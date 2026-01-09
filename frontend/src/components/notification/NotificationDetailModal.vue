@@ -43,11 +43,11 @@ const targetName = computed(() => {
             </button>
           </div>
           <div class="modal-body" v-if="notification">
-            <div class="notification-detail-header mb-md">
+            <div class="notification-detail-header mb-md flex items-center gap-md">
               <span class="notification-type-badge" :class="'type-' + notification.type">
                 {{ typeName }}
               </span>
-              <span class="text-sm text-secondary ml-2">
+              <span class="text-sm text-secondary">
                 {{ targetName }}
               </span>
             </div>

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '@/api/auth'
 import { dictionaryApi, type Dictionary, type DictionaryItem } from '@/api/dictionary'
 import { notificationApi, type Notification, type UserBrief } from '@/api/notification'
+import NotificationDetailModal from '@/components/notification/NotificationDetailModal.vue'
 import GlassCard from '@/components/common/GlassCard.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
@@ -11,6 +12,7 @@ import { Browser, Events } from '@wailsio/runtime'
 
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
+import pkg from '../../package.json'
 
 
 const route = useRoute()
@@ -552,12 +554,48 @@ const handlePasswordChange = async () => {
 // ============ About Logic ============
 const checkingUpdate = ref(false)
 
-const checkUpdate = () => {
+const checkUpdate = async () => {
   checkingUpdate.value = true
-  setTimeout(() => {
+  try {
+    // Determine the API URL - could be configured elsewhere but hardcoded for now as per requirement
+    const apiUrl = 'https://api.github.com/repos/FruitsAI/Orange/releases/latest'
+    
+    const response = await fetch(apiUrl)
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    const latestVersionTag = data.tag_name // e.g., "v0.1.2"
+    
+    // Simple version comparison logic
+    // specific logic: remove 'v' prefix if present
+    const cleanLatest = latestVersionTag.replace(/^v/, '')
+    const cleanCurrent = pkg.version.replace(/^v/, '')
+    
+    if (cleanLatest === cleanCurrent) {
+       toast.success(`当前已是最新版本 (v${cleanLatest})`)
+    } else {
+       // Assuming semantic versioning, if strings differ and we want to be simple, 
+       // we can just check inequality. For strictly "newer", we'd need a semver lib or robust parsing.
+       // However, often "not equal" is enough to trigger "update available" if we assume simple progression.
+       // Let's stick to strict inequality for now, or even better, ask user if they want to view the release.
+       
+       const confirmed = await confirm({ 
+         title: '发现新版本', 
+         message: `检测到新版本 ${latestVersionTag}，当前版本 v${cleanCurrent}。是否前往下载？` 
+       })
+       
+       if (confirmed) {
+         Browser.OpenURL(data.html_url)
+       }
+    }
+  } catch (error) {
+    console.error('Check update failed:', error)
+    toast.error('检查更新失败，请稍后重试')
+  } finally {
     checkingUpdate.value = false
-    toast.success('当前已是最新版本')
-  }, 2000)
+  }
 }
 
 onMounted(() => {
@@ -864,7 +902,7 @@ onMounted(() => {
           <img src="/orange.png" alt="Orange Logo" style="margin-bottom: 1rem;" class="w-28 h-28 object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500" />
           <h2 style="margin-bottom: 0.3rem; color: #FF9F0A;" class="text-4xl font-bold tracking-tight">Orange</h2>
           <div class="flex items-center justify-center gap-4">
-            <span style="padding: 0.2rem 0.3rem;" class="rounded-full bg-blue-500/10 text-blue-500 text-sm font-bold border border-blue-500/20 shadow-sm">v1.0.0</span>
+            <span style="padding: 0.2rem 0.3rem;" class="rounded-full bg-blue-500/10 text-blue-500 text-sm font-bold border border-blue-500/20 shadow-sm">v{{ pkg.version }}</span>
             <span class="text-secondary text-base">小旭姐专属记账工具</span>
           </div>
         </div>
@@ -982,46 +1020,10 @@ onMounted(() => {
     </Teleport>
 
     <!-- Notification Detail Modal -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showNotificationDetailModal" class="modal-overlay open" @click.self="showNotificationDetailModal = false">
-          <div class="modal open">
-            <div class="modal-header">
-              <h3 class="modal-title">{{ isEditingNotification ? '编辑通知' : '通知详情' }}</h3>
-              <button class="modal-close" @click="showNotificationDetailModal = false">
-                <i class="ri-close-line"></i>
-              </button>
-            </div>
-            <div class="modal-body" v-if="selectedNotification">
-              <div v-if="!isEditingNotification">
-                <!-- 查看模式 -->
-                <div class="notification-detail-header mb-md">
-                  <span class="notification-type-badge" :class="'type-' + selectedNotification.type">
-                    {{ selectedNotification.type === 2 ? '活动' : (selectedNotification.type === 3 ? '私信' : '系统') }}
-                  </span>
-                  <span class="text-sm text-secondary ml-2">
-                    {{ selectedNotification.is_global === 1 ? '全员通知' : '私信通知' }}
-                  </span>
-                </div>
-                <h4 class="text-xl font-medium mb-md">{{ selectedNotification.title }}</h4>
-                <p class="text-secondary mb-lg" style="white-space: pre-wrap;">{{ selectedNotification.content }}</p>
-                <div class="text-sm text-tertiary">
-                  {{ new Date(selectedNotification.create_time).toLocaleString() }}
-                  <span v-if="selectedNotification.sender"> · 发送者: {{ selectedNotification.sender.name }}</span>
-                </div>
-              </div>
-              <div v-else>
-                <!-- 编辑模式（占位，暂不实现完整编辑功能） -->
-                <div class="text-center text-secondary py-lg">
-                  编辑功能开发中...
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+    <NotificationDetailModal
+      v-model="showNotificationDetailModal"
+      :notification="selectedNotification"
+    />
 
     <!-- Dict Item Modal -->
     <Teleport to="body">

@@ -14,6 +14,11 @@ vars:
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
 
 tasks:
+  bump-version:
+    summary: "Updates the application version (usage: task bump-version VERSION=0.1.x)"
+    cmds:
+      - go run scripts/bump_version.go {{.VERSION}}
+
   build:
     summary: Builds the application
     cmds:

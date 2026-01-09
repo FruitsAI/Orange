@@ -252,7 +252,8 @@ onUnmounted(() => {
         :value="Math.round(stats.avg_collection_days)"
         suffix="天"
         icon="ri-time-line"
-        :trendDirection="stats.avg_collection_days_trend > 0 ? 'up' : 'down'"
+        trend-direction="up"
+        :trend-up="stats.avg_collection_days_trend >= 0"
         :trendValue="Math.abs(stats.avg_collection_days_trend).toFixed(1) + '%'"
         variant="primary"
       />
@@ -260,7 +261,8 @@ onUnmounted(() => {
         label="预期收款"
         :value="'¥' + stats.total_amount.toLocaleString()"
         icon="ri-funds-line"
-        :trendDirection="stats.total_trend > 0 ? 'up' : 'down'"
+        trend-direction="up"
+        :trend-up="stats.total_trend >= 0"
         :trendValue="Math.abs(stats.total_trend).toFixed(1) + '%'"
         variant="success"
       />
@@ -269,7 +271,8 @@ onUnmounted(() => {
         :value="collectionRate"
         suffix="%"
         icon="ri-percent-line"
-        :trendDirection="stats.paid_trend > 0 ? 'up' : 'down'"
+        trend-direction="up"
+        :trend-up="stats.paid_trend >= 0"
         :trendValue="Math.abs(stats.paid_trend).toFixed(1) + '%'"
         variant="warning"
       />
@@ -278,7 +281,8 @@ onUnmounted(() => {
         :value="overdueRate"
         suffix="%"
         icon="ri-error-warning-line"
-        :trendDirection="stats.overdue_trend > 0 ? 'up' : 'down'"
+        trend-direction="down"
+        :trend-up="stats.overdue_trend >= 0"
         :trendValue="Math.abs(stats.overdue_trend).toFixed(1) + '%'"
         variant="danger"
       />

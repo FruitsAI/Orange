@@ -35,36 +35,36 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 	case "week":
 		// Current: Last 7 days
 		startDate = now.AddDate(0, 0, -6).Format("2006-01-02")
-		endDate = now.Format("2006-01-02")
+		endDate = now.Format("2006-01-02") + " 23:59:59"
 		// Previous: The 7 days before that
 		prevStartDate = now.AddDate(0, 0, -13).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, 0, -7).Format("2006-01-02")
+		prevEndDate = now.AddDate(0, 0, -7).Format("2006-01-02") + " 23:59:59"
 	case "month":
 		// Current: Last 30 days
 		startDate = now.AddDate(0, 0, -29).Format("2006-01-02")
-		endDate = now.Format("2006-01-02")
+		endDate = now.Format("2006-01-02") + " 23:59:59"
 		// Previous
 		prevStartDate = now.AddDate(0, 0, -59).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, 0, -30).Format("2006-01-02")
+		prevEndDate = now.AddDate(0, 0, -30).Format("2006-01-02") + " 23:59:59"
 	case "quarter":
 		// Current: Last 3 months (90 days approx)
 		startDate = now.AddDate(0, -3, 0).Format("2006-01-02")
-		endDate = now.Format("2006-01-02")
+		endDate = now.Format("2006-01-02") + " 23:59:59"
 		// Previous
 		prevStartDate = now.AddDate(0, -6, 0).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, -3, 0).Format("2006-01-02")
+		prevEndDate = now.AddDate(0, -3, 0).Format("2006-01-02") + " 23:59:59"
 	case "year":
 		// Current: Last 12 months
 		startDate = now.AddDate(-1, 0, 0).Format("2006-01-02")
-		endDate = now.Format("2006-01-02")
+		endDate = now.Format("2006-01-02") + " 23:59:59"
 		// Previous
 		prevStartDate = now.AddDate(-2, 0, 0).Format("2006-01-02")
-		prevEndDate = now.AddDate(-1, 0, 0).Format("2006-01-02")
+		prevEndDate = now.AddDate(-1, 0, 0).Format("2006-01-02") + " 23:59:59"
 	default: // Default to Month if empty
 		startDate = now.AddDate(0, 0, -29).Format("2006-01-02")
-		endDate = now.Format("2006-01-02")
+		endDate = now.Format("2006-01-02") + " 23:59:59"
 		prevStartDate = now.AddDate(0, 0, -59).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, 0, -30).Format("2006-01-02")
+		prevEndDate = now.AddDate(0, 0, -30).Format("2006-01-02") + " 23:59:59"
 	}
 
 	// Current Stats
@@ -134,26 +134,26 @@ func (s *DashboardService) GetIncomeTrend(userID int64, period string) (*dto.Inc
 		interval = "day"
 		loopStart = now.AddDate(0, 0, -days+1)
 		startDate = loopStart.Format("2006-01-02")
-		endDate = now.Format("2006-01-02")
+		endDate = now.Format("2006-01-02") + " 23:59:59"
 	case "month":
 		days = 30
 		interval = "day"
 		loopStart = now.AddDate(0, 0, -days+1)
 		startDate = loopStart.Format("2006-01-02")
-		endDate = now.Format("2006-01-02")
+		endDate = now.Format("2006-01-02") + " 23:59:59"
 	case "quarter":
 		months = 3
 		interval = "month"
 		// Start from N-1 months ago 1st day
 		loopStart = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).AddDate(0, -months+1, 0)
 		startDate = loopStart.Format("2006-01-02")
-		endDate = now.Format("2006-01-02")
+		endDate = now.Format("2006-01-02") + " 23:59:59"
 	case "year":
 		months = 12
 		interval = "month"
 		loopStart = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).AddDate(0, -months+1, 0)
 		startDate = loopStart.Format("2006-01-02")
-		endDate = now.Format("2006-01-02")
+		endDate = now.Format("2006-01-02") + " 23:59:59"
 	default: // Default used to be 6 months. Let's make default "month" (30 days daily) or "year" (12 months monthly)?
 		// The frontend default might be "month" (meaning 30 days daily) OR existing "6 months".
 		// Let's keep a "default" that mimics the old behavior if needed, OR map "month" to 30 days.
@@ -163,7 +163,7 @@ func (s *DashboardService) GetIncomeTrend(userID int64, period string) (*dto.Inc
 		interval = "month"
 		loopStart = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).AddDate(0, -months+1, 0)
 		startDate = loopStart.Format("2006-01-02")
-		endDate = now.Format("2006-01-02")
+		endDate = now.Format("2006-01-02") + " 23:59:59"
 	}
 
 	expected, actual, err := s.paymentRepo.GetIncomeStats(userID, startDate, endDate, interval)

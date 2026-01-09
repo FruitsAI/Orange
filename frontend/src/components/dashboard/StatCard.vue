@@ -22,6 +22,7 @@ const computedIconClass = computed(() => {
 })
 
 const displayTrend = computed(() => props.trend || props.trendValue)
+
 const isTrendUp = computed(() => {
   if (props.trendUp !== undefined) return props.trendUp
   return props.trendDirection === 'up'

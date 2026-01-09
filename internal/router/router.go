@@ -106,6 +106,13 @@ func NewRouter() *gin.Engine {
 				notifications.PUT("/:id/read", notificationHandler.MarkAsRead)
 				notifications.DELETE("/:id", notificationHandler.Delete)
 			}
+
+			// System routes
+			system := authorized.Group("/system")
+			{
+				systemHandler := handler.NewSystemHandler()
+				system.GET("/updates/check", systemHandler.CheckUpdate)
+			}
 		}
 	}
 

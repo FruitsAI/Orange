@@ -16,6 +16,7 @@ type Config struct {
 	TokenExpiry int64 // 单位：小时
 	LogEnable   bool
 	LogLevel    string
+	GitHubRepo  string
 }
 
 // AppConfig 全局配置实例
@@ -51,6 +52,7 @@ func Load() {
 		TokenExpiry: getEnvInt("TOKEN_EXPIRY", 24),
 		LogEnable:   getEnvBool("LOG_ENABLE", true),
 		LogLevel:    getEnv("LOG_LEVEL", "debug"),
+		GitHubRepo:  getEnv("GITHUB_REPO", "FruitsAI/Orange"),
 	}
 }
 

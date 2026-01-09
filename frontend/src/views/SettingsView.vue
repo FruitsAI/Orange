@@ -2,6 +2,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '@/api/auth'
+import api from '@/api'
 import { dictionaryApi, type Dictionary, type DictionaryItem } from '@/api/dictionary'
 import { notificationApi, type Notification, type UserBrief } from '@/api/notification'
 import NotificationDetailModal from '@/components/notification/NotificationDetailModal.vue'
@@ -557,37 +558,32 @@ const checkingUpdate = ref(false)
 const checkUpdate = async () => {
   checkingUpdate.value = true
   try {
-    // Determine the API URL - could be configured elsewhere but hardcoded for now as per requirement
-    const apiUrl = 'https://api.github.com/repos/FruitsAI/Orange/releases/latest'
+    // 调用后端代理接口，避免 CORS 问题
+    const { data } = await api.get('/system/updates/check')
     
-    const response = await fetch(apiUrl)
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`)
-    }
+    // 兼容后端返回结构: { code: 0, data: { tag_name: "v0.1.2", ... } }
+    // api 拦截器会自动解包并返回 AxiosResponse，其中 data 是 ApiResponse
+    // 但我们的拦截器 return response，所以这里 data 是 { code: 0, message: "success", data: { tag_name: ... } }
+    // 还是说拦截器直接返回了 response.data? Note: api.interceptors.response.use returns response (line 55 of api/index.ts)
+    // So 'data' here is the AxiosResponse.data, which is { code: 0, message: "...", data: { ... } }
     
-    const data = await response.json()
-    const latestVersionTag = data.tag_name // e.g., "v0.1.2"
+    const releaseInfo = data.data
+    const latestVersionTag = releaseInfo.tag_name 
+    const htmlUrl = releaseInfo.html_url
     
-    // Simple version comparison logic
-    // specific logic: remove 'v' prefix if present
     const cleanLatest = latestVersionTag.replace(/^v/, '')
     const cleanCurrent = pkg.version.replace(/^v/, '')
     
     if (cleanLatest === cleanCurrent) {
        toast.success(`当前已是最新版本 (v${cleanLatest})`)
     } else {
-       // Assuming semantic versioning, if strings differ and we want to be simple, 
-       // we can just check inequality. For strictly "newer", we'd need a semver lib or robust parsing.
-       // However, often "not equal" is enough to trigger "update available" if we assume simple progression.
-       // Let's stick to strict inequality for now, or even better, ask user if they want to view the release.
-       
        const confirmed = await confirm({ 
          title: '发现新版本', 
          message: `检测到新版本 ${latestVersionTag}，当前版本 v${cleanCurrent}。是否前往下载？` 
        })
        
        if (confirmed) {
-         Browser.OpenURL(data.html_url)
+         Browser.OpenURL(htmlUrl)
        }
     }
   } catch (error) {

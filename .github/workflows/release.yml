@@ -52,9 +52,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev build-essential nsis rpm
 
+      - name: Install Windows Dependencies
+        if: matrix.platform == 'windows-latest'
+        run: choco install nsis
+
       - name: Build and Package
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # We assume 'task package' is sufficient for all platforms as defined in Taskfile.yml
-        # Windows: creates bin/Orange.exe (binary) - we might need to handle NSIS if 'task package' runs it
+        # Windows: needs NSIS (installed above)
         # Linux: creates bin/Orange (binary), bin/*.deb, bin/*.rpm, bin/*.AppImage
         # macOS: creates bin/Orange.app
         run: task package

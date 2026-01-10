@@ -906,7 +906,7 @@ onMounted(() => {
         <!-- Info Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-12 w-full max-w-6xl">
           <!-- Author Card -->
-          <div style="padding: 2.5rem 2rem;" class="group relative bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/10 rounded-[2rem] flex flex-col items-center text-center transition-all hover:-translate-y-2 hover:bg-white dark:hover:bg-white/20 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-500/30 shadow-sm">
+          <div style="padding: 2.5rem 2rem;" class="about-card group relative border border-gray-100 dark:border-white/10 rounded-[2rem] flex flex-col items-center text-center transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-500/30 shadow-sm">
             <div style="margin-bottom: 1rem;" class="w-16 h-16 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <i class="ri-user-smile-line text-3xl"></i>
             </div>
@@ -915,7 +915,7 @@ onMounted(() => {
           </div>
           
           <!-- WeChat Card -->
-          <div style="padding: 2.5rem 2rem;" class="group relative bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/10 rounded-[2rem] flex flex-col items-center text-center transition-all hover:-translate-y-2 hover:bg-white dark:hover:bg-white/20 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-500/30 shadow-sm">
+          <div style="padding: 2.5rem 2rem;" class="about-card group relative border border-gray-100 dark:border-white/10 rounded-[2rem] flex flex-col items-center text-center transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-500/30 shadow-sm">
             <div style="margin-bottom: 1rem;" class="w-16 h-16 rounded-2xl bg-green-500/10 text-green-500 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <i class="ri-wechat-line text-3xl"></i>
             </div>
@@ -924,7 +924,7 @@ onMounted(() => {
           </div>
 
           <!-- GitHub Card -->
-          <div @click="openGitHub" style="padding: 2.5rem 2rem;" class="group relative bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/10 rounded-[2rem] flex flex-col items-center text-center transition-all hover:-translate-y-2 hover:bg-white dark:hover:bg-white/20 hover:shadow-2xl hover:shadow-gray-500/10 hover:border-gray-500/30 cursor-pointer shadow-sm">
+          <div @click="openGitHub" style="padding: 2.5rem 2rem;" class="about-card group relative border border-gray-100 dark:border-white/10 rounded-[2rem] flex flex-col items-center text-center transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-gray-500/10 hover:border-gray-500/30 cursor-pointer shadow-sm">
             <div style="margin-bottom: 1rem;" class="w-16 h-16 rounded-2xl bg-gray-500/10 text-gray-500 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <i class="ri-github-line text-3xl"></i>
             </div>
@@ -937,10 +937,10 @@ onMounted(() => {
 
         <!-- Tech Stack -->
         <div class="flex flex-wrap justify-center gap-5">
-          <span style="padding: 0.2rem 0.3rem;" class="rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/20 text-base text-secondary font-medium font-mono hover:bg-white dark:hover:bg-white/10 transition-colors cursor-default shadow-sm">Wails v3</span>
-          <span style="padding: 0.2rem 0.3rem;" class="rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/20 text-base text-secondary font-medium font-mono hover:bg-white dark:hover:bg-white/10 transition-colors cursor-default shadow-sm">Vue 3</span>
-          <span style="padding: 0.2rem 0.3rem;" class="rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/20 text-base text-secondary font-medium font-mono hover:bg-white dark:hover:bg-white/10 transition-colors cursor-default shadow-sm">TypeScript</span>
-          <span style="padding: 0.2rem 0.3rem;" class="rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/20 text-base text-secondary font-medium font-mono hover:bg-white dark:hover:bg-white/10 transition-colors cursor-default shadow-sm">Go</span>
+          <span class="tech-badge rounded-xl border text-base font-medium font-mono transition-colors cursor-default shadow-sm" style="padding: 0.2rem 0.3rem;">Wails v3</span>
+          <span class="tech-badge rounded-xl border text-base font-medium font-mono transition-colors cursor-default shadow-sm" style="padding: 0.2rem 0.3rem;">Vue 3</span>
+          <span class="tech-badge rounded-xl border text-base font-medium font-mono transition-colors cursor-default shadow-sm" style="padding: 0.2rem 0.3rem;">TypeScript</span>
+          <span class="tech-badge rounded-xl border text-base font-medium font-mono transition-colors cursor-default shadow-sm" style="padding: 0.2rem 0.3rem;">Go</span>
         </div>
 
         <!-- Update Button -->
@@ -1599,5 +1599,36 @@ onMounted(() => {
 
 .read-title {
   color: #9ca3af;
+}
+
+/* Custom About Card Styles to bypass specificity/config issues */
+.about-card {
+  background-color: white;
+  border-color: #f3f4f6; /* gray-100 */
+}
+
+[data-theme='dark'] .about-card {
+  background-color: rgba(39, 39, 42, 0.5); /* zinc-800 with 50% opacity */
+  border-color: rgba(255, 255, 255, 0.05); /* Soft border */
+}
+
+/* Tech Stack Badges */
+.tech-badge {
+  background-color: white;
+  border-color: #e5e7eb; /* gray-200 */
+  color: var(--text-secondary);
+}
+
+.tech-badge:hover {
+  background-color: #f9fafb; /* gray-50 */
+}
+
+[data-theme='dark'] .tech-badge {
+  background-color: rgba(39, 39, 42, 0.5);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .tech-badge:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 </style>

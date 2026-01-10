@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4] - 2026-01-10
+
+### Changed
+
+- Updated "About" page styling: fixed reversed dark/light mode card backgrounds and refined visual hierarchy for tech stack badges.
+- Temporarily hid the global search box in the header.
+
 ## [0.1.3] - 2026-01-10
 
 ### Fixed

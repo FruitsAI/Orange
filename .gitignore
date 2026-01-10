@@ -46,3 +46,4 @@ cover.out
 # docs/ # Docs should be tracked
 # Agent
 .agent/
+.ai_memory/

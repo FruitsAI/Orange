@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/FruitsAI/Orange/internal/database"
 	"github.com/FruitsAI/Orange/internal/models"
 	"github.com/FruitsAI/Orange/internal/pkg/jwt"
+	"github.com/FruitsAI/Orange/internal/pkg/logger"
 	"github.com/FruitsAI/Orange/internal/router"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -65,16 +65,11 @@ func main() {
 	// Load configuration
 	config.Load()
 
-	// SETUP DEBUG LOGGING
-	homeDir, _ := os.UserHomeDir()
-	logPath := filepath.Join(homeDir, "orange_debug.log")
-	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err == nil {
-		// Use file logger
-		slog.SetDefault(slog.New(slog.NewTextHandler(logFile, nil)))
-		log.SetOutput(logFile)
-		slog.Info("Application starting...", "version", "v0.1.5-debug")
-	}
+	// Initialize Logger
+	logger.Setup()
+	defer logger.Sync()
+
+	slog.Info("Application starting...", "version", "v0.1.7")
 
 	// PANIC RECOVERY
 	defer func() {
@@ -148,7 +143,7 @@ func main() {
 	})
 
 	// Run the application. This blocks until the application has been exited.
-	err = app.Run()
+	err := app.Run()
 
 	// If an error occurred while running the application, log it and exit.
 	if err != nil {

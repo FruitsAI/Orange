@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/FruitsAI/Orange/internal/config"
+	"github.com/FruitsAI/Orange/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // bodyLogWriter 封装 gin.ResponseWriter 以捕获响应体
@@ -52,20 +54,25 @@ func Logger() gin.HandlerFunc {
 		}
 
 		// 构建日志字段
-		logFields := []interface{}{
-			"status", statusCode,
-			"method", method,
-			"path", path,
-			"latency", latency,
-			"ip", c.ClientIP(),
+		fields := []zap.Field{
+			zap.Int("status", statusCode),
+			zap.String("method", method),
+			zap.String("path", path),
+			zap.Duration("latency", latency),
+			zap.String("ip", c.ClientIP()),
 		}
 
 		// 调试模式下打印响应体
 		if config.AppConfig.LogLevel == "debug" {
-			logFields = append(logFields, "response", blw.body.String())
+			fields = append(fields, zap.String("response", blw.body.String()))
 		}
 
 		// 打印日志
-		slog.Info("Request", logFields...)
+		if logger.Log != nil {
+			logger.Log.Info("Request", fields...)
+		} else {
+			// Fallback if logger not initialized (shouldn't happen if Setup called)
+			slog.Info("Request", "status", statusCode, "path", path)
+		}
 	}
 }

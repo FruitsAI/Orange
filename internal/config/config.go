@@ -11,12 +11,17 @@ import (
 
 // Config 应用配置
 type Config struct {
-	DBPath      string
-	JWTSecret   string
-	TokenExpiry int64 // 单位：小时
-	LogEnable   bool
-	LogLevel    string
-	GitHubRepo  string
+	DBPath        string
+	JWTSecret     string
+	TokenExpiry   int64 // 单位：小时
+	LogEnable     bool
+	LogLevel      string
+	GitHubRepo    string
+	LogPath       string
+	LogMaxSize    int
+	LogMaxBackups int
+	LogMaxAge     int
+	LogCompress   bool
 }
 
 // AppConfig 全局配置实例
@@ -30,8 +35,10 @@ func Load() {
 		log.Println("Info: .env file not found, utilizing environment variables or default values")
 	}
 
-	// 计算默认数据库路径
+	// 计算默认数据库路径和日志路径
 	defaultDBPath := "orange.db"
+	defaultLogPath := "orange.log"
+
 	configDir, err := os.UserConfigDir()
 	if err == nil {
 		// macOS: ~/Library/Application Support/FruitsAI/Orange
@@ -39,6 +46,14 @@ func Load() {
 		appDir := filepath.Join(configDir, "FruitsAI", "Orange")
 		if err := os.MkdirAll(appDir, 0755); err == nil {
 			defaultDBPath = filepath.Join(appDir, "orange.db")
+
+			// 日志放到 log 子目录
+			logDir := filepath.Join(appDir, "log")
+			if err := os.MkdirAll(logDir, 0755); err == nil {
+				defaultLogPath = filepath.Join(logDir, "orange.log")
+			} else {
+				defaultLogPath = filepath.Join(appDir, "orange.log")
+			}
 		} else {
 			log.Printf("Warning: Failed to create app config dir: %v\n", err)
 		}
@@ -47,12 +62,17 @@ func Load() {
 	}
 
 	AppConfig = &Config{
-		DBPath:      getEnv("DB_PATH", defaultDBPath),
-		JWTSecret:   getEnv("JWT_SECRET", "orange-secret-key-change-in-production"),
-		TokenExpiry: getEnvInt("TOKEN_EXPIRY", 24),
-		LogEnable:   getEnvBool("LOG_ENABLE", true),
-		LogLevel:    getEnv("LOG_LEVEL", "debug"),
-		GitHubRepo:  getEnv("GITHUB_REPO", "FruitsAI/Orange"),
+		DBPath:        getEnv("DB_PATH", defaultDBPath),
+		JWTSecret:     getEnv("JWT_SECRET", "orange-secret-key-change-in-production"),
+		TokenExpiry:   getEnvInt("TOKEN_EXPIRY", 24),
+		LogEnable:     getEnvBool("LOG_ENABLE", true),
+		LogLevel:      getEnv("LOG_LEVEL", "debug"),
+		GitHubRepo:    getEnv("GITHUB_REPO", "FruitsAI/Orange"),
+		LogPath:       getEnv("LOG_PATH", defaultLogPath),
+		LogMaxSize:    int(getEnvInt("LOG_MAX_SIZE", 10)),   // 10MB
+		LogMaxBackups: int(getEnvInt("LOG_MAX_BACKUPS", 5)), // 5 files
+		LogMaxAge:     int(getEnvInt("LOG_MAX_AGE", 30)),    // 30 days
+		LogCompress:   getEnvBool("LOG_COMPRESS", true),     // Compress by default
 	}
 }
 

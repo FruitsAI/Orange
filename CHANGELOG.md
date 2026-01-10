@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.7] - 2026-01-10
+
+### Added
+
+- **Robust Logger**: Implemented a production-grade file logging system using `Uber Zap` (high performance) and `Lumberjack` (log rotation).
+  - Logs are stored in `log/orange.log` alongside the database.
+  - Supports automatic rotation (10MB limit, keep 5 files, 30 days retention).
+  - Captures `slog` output (Gin, GORM, system logs) automatically.
+  - Configuration added to `config.json` / env vars (`LOG_PATH`, `LOG_MAX_SIZE`, etc.).
+
 ## [0.1.6] - 2026-01-10
 
 ### Fixed

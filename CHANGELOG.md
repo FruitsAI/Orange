@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.6] - 2026-01-10
+
+### Fixed
+
+- **Critical**: Replaced CGO-based SQLite driver with pure-Go driver (`glebarez/sqlite`). This resolves the "Binary was compiled with 'CGO_ENABLED=0', go-sqlite3 requires cgo" panic on Windows.
+
 ## [0.1.5] - 2026-01-10
 
 ### Added

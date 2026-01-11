@@ -352,9 +352,22 @@ const handleSubmit = async () => {
     if (!formData.value.status) { toast.error('请选择项目状态'); return }
     if (!formData.value.startDate) { toast.error('请选择开始日期'); return }
     if (!formData.value.endDate) { toast.error('请选择截止日期'); return }
+    
+    // 校验：开始日期不能晚于截止日期
+    if (dayjs(formData.value.startDate).isAfter(dayjs(formData.value.endDate))) {
+      toast.error('开始日期不能晚于截止日期')
+      return
+    }
+
     if (!formData.value.totalAmount || parseFloat(formData.value.totalAmount) <= 0) { toast.error('请输入有效的合同总金额'); return }
     if (!formData.value.contractNo) { toast.error('请输入合同编号'); return }
     if (!formData.value.contractDate) { toast.error('请选择合同日期'); return }
+    
+    // 校验：合同日期不能晚于开始日期
+    if (dayjs(formData.value.contractDate).isAfter(dayjs(formData.value.startDate))) {
+      toast.error('合同日期不能晚于项目开始日期')
+      return
+    }
     
     // 检查合同编号唯一性
     try {
@@ -375,6 +388,12 @@ const handleSubmit = async () => {
     for (const item of formData.value.paymentItems) {
         if (!item.amount || parseFloat(item.amount) <= 0) { toast.error('收款金额必须大于0'); return }
         if (!item.planDate) { toast.error('请选择收款日期'); return }
+
+        // 校验：收款日期不能早于合同日期
+        if (dayjs(item.planDate).isBefore(dayjs(formData.value.contractDate))) {
+          toast.error(`收款日期(${item.planDate})不能早于合同日期`)
+          return
+        }
     }
 
     loading.value = true

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.2] - 2026-01-11
+
+### Added
+
+- **Components**: Enhanced `DatePicker.vue` with Year and Month selection views for quick navigation (similar to Element UI).
+
+### Changed
+
+- **Projects**: Added comprehensive date validation when creating/editing projects (Start <= End, Contract <= Start, Contract <= Payment).
+
 ## [0.2.1] - 2026-01-11
 
 ### Changed

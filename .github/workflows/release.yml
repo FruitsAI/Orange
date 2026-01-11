@@ -67,27 +67,46 @@ jobs:
         # macOS: creates bin/Orange.app
         run: task package
 
-      # macOS: Zip the .app bundle
+      # macOS: Zip the .app bundle with version
       - name: Zip macOS App
         if: matrix.platform == 'macos-latest'
         run: |
           cd bin
-          zip -r Orange-macOS-universal.zip Orange.app
+          zip -r Orange-${{ github.ref_name }}-macOS-universal.zip Orange.app
           cd ..
 
-      # Windows: Check for installer or just use binary
-      # According to Taskfile, 'task package' on Windows runs 'create:nsis:installer'
-      # The output location might be build/windows/nsis/Orange-installer.exe or similar.
-      # Let's verify commonly used paths or just use shell globbing in upload
-      
+      # Windows: Check for installer and rename with version
       - name: Prepare Windows Artifacts
         if: matrix.platform == 'windows-latest'
         shell: pwsh
         run: |
-          # Move installer to bin if it exists in nsis folder, for easier upload wildcard
+          $version = $env:GITHUB_REF_NAME
+          # Move installer to bin if it exists in nsis folder, and rename it
           if (Test-Path "build/windows/nsis/*-installer.exe") {
-            Move-Item "build/windows/nsis/*-installer.exe" "bin/"
+            Move-Item "build/windows/nsis/*-installer.exe" "bin/Orange-${version}-windows-amd64-installer.exe"
           }
+
+      # Linux: Rename artifacts to include version
+      - name: Prepare Linux Artifacts
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          VERSION=${GITHUB_REF_NAME}
+          cd bin
+          # Rename .deb if exists (assuming it's named Orange.deb or similar generic name)
+          if [ -f "Orange.deb" ]; then
+            mv Orange.deb Orange-${VERSION}-linux-amd64.deb
+          fi
+          # Rename .rpm if exists
+          if [ -f "Orange.rpm" ]; then
+            mv Orange.rpm Orange-${VERSION}-linux-amd64.rpm
+          fi
+          # Rename .AppImage if exists (it usually has a dynamic name, catch wildcard)
+          for file in *.AppImage; do
+             if [ -f "$file" ]; then
+               mv "$file" "Orange-${VERSION}-linux-x86_64.AppImage"
+             fi
+          done
+          cd ..
 
       - name: Generate Release Notes
         shell: bash
@@ -95,7 +114,11 @@ jobs:
           VERSION=${GITHUB_REF_NAME#v}
           echo "Extracting release notes for version $VERSION"
           # Extract content between the version header and the next header
-          awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md > RELEASE_NOTES.md
+          if [ -f CHANGELOG.md ]; then
+             awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md > RELEASE_NOTES.md
+          else
+             echo "CHANGELOG.md not found" > RELEASE_NOTES.md
+          fi
           
           # If empty (no match), perform a fallback or just leave empty
           if [ ! -s RELEASE_NOTES.md ]; then
@@ -111,10 +134,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           body_path: RELEASE_NOTES.md
           files: |
-            bin/*.zip
-            bin/*.dmg
-            bin/*.exe
-            bin/*.AppImage
-            bin/*.deb
-            bin/*.rpm
+            bin/*-macOS-universal.zip
+            bin/*-windows-amd64-installer.exe
+            bin/*-linux-*.AppImage
+            bin/*-linux-*.deb
+            bin/*-linux-*.rpm
           make_latest: true

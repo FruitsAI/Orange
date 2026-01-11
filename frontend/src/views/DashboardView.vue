@@ -35,6 +35,7 @@ const statsDisplay = computed(() => [
     label: '总收款金额', 
     value: `¥${statsData.value.total_amount.toLocaleString()}`, 
     icon: 'ri-money-dollar-circle-line', 
+    trendPrefix: '较上月',
     trend: `${Math.abs(statsData.value.total_trend)}%`, 
     trendUp: statsData.value.total_trend >= 0, 
     iconColorClass: 'stat-card-icon--primary' 
@@ -43,6 +44,7 @@ const statsDisplay = computed(() => [
     label: '已结算金额', 
     value: `¥${statsData.value.paid_amount.toLocaleString()}`, 
     icon: 'ri-checkbox-circle-line', 
+    trendPrefix: '较上月',
     trend: `${Math.abs(statsData.value.paid_trend)}%`, 
     trendUp: statsData.value.paid_trend >= 0, 
     iconColorClass: 'stat-card-icon--success' 
@@ -51,6 +53,7 @@ const statsDisplay = computed(() => [
     label: '待结算金额', 
     value: `¥${statsData.value.pending_amount.toLocaleString()}`, 
     icon: 'ri-time-line', 
+    trendPrefix: '较上月',
     trend: `${Math.abs(statsData.value.pending_trend)}%`, 
     trendUp: statsData.value.pending_trend >= 0, // Pending trend up might be bad? Usually context dependent. optimized: false? Keeping simple.
     iconColorClass: 'stat-card-icon--warning' 
@@ -59,6 +62,7 @@ const statsDisplay = computed(() => [
     label: '逾期金额', 
     value: `¥${statsData.value.overdue_amount.toLocaleString()}`, 
     icon: 'ri-error-warning-line', 
+    trendPrefix: '较上月',
     trend: `${Math.abs(statsData.value.overdue_trend)}%`, 
     trendUp: statsData.value.overdue_trend >= 0, // Overdue up is definitely bad. But trendUp usually just controls arrow direction.
     iconColorClass: 'stat-card-icon--danger' 

@@ -1,6 +1,16 @@
 # Changelog
 
-## [0.1.10] - 2026-01-11
+## [0.2.0] - 2026-01-11
+
+### Added
+
+- **Dashboard**: Added trend calculation for Overdue Amount (month-over-month).
+- **Analytics**: Implemented dynamic trend prefixes (e.g., "Compared to last week/month/quarter/year") based on the selected time period in the Analytics view.
+
+### Changed
+
+- **Dashboard**: Optimized the trend calculation logic for the main statistics cards to display month-over-month comparison trends instead of all-time trends.
+- **UI**: Updated the dashboard statistics cards to interpret the trend values as "Compared to last month" and explicitly display this text.
 
 ### Fixed
 

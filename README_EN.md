@@ -4,7 +4,7 @@
 # Orange
 
   <p>
-    <strong>A modern cross-platform desktop application demo based on Wails v3</strong>
+    <strong>A modern cross-platform desktop application based on Wails v3</strong>
   </p>
 
   <p>

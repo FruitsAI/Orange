@@ -231,7 +231,18 @@ onUnmounted(() => {
   if (barChartInstance) barChartInstance.destroy()
   if (doughnutChartInstance) doughnutChartInstance.destroy()
 })
- const chartTitle = computed(() => {
+// 动态计算趋势前缀
+const trendPrefix = computed(() => {
+  switch (activePeriod.value) {
+    case 'week': return '较上周'
+    case 'month': return '较上月'
+    case 'quarter': return '较上季'
+    case 'year': return '较上年'
+    default: return '较上期'
+  }
+})
+
+const chartTitle = computed(() => {
   switch (activePeriod.value) {
     case 'week': return '周度收入对比'
     case 'month': return '月度收入对比'
@@ -265,6 +276,7 @@ onUnmounted(() => {
         :value="Math.round(stats.avg_collection_days)"
         suffix="天"
         icon="ri-time-line"
+        :trendPrefix="trendPrefix"
         trend-direction="up"
         :trend-up="stats.avg_collection_days_trend >= 0"
         :trendValue="Math.abs(stats.avg_collection_days_trend).toFixed(1) + '%'"
@@ -274,6 +286,7 @@ onUnmounted(() => {
         label="预期收款"
         :value="'¥' + stats.total_amount.toLocaleString()"
         icon="ri-funds-line"
+        :trendPrefix="trendPrefix"
         trend-direction="up"
         :trend-up="stats.total_trend >= 0"
         :trendValue="Math.abs(stats.total_trend).toFixed(1) + '%'"
@@ -284,6 +297,7 @@ onUnmounted(() => {
         :value="collectionRate"
         suffix="%"
         icon="ri-percent-line"
+        :trendPrefix="trendPrefix"
         trend-direction="up"
         :trend-up="stats.paid_trend >= 0"
         :trendValue="Math.abs(stats.paid_trend).toFixed(1) + '%'"
@@ -294,6 +308,7 @@ onUnmounted(() => {
         :value="overdueRate"
         suffix="%"
         icon="ri-error-warning-line"
+        :trendPrefix="trendPrefix"
         trend-direction="down"
         :trend-up="stats.overdue_trend >= 0"
         :trendValue="Math.abs(stats.overdue_trend).toFixed(1) + '%'"

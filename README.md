@@ -4,7 +4,7 @@
 # Orange
 
   <p>
-    <strong>一个基于 Wails v3 的现代化跨平台桌面应用演示</strong>
+    <strong>一个基于 Wails v3 的现代化跨平台桌面应用</strong>
   </p>
 
   <p>

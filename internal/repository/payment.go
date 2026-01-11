@@ -186,8 +186,9 @@ func (r *PaymentRepository) GetIncomeStats(userID int64, startDate, endDate, int
 //   - totalExpected: 计划在此期间应收总额
 //   - paid: 实际在此期间收到的金额
 //   - pending: 计划在此期间但尚未收到的金额 (包含逾期)
+//   - overdue: 计划在此期间且已逾期的金额 (plan_date < today)
 //   - avgPeriod: 平均回款周期 (天)
-func (r *PaymentRepository) GetStatsByPeriod(userID int64, startDate, endDate string) (total, paid, overdue, avgPeriod float64, err error) {
+func (r *PaymentRepository) GetStatsByPeriod(userID int64, startDate, endDate string) (total, paid, pending, overdue, avgPeriod float64, err error) {
 	// 1. Total (TotalExpected): 计划日期在范围内的款项总和
 	r.db.Model(&models.Payment{}).
 		Where("user_id = ? AND plan_date BETWEEN ? AND ?", userID, startDate, endDate).
@@ -199,24 +200,24 @@ func (r *PaymentRepository) GetStatsByPeriod(userID int64, startDate, endDate st
 		Select("COALESCE(SUM(amount), 0)").Scan(&paid)
 
 	// 3. Pending: 计划日期在范围内，当前状态仍为 pending 的款项
-	//    注意: 这里 pending 包含了 overdue 的部分，只要没付且计划时间在范围内
 	r.db.Model(&models.Payment{}).
 		Where("user_id = ? AND status = 'pending' AND plan_date BETWEEN ? AND ?", userID, startDate, endDate).
+		Select("COALESCE(SUM(amount), 0)").Scan(&pending)
+
+	// 4. Overdue: 计划日期在范围内，且已逾期 (plan_date < today)
+	//    这是 Pending 的子集
+	today := time.Now().Format("2006-01-02")
+	r.db.Model(&models.Payment{}).
+		Where("user_id = ? AND status = 'pending' AND plan_date BETWEEN ? AND ? AND plan_date < ?", userID, startDate, endDate, today).
 		Select("COALESCE(SUM(amount), 0)").Scan(&overdue)
 
-	pendingAmount := overdue // 复用逻辑：第三个返回参数位置放置待收总额
-
-	// (可选统计) 如果需要单独统计严格逾期(当前时间 > 计划时间)，可开启下行逻辑，但不影响本函数返回值定义
-	// now := time.Now().Format("2006-01-02")
-	// ... WHERE plan_date < now ...
-
-	// 4. AvgPeriod: 平均回款周期 (Actual Date - Plan Date)
+	// 5. AvgPeriod: 平均回款周期 (Actual Date - Plan Date)
 	//    仅统计在此期间实际到账的款项
 	r.db.Model(&models.Payment{}).
 		Where("user_id = ? AND status = 'paid' AND actual_date BETWEEN ? AND ?", userID, startDate, endDate).
 		Select("COALESCE(AVG(julianday(actual_date) - julianday(plan_date)), 0)").Scan(&avgPeriod)
 
-	return total, paid, pendingAmount, avgPeriod, nil
+	return total, paid, pending, overdue, avgPeriod, nil
 }
 
 // SumPaidByProject 计算项目中已支付的总金额

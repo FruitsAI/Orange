@@ -12,6 +12,7 @@ const props = defineProps<{
   value?: string | number // 指标值
   icon: string            // 图标类名
   trend?: string          // 趋势文本 (如 "+12%")
+  trendPrefix?: string    // 趋势前缀文本 (如 "较上月")
   trendValue?: string     // 兼容性字段 (同 trend)
   trendUp?: boolean       // 是否为上升趋势 (决定颜色)
   trendDirection?: 'up' | 'down' // 兼容性字段
@@ -50,6 +51,7 @@ const isTrendUp = computed(() => {
       class="stat-card-trend" 
       :class="isTrendUp ? 'stat-card-trend--up' : 'stat-card-trend--down'"
     >
+      <span v-if="trendPrefix" class="mr-1 opacity-75">{{ trendPrefix }}</span> 
       <i :class="isTrendUp ? 'ri-arrow-up-line' : 'ri-arrow-down-line'"></i> {{ displayTrend }}
     </div>
   </GlassCard>

@@ -89,10 +89,27 @@ jobs:
             Move-Item "build/windows/nsis/*-installer.exe" "bin/"
           }
 
+      - name: Generate Release Notes
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "Extracting release notes for version $VERSION"
+          # Extract content between the version header and the next header
+          awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md > RELEASE_NOTES.md
+          
+          # If empty (no match), perform a fallback or just leave empty
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "No specific release notes found for $VERSION in CHANGELOG.md"
+            echo "See CHANGELOG.md for details." > RELEASE_NOTES.md
+          else
+            cat RELEASE_NOTES.md
+          fi
+
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          body_path: RELEASE_NOTES.md
           files: |
             bin/*.zip
             bin/*.dmg
@@ -100,5 +117,4 @@ jobs:
             bin/*.AppImage
             bin/*.deb
             bin/*.rpm
-          # Note: We use wildcards to catch whatever 'task package' produced
           make_latest: true

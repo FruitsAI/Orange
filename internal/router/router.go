@@ -44,9 +44,19 @@ func NewRouter() *gin.Engine {
 			users := authorized.Group("/users")
 			{
 				authHandler := handler.NewAuthHandler()
+				userHandler := handler.NewUserHandler()
+
+				// 普通用户接口
 				users.GET("/me", authHandler.GetCurrentUser)
 				users.PUT("/me", authHandler.UpdateProfile)
 				users.PUT("/me/password", authHandler.ChangePassword)
+
+				// 管理员接口 (内部已做权限校验)
+				users.GET("", userHandler.List)
+				users.POST("", userHandler.Create)
+				users.PUT("/:id", userHandler.Update)
+				users.DELETE("/:id", userHandler.Delete)
+				users.PUT("/:id/password", userHandler.ResetPassword)
 			}
 
 			// 项目管理模块

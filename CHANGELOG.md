@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.0] - 2026-01-12
+
+### Added
+
+- **User Management**: New admin-only module for creating, editing, and managing system users.
+- **UI**: Added visual separators to modal headers in Settings.
+
+### Changed
+
+- **UI**: Refined modal styles for Notifications and Dictionary Management to align with the global design system.
+- **UI**: Unified form styling across "New Project", "User Management", and "Notification" modals (input styles, dark mode adaptation).
+
+### Fixed
+
+- **UI**: Fixed disappearing select arrows in dark mode for all settings modals.
+- **Performance**: Fixed user list not refreshing immediately after creating a new user.
+
 ## [0.2.2] - 2026-01-11
 
 ### Added

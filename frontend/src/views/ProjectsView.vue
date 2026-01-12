@@ -269,7 +269,7 @@ onActivated(() => {
     </div>
 
     <GlassCard class="p-0">
-      <div class="overflow-x-auto">
+      <div class="overflow-auto" style="height: 440px;">
         <table class="data-table w-full">
           <thead>
             <tr>

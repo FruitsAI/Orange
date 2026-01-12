@@ -56,6 +56,42 @@ export interface UpdateProfileRequest {
 }
 
 // 认证 API 集合
+// 列表请求参数
+export interface UserListParams {
+  page: number
+  page_size: number
+  keyword?: string
+  _t?: number // Cache busting
+}
+
+// 用户列表响应
+export interface UserListResult {
+  list: User[]
+  total: number
+}
+
+// 创建用户请求 (Admin)
+export interface CreateUserRequest {
+  username: string
+  name: string
+  email?: string
+  phone?: string
+  password: string
+  role: 'admin' | 'user'
+}
+
+// 更新用户请求 (Admin)
+export interface UpdateUserRequest {
+  name?: string
+  email?: string
+  phone?: string
+  department?: string
+  position?: string
+  role?: string
+  status?: number
+}
+
+// 认证 API 集合
 export const authApi = {
   // 登录
   login: (data: LoginRequest) =>
@@ -80,4 +116,20 @@ export const authApi = {
   // 修改密码
   changePassword: (data: ChangePasswordRequest) =>
     api.put<ApiResponse<null>>('/users/me/password', data),
+
+  // === User Management (Admin) ===
+  getUsers: (params: UserListParams) =>
+    api.get<ApiResponse<UserListResult>>('/users', { params }),
+
+  createUser: (data: CreateUserRequest) =>
+    api.post<ApiResponse<null>>('/users', data),
+
+  updateUser: (id: number, data: UpdateUserRequest) =>
+    api.put<ApiResponse<null>>(`/users/${id}`, data),
+
+  deleteUser: (id: number) =>
+    api.delete<ApiResponse<null>>(`/users/${id}`),
+
+  resetPassword: (id: number, password: string) =>
+    api.put<ApiResponse<null>>(`/users/${id}/password`, { new_password: password }),
 }

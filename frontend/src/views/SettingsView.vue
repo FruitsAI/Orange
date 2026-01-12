@@ -17,11 +17,11 @@ import api from '@/api'
 import { dictionaryApi, type Dictionary, type DictionaryItem } from '@/api/dictionary'
 import { notificationApi, type Notification, type UserBrief } from '@/api/notification'
 import NotificationDetailModal from '@/components/notification/NotificationDetailModal.vue'
+import UserManagement from '@/views/settings/UserManagement.vue'
 import GlassCard from '@/components/common/GlassCard.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import { Browser, Events } from '@wailsio/runtime'
-
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import pkg from '../../package.json'
@@ -72,19 +72,25 @@ watch(() => route.query.id, async (newId) => {
 
 const authStore = useAuthStore()
 
+// 简单的权限判断
+const isAdmin = computed(() => authStore.user?.role === 'admin')
+
 // 计算设置导航菜单 (根据权限动态显示)
 const settingsNav = computed(() => {
   const items = [
     { key: 'profile', icon: 'ri-user-line', label: '个人信息' },
+    // Admin only
+    ...(isAdmin.value ? [{ key: 'users', icon: 'ri-admin-line', label: '用户管理' }] : []),
     { key: 'security', icon: 'ri-lock-line', label: '安全设置' },
     { key: 'appearance', icon: 'ri-palette-line', label: '外观设置' },
     { key: 'notification', icon: 'ri-notification-3-line', label: '通知设置' },
     { key: 'about', icon: 'ri-information-line', label: '关于' },
   ]
   
-  if (authStore && authStore.user?.role === 'admin') {
-    // 管理员专属菜单
-    items.splice(1, 0, { key: 'dictionary', icon: 'ri-book-2-line', label: '字典管理' })
+  if (isAdmin.value) {
+    // 管理员专属菜单 (Additional items if needed)
+    const dictIndex = items.findIndex(i => i.key === 'security')
+    items.splice(dictIndex, 0, { key: 'dictionary', icon: 'ri-book-2-line', label: '字典管理' })
   }
   
   return items
@@ -311,8 +317,8 @@ const showNotificationDetailModal = ref(false)
 const selectedNotification = ref<Notification | null>(null)
 const isEditingNotification = ref(false)
 
-// 简单的权限判断 (从 authStore 获取)
-const isAdmin = computed(() => authStore.user?.role === 'admin')
+// 简单的权限判断 (从 authStore 获取) - 已移至顶部
+
 
 // 分页计算
 const notificationTotalPages = computed(() => Math.ceil(notificationTotal.value / notificationPageSize.value))
@@ -664,6 +670,14 @@ onMounted(() => {
       </div>
     </GlassCard>
 
+    <!-- User Management (Admin) -->
+    <GlassCard
+      v-else-if="activeTab === 'users' && isAdmin"
+      class="h-fit flex flex-col p-0 overflow-hidden"
+    >
+      <UserManagement />
+    </GlassCard>
+
     <!-- Dictionary Management -->
     <GlassCard
       v-else-if="activeTab === 'dictionary'"
@@ -969,7 +983,7 @@ onMounted(() => {
       <Transition name="fade">
         <div v-if="showCreateNotificationModal" class="modal-overlay open" @click.self="showCreateNotificationModal = false">
           <div class="modal open">
-            <div class="modal-header">
+            <div class="modal-header" style="border-bottom: 1px solid var(--separator-color); padding-bottom: 16px; margin-bottom: 24px;">
               <h3 class="modal-title">{{ isEditingNotification ? '编辑通知' : '发送通知' }}</h3>
               <button class="modal-close" @click="showCreateNotificationModal = false">
                 <i class="ri-close-line"></i>
@@ -996,19 +1010,25 @@ onMounted(() => {
               </div>
               <div class="form-group mb-md">
                 <label class="form-label">通知类型</label>
-                <select v-model="newNotification.type" class="form-input">
-                  <option value="system">系统通知</option>
-                  <option value="activity">活动通知</option>
-                </select>
+                <div class="input-wrapper">
+                  <select v-model="newNotification.type" class="form-select">
+                    <option value="system">系统通知</option>
+                    <option value="activity">活动通知</option>
+                  </select>
+                  <i class="ri-arrow-down-s-line select-arrow"></i>
+                </div>
               </div>
               <div class="form-group mb-md">
                 <label class="form-label">发送对象</label>
-                <select v-model="newNotification.target_user_id" class="form-input">
-                  <option :value="0">全员通知</option>
-                  <option v-for="user in targetUsers" :key="user.id" :value="user.id">
-                    {{ user.name }} ({{ user.username }})
-                  </option>
-                </select>
+                <div class="input-wrapper">
+                  <select v-model="newNotification.target_user_id" class="form-select">
+                    <option :value="0">全员通知</option>
+                    <option v-for="user in targetUsers" :key="user.id" :value="user.id">
+                      {{ user.name }} ({{ user.username }})
+                    </option>
+                  </select>
+                  <i class="ri-arrow-down-s-line select-arrow"></i>
+                </div>
               </div>
             </div>
             <div class="modal-footer">
@@ -1031,41 +1051,48 @@ onMounted(() => {
     <!-- Dict Item Modal -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showModal" class="confirm-overlay" @click.self="showModal = false">
-          <div class="confirm-modal">
-            <h3 class="confirm-title">{{ isEditing ? '编辑条目' : '新增条目' }}</h3>
-            <div class="form-group mb-md text-left">
-              <label class="form-label">名称 (Label)</label>
-              <input
-                v-model="modalForm.label"
-                type="text"
-                class="form-input"
-                spellcheck="false"
-                autocomplete="off"
-              />
+        <div v-if="showModal" class="modal-overlay open" @click.self="showModal = false">
+          <div class="modal open">
+            <div class="modal-header" style="border-bottom: 1px solid var(--separator-color); padding-bottom: 16px; margin-bottom: 24px;">
+              <h3 class="modal-title">{{ isEditing ? '编辑条目' : '新增条目' }}</h3>
+              <button class="modal-close" @click="showModal = false">
+                <i class="ri-close-line"></i>
+              </button>
             </div>
-            <div class="form-group mb-md text-left">
-              <label class="form-label">值 (Value)</label>
-              <input
-                v-model="modalForm.value"
-                type="text"
-                class="form-input"
-                spellcheck="false"
-                autocomplete="off"
-              />
+            <div class="modal-body">
+              <div class="form-group mb-md">
+                <label class="form-label">名称 (Label)</label>
+                <input
+                  v-model="modalForm.label"
+                  type="text"
+                  class="form-input"
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+              </div>
+              <div class="form-group mb-md">
+                <label class="form-label">值 (Value)</label>
+                <input
+                  v-model="modalForm.value"
+                  type="text"
+                  class="form-input"
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+              </div>
+              <div class="form-group mb-md">
+                <label class="form-label">排序 (Sort)</label>
+                <input
+                  v-model.number="modalForm.sort"
+                  type="number"
+                  class="form-input"
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+              </div>
             </div>
-            <div class="form-group mb-xl text-left">
-              <label class="form-label">排序 (Sort)</label>
-              <input
-                v-model.number="modalForm.sort"
-                type="number"
-                class="form-input"
-                spellcheck="false"
-                autocomplete="off"
-              />
-            </div>
-            <div class="confirm-actions">
-              <button class="btn btn-ghost" @click="showModal = false">取消</button>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" @click="showModal = false">取消</button>
               <button class="btn btn-primary" @click="handleModalSubmit">保存</button>
             </div>
           </div>
@@ -1199,19 +1226,53 @@ onMounted(() => {
   margin-bottom: var(--spacing-sm);
 }
 
-.form-input {
+.form-input,
+.form-select {
   width: 100%;
   padding: 8px 12px;
-  background: var(--bg-elevated);
+  background: var(--bg-base);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   outline: none;
   transition: border-color 0.2s;
+  font-size: 14px;
 }
 
-.form-input:focus {
+.form-input:focus,
+.form-select:focus {
   border-color: var(--color-primary);
+}
+
+.form-select {
+  appearance: none;
+  padding-right: 28px;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper .select-arrow {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+[data-theme='dark'] .form-input,
+[data-theme='dark'] .form-select {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .form-input:focus,
+[data-theme='dark'] .form-select:focus {
+  border-color: var(--color-primary);
+  background: rgba(0, 0, 0, 0.4);
 }
 
 /* 表单网格布局 */

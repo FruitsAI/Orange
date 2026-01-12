@@ -85,3 +85,32 @@ func (r *UserRepository) Update(user *models.User) error {
 func (r *UserRepository) UpdateFields(id int64, fields map[string]interface{}) error {
 	return r.db.Model(&models.User{}).Where("id = ?", id).Updates(fields).Error
 }
+
+// List 获取用户列表 (支持分页和搜索)
+func (r *UserRepository) List(page, pageSize int, keyword string) ([]models.User, int64, error) {
+	var users []models.User
+	var total int64
+	offset := (page - 1) * pageSize
+
+	query := r.db.Model(&models.User{})
+	if keyword != "" {
+		likePattern := "%" + keyword + "%"
+		query = query.Where("username LIKE ? OR name LIKE ? OR email LIKE ? OR phone LIKE ?",
+			likePattern, likePattern, likePattern, likePattern)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := query.Offset(offset).Limit(pageSize).Order("id DESC").Find(&users).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return users, total, nil
+}
+
+// Delete 删除用户
+func (r *UserRepository) Delete(id int64) error {
+	return r.db.Delete(&models.User{}, id).Error
+}

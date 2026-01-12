@@ -130,7 +130,7 @@ const fetchDashboardData = async () => {
           amount: p.amount,
           status: days < 0 ? 'danger' : days < 3 ? 'danger' : days < 7 ? 'warning' : 'success'
         }
-      })
+      }).slice(0, 3) // Only show top 3 upcoming payments
     }
 
   } catch (error) {

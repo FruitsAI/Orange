@@ -69,6 +69,21 @@ async function handleRegister() {
     registerError.value = '请输入姓名'
     return
   }
+  
+  // 校验邮箱格式（如果有输入）
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (regEmail.value && !emailRegex.test(regEmail.value)) {
+    registerError.value = '邮箱格式不正确'
+    return
+  }
+
+  // 校验手机号格式（如果有输入）
+  const phoneRegex = /^1[3-9]\d{9}$/
+  if (regPhone.value && !phoneRegex.test(regPhone.value)) {
+    registerError.value = '手机号格式不正确'
+    return
+  }
+
   if (!regPassword.value) {
     registerError.value = '请输入密码'
     return

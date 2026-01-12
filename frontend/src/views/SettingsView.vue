@@ -144,6 +144,20 @@ const saveProfile = async () => {
     return
   }
 
+  // 校验邮箱格式（如果有输入）
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (profile.value.email && !emailRegex.test(profile.value.email)) {
+    toast.warning('邮箱格式不正确')
+    return
+  }
+
+  // 校验手机号格式（如果有输入）
+  const phoneRegex = /^1[3-9]\d{9}$/
+  if (profile.value.phone && !phoneRegex.test(profile.value.phone)) {
+    toast.warning('手机号格式不正确')
+    return
+  }
+
   try {
     const res = await authApi.updateProfile({
       name: profile.value.name,

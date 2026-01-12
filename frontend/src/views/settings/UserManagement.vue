@@ -138,9 +138,31 @@ const handleSubmit = async () => {
     toast.warning('请填写必填项(用户名、姓名)')
     return
   }
+
+  // 校验用户名格式 (小写字母开头 + 数字/小写字母组合，长度 <= 10)
+  const usernameRegex = /^[a-z][a-z0-9]{0,9}$/
+  if (!usernameRegex.test(form.username)) {
+    toast.warning('用户名必须以小写字母开头，只能包含小写字母和数字，且长度不超过10位')
+    return
+  }
+
   if (!isEditing.value && !form.password) {
       toast.warning('创建用户必须设置初始密码')
       return
+  }
+
+  // 校验邮箱格式（如果有输入）
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (form.email && !emailRegex.test(form.email)) {
+    toast.warning('邮箱格式不正确')
+    return
+  }
+
+  // 校验手机号格式（如果有输入）
+  const phoneRegex = /^1[3-9]\d{9}$/
+  if (form.phone && !phoneRegex.test(form.phone)) {
+    toast.warning('手机号格式不正确')
+    return
   }
   
   modalLoading.value = true

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.1] - 2026-01-12
+
+### Added
+
+- **Validation**: Implemented comprehensive format validation (Email, Phone) across Registration, Profile, and User Management modules.
+- **Validation**: Added strict username validation rules (lowercase start, alphanumeric, max 10 chars) for User Management.
+
+### Changed
+
+- **Dashboard**: Optimized "Upcoming Payments" display to show only the top 3 most recent items.
+
 ## [0.3.0] - 2026-01-12
 
 ### Added

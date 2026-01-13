@@ -69,7 +69,7 @@ The project integrates a comprehensive suite of business management features, in
     <td>
       <ul>
         <li><b>Web Framework</b>: <a href="https://github.com/gin-gonic/gin">Gin</a></li>
-        <li><b>ORM</b>: <a href="https://gorm.io">GORM</a> (SQLite)</li>
+        <li><b>ORM</b>: <a href="https://gorm.io">GORM</a> (SQLite / MySQL / PostgreSQL)</li>
         <li><b>Logging</b>: <a href="https://github.com/uber-go/zap">Zap</a> + Lumberjack</li>
         <li><b>Auth</b>: JWT (golang-jwt/v5)</li>
       </ul>
@@ -142,11 +142,41 @@ After the application starts and seeds the database, use the following default a
 
 The project supports configuration via a `.env` file. You can copy `.env.example` to `.env` and modify it as needed:
 
+### Database Configuration
+
+Orange supports three databases: **SQLite** (default), **MySQL**, and **PostgreSQL**.
+
 ```ini
-# Database Configuration
+# Database Type: sqlite (default), mysql, postgres
+DB_TYPE=sqlite
+
 # Database Path (Default: orange.db in user config directory)
+# SQLite Configuration (only for DB_TYPE=sqlite)
 DB_PATH=orange.db
 
+# MySQL/PostgreSQL Configuration
+DB_HOST=localhost
+DB_PORT=3306          # MySQL: 3306, PostgreSQL: 5432
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=orange
+
+# SSL Connection Mode (PostgreSQL)
+# disable: Local development
+# require: Cloud-hosted databases (Nile, Supabase, AWS RDS, etc.)
+DB_SSL_MODE=disable
+
+# Auto-create database on startup
+# true: Local environment, auto-create if not exists
+# false: Cloud-hosted databases, pre-created by provider
+DB_AUTO_CREATE=true
+```
+
+> **Tip**: For cloud databases (e.g., Nile, Supabase), set `DB_SSL_MODE=require` and `DB_AUTO_CREATE=false`.
+
+### Other Configuration
+
+```ini
 # JWT Configuration
 # JWT Secret (MUST change in production)
 JWT_SECRET=orange-secret-key-change-in-production

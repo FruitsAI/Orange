@@ -69,7 +69,7 @@
     <td>
       <ul>
         <li><b>Web Framework</b>: <a href="https://github.com/gin-gonic/gin">Gin</a></li>
-        <li><b>ORM</b>: <a href="https://gorm.io">GORM</a> (SQLite)</li>
+        <li><b>ORM</b>: <a href="https://gorm.io">GORM</a> (SQLite / MySQL / PostgreSQL)</li>
         <li><b>Logging</b>: <a href="https://github.com/uber-go/zap">Zap</a> + Lumberjack</li>
         <li><b>Auth</b>: JWT (golang-jwt/v5)</li>
       </ul>
@@ -142,11 +142,41 @@ wails3 build
 
 项目支持使用 `.env` 文件进行配置。你可以复制 `.env.example` 为 `.env` 并根据需要修改：
 
+### 数据库配置
+
+Orange 支持三种数据库：**SQLite** (默认)、**MySQL** 和 **PostgreSQL**。
+
 ```ini
-# Database Configuration
+# 数据库类型: sqlite (默认), mysql, postgres
+DB_TYPE=sqlite
+
 # 数据库路径 (默认: 系统用户配置目录下的 orange.db)
+# SQLite 配置 (仅 DB_TYPE=sqlite 时有效)
 DB_PATH=orange.db
 
+# MySQL/PostgreSQL 配置
+DB_HOST=localhost
+DB_PORT=3306          # MySQL: 3306, PostgreSQL: 5432
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=orange
+
+# SSL 连接模式 (PostgreSQL)
+# disable: 本地开发环境
+# require: 云托管数据库 (Nile, Supabase, AWS RDS 等)
+DB_SSL_MODE=disable
+
+# 是否自动创建数据库
+# true: 本地环境，首次连接时自动创建
+# false: 云托管数据库，由服务商预先创建
+DB_AUTO_CREATE=true
+```
+
+> **提示**: 使用云数据库 (如 Nile, Supabase) 时，请设置 `DB_SSL_MODE=require` 和 `DB_AUTO_CREATE=false`。
+
+### 其他配置
+
+```ini
 # JWT Configuration
 # JWT 签名密钥 (生产环境务必修改)
 JWT_SECRET=orange-secret-key-change-in-production

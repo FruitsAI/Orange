@@ -1,12 +1,51 @@
 package repository
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/FruitsAI/Orange/internal/database"
 	"github.com/FruitsAI/Orange/internal/models"
 	"gorm.io/gorm"
 )
+
+// getDateFormatExpr 根据数据库类型返回日期格式化 SQL 表达式
+// column: 日期列名
+// interval: 分组间隔 ("day" 或 "month")
+// dbType: 数据库类型 ("sqlite", "mysql", "postgres")
+func getDateFormatExpr(column, interval, dbType string) string {
+	switch dbType {
+	case "mysql":
+		if interval == "month" {
+			return fmt.Sprintf("DATE_FORMAT(%s, '%%Y-%%m')", column)
+		}
+		return fmt.Sprintf("DATE_FORMAT(%s, '%%Y-%%m-%%d')", column)
+	case "postgres":
+		if interval == "month" {
+			return fmt.Sprintf("TO_CHAR(%s, 'YYYY-MM')", column)
+		}
+		return fmt.Sprintf("TO_CHAR(%s, 'YYYY-MM-DD')", column)
+	default: // sqlite
+		if interval == "month" {
+			return fmt.Sprintf("strftime('%%Y-%%m', %s)", column)
+		}
+		return fmt.Sprintf("strftime('%%Y-%%m-%%d', %s)", column)
+	}
+}
+
+// getDateDiffExpr 根据数据库类型返回日期差值 SQL 表达式 (返回天数)
+// date1, date2: 日期列名或值
+// dbType: 数据库类型
+func getDateDiffExpr(date1, date2, dbType string) string {
+	switch dbType {
+	case "mysql":
+		return fmt.Sprintf("DATEDIFF(%s, %s)", date1, date2)
+	case "postgres":
+		return fmt.Sprintf("(%s::date - %s::date)", date1, date2)
+	default: // sqlite
+		return fmt.Sprintf("(julianday(%s) - julianday(%s))", date1, date2)
+	}
+}
 
 // PaymentRepository 收款数据仓库
 type PaymentRepository struct {
@@ -141,11 +180,10 @@ func (r *PaymentRepository) GetIncomeStats(userID int64, startDate, endDate, int
 	expected := make(map[string]float64)
 	actual := make(map[string]float64)
 
-	// SQLite 日期格式化语法
-	dateFormat := "%Y-%m-%d"
-	if interval == "month" {
-		dateFormat = "%Y-%m"
-	}
+	// 根据数据库类型选择日期格式化表达式
+	dbType := database.GetDBType()
+	dateExpr := getDateFormatExpr("plan_date", interval, dbType)
+	actualDateExpr := getDateFormatExpr("actual_date", interval, dbType)
 
 	type Result struct {
 		Date  string
@@ -155,7 +193,7 @@ func (r *PaymentRepository) GetIncomeStats(userID int64, startDate, endDate, int
 	// 1. 预期收入: 依据 plan_date 统计所有款项
 	var expectedResults []Result
 	if err := r.db.Model(&models.Payment{}).
-		Select("strftime('"+dateFormat+"', plan_date) as date, COALESCE(SUM(amount), 0) as total").
+		Select(dateExpr+" as date, COALESCE(SUM(amount), 0) as total").
 		Where("user_id = ? AND plan_date BETWEEN ? AND ?", userID, startDate, endDate).
 		Group("date").
 		Scan(&expectedResults).Error; err != nil {
@@ -168,7 +206,7 @@ func (r *PaymentRepository) GetIncomeStats(userID int64, startDate, endDate, int
 	// 2. 实际收入: 依据 actual_date 统计已完成(paid)的款项
 	var actualResults []Result
 	if err := r.db.Model(&models.Payment{}).
-		Select("strftime('"+dateFormat+"', actual_date) as date, COALESCE(SUM(amount), 0) as total").
+		Select(actualDateExpr+" as date, COALESCE(SUM(amount), 0) as total").
 		Where("user_id = ? AND status = 'paid' AND actual_date BETWEEN ? AND ?", userID, startDate, endDate).
 		Group("date").
 		Scan(&actualResults).Error; err != nil {
@@ -213,9 +251,11 @@ func (r *PaymentRepository) GetStatsByPeriod(userID int64, startDate, endDate st
 
 	// 5. AvgPeriod: 平均回款周期 (Actual Date - Plan Date)
 	//    仅统计在此期间实际到账的款项
+	dbType := database.GetDBType()
+	dateDiffExpr := getDateDiffExpr("actual_date", "plan_date", dbType)
 	r.db.Model(&models.Payment{}).
 		Where("user_id = ? AND status = 'paid' AND actual_date BETWEEN ? AND ?", userID, startDate, endDate).
-		Select("COALESCE(AVG(julianday(actual_date) - julianday(plan_date)), 0)").Scan(&avgPeriod)
+		Select("COALESCE(AVG(" + dateDiffExpr + "), 0)").Scan(&avgPeriod)
 
 	return total, paid, pending, overdue, avgPeriod, nil
 }

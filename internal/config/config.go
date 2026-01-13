@@ -12,7 +12,17 @@ import (
 // Config 应用全局配置结构体
 // 包含数据库、安全、日志及第三方服务的所有配置项。
 type Config struct {
-	DBPath        string // 数据库文件存储路径
+	// 数据库配置
+	DBType       string // 数据库类型: sqlite (默认), mysql, postgres
+	DBPath       string // SQLite 文件路径 (仅 sqlite 有效)
+	DBHost       string // 数据库主机 (mysql/postgres)
+	DBPort       int    // 数据库端口
+	DBUser       string // 数据库用户名
+	DBPassword   string // 数据库密码
+	DBName       string // 数据库名
+	DBSSLMode    string // SSL 模式: disable (本地), require (云数据库)
+	DBAutoCreate bool   // 是否自动创建数据库 (本地 true, 云托管 false)
+
 	JWTSecret     string // JWT 签名密钥
 	TokenExpiry   int64  // Token 有效期 (单位: 小时)
 	LogEnable     bool   // 是否启用请求日志
@@ -69,7 +79,17 @@ func Load() {
 
 	// 组装配置对象，优先从环境变量读取
 	AppConfig = &Config{
-		DBPath:        getEnv("DB_PATH", defaultDBPath),
+		// 数据库配置
+		DBType:       getEnv("DB_TYPE", "sqlite"),
+		DBPath:       getEnv("DB_PATH", defaultDBPath),
+		DBHost:       getEnv("DB_HOST", "localhost"),
+		DBPort:       int(getEnvInt("DB_PORT", 3306)),
+		DBUser:       getEnv("DB_USER", "root"),
+		DBPassword:   getEnv("DB_PASSWORD", ""),
+		DBName:       getEnv("DB_NAME", "orange"),
+		DBSSLMode:    getEnv("DB_SSL_MODE", "disable"),
+		DBAutoCreate: getEnvBool("DB_AUTO_CREATE", true),
+
 		JWTSecret:     getEnv("JWT_SECRET", "orange-secret-key-change-in-production"),
 		TokenExpiry:   getEnvInt("TOKEN_EXPIRY", 24),
 		LogEnable:     getEnvBool("LOG_ENABLE", true),

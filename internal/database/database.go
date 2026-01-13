@@ -1,11 +1,16 @@
 package database
 
 import (
+	"database/sql"
+	"fmt"
 	"log/slog"
 	"sync"
 
 	"github.com/FruitsAI/Orange/internal/config"
 	"github.com/glebarez/sqlite"
+	_ "github.com/jackc/pgx/v5/stdlib" // 注册 pgx 驱动到 database/sql
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -19,7 +24,6 @@ var (
 
 // GetDB 获取数据库连接实例 (单例)
 // 该方法是并发安全的，首次调用时会自动初始化数据库连接。
-// 这里的初始化包括打开 SQLite 文件连接和配置 GORM 引擎。
 func GetDB() *gorm.DB {
 	once.Do(func() {
 		var err error
@@ -33,17 +37,49 @@ func GetDB() *gorm.DB {
 	return db
 }
 
-// initDB 初始化 SQLite 数据库连接
-// 根据配置文件中的路径打开数据库，并配置 GORM 的日志级别。
-// 使用纯 Go 实现的 glebarez/sqlite 驱动，无需 CGO 支持。
-func initDB() (*gorm.DB, error) {
-	// 1. 获取数据库文件路径 (由 config 模块加载)
-	dbPath := config.AppConfig.DBPath
-	slog.Info("Opening database", "path", dbPath)
+// GetDBType 获取当前数据库类型
+func GetDBType() string {
+	return config.AppConfig.DBType
+}
 
-	// 2. 建立 GORM 连接
-	// 默认开启 Info 级别日志，便于调试 SQL 语句
-	database, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+// initDB 初始化数据库连接
+// 根据配置选择对应的数据库驱动 (SQLite/MySQL/PostgreSQL)
+func initDB() (*gorm.DB, error) {
+	cfg := config.AppConfig
+	var dialector gorm.Dialector
+
+	switch cfg.DBType {
+	case "mysql":
+		// 根据配置决定是否自动创建数据库
+		if cfg.DBAutoCreate {
+			if err := ensureMySQLDatabase(cfg); err != nil {
+				return nil, fmt.Errorf("failed to ensure MySQL database: %w", err)
+			}
+		}
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+			cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
+		dialector = mysql.Open(dsn)
+		slog.Info("Connecting to MySQL database", "host", cfg.DBHost, "port", cfg.DBPort, "database", cfg.DBName)
+
+	case "postgres":
+		// 根据配置决定是否自动创建数据库
+		if cfg.DBAutoCreate {
+			if err := ensurePostgresDatabase(cfg); err != nil {
+				return nil, fmt.Errorf("failed to ensure PostgreSQL database: %w", err)
+			}
+		}
+		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=Asia/Shanghai",
+			cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
+		dialector = postgres.Open(dsn)
+		slog.Info("Connecting to PostgreSQL database", "host", cfg.DBHost, "port", cfg.DBPort, "database", cfg.DBName, "sslmode", cfg.DBSSLMode)
+
+	default: // sqlite
+		slog.Info("Opening SQLite database", "path", cfg.DBPath)
+		dialector = sqlite.Open(cfg.DBPath)
+	}
+
+	// 建立 GORM 连接
+	database, err := gorm.Open(dialector, &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
@@ -51,6 +87,64 @@ func initDB() (*gorm.DB, error) {
 	}
 
 	return database, nil
+}
+
+// ensureMySQLDatabase 确保 MySQL 数据库存在，不存在则自动创建
+func ensureMySQLDatabase(cfg *config.Config) error {
+	// 连接到 MySQL 服务器 (不指定数据库)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/?charset=utf8mb4&parseTime=True&loc=Local",
+		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort)
+
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// 创建数据库 (如果不存在)
+	createSQL := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", cfg.DBName)
+	_, err = db.Exec(createSQL)
+	if err != nil {
+		return fmt.Errorf("failed to create database: %w", err)
+	}
+
+	slog.Info("MySQL database ensured", "database", cfg.DBName)
+	return nil
+}
+
+// ensurePostgresDatabase 确保 PostgreSQL 数据库存在，不存在则自动创建
+func ensurePostgresDatabase(cfg *config.Config) error {
+	// 连接到 postgres 默认数据库
+	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=postgres sslmode=%s",
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBSSLMode)
+
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// 检查数据库是否存在
+	var exists bool
+	checkSQL := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '%s')", cfg.DBName)
+	err = db.QueryRow(checkSQL).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("failed to check database existence: %w", err)
+	}
+
+	// 不存在则创建
+	if !exists {
+		createSQL := fmt.Sprintf("CREATE DATABASE %s WITH ENCODING 'UTF8'", cfg.DBName)
+		_, err = db.Exec(createSQL)
+		if err != nil {
+			return fmt.Errorf("failed to create database: %w", err)
+		}
+		slog.Info("PostgreSQL database created", "database", cfg.DBName)
+	} else {
+		slog.Info("PostgreSQL database already exists", "database", cfg.DBName)
+	}
+
+	return nil
 }
 
 // Close 关闭数据库连接

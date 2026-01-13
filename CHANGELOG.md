@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0] - 2026-01-13
+
+### Added
+
+- **Multi-Database Support**: Added support for MySQL and PostgreSQL in addition to SQLite (default).
+- **Auto-Create Database**: MySQL/PostgreSQL databases are automatically created on first connection (configurable).
+- **SSL Configuration**: Added `DB_SSL_MODE` option for cloud database connections (Nile, Supabase, AWS RDS, etc.).
+- **New Config Options**: `DB_AUTO_CREATE` to toggle automatic database creation for local vs cloud environments.
+
+### Changed
+
+- **Documentation**: Updated README (CN/EN) with comprehensive multi-database configuration guide.
+- **Configuration**: Expanded `.env.example` with new database options and detailed comments.
+
+---
+
 ## [0.3.1] - 2026-01-12
 
 ### Added

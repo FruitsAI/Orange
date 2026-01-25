@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.0] - 2026-01-25
+
+### Added
+
+- **Data Sync**: Implement database synchronization feature (SQLite to PostgreSQL/MySQL).
+- **Settings**: Add Data Sync management panel with connection test and data comparison.
+- **Backend**: Add `SyncService` for handling data synchronization logic.
+
+### Changed
+
+- **UI**: Refine settings panel layout and table styles for better consistency.
+- **UX**: Improve loading indicators with animated Remix Icons.
+
+### Fixed
+
+- **Sync**: Fix "append-only" sync issue by implementing "Mirror" mode (automatically delete orphaned cloud records).
+
 ## [0.4.1] - 2026-01-25
 
 ### Fixed

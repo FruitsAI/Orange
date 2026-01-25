@@ -18,6 +18,7 @@ import { dictionaryApi, type Dictionary, type DictionaryItem } from '@/api/dicti
 import { notificationApi, type Notification, type UserBrief } from '@/api/notification'
 import NotificationDetailModal from '@/components/notification/NotificationDetailModal.vue'
 import UserManagement from '@/views/settings/UserManagement.vue'
+import DataSyncPanel from '@/components/settings/DataSyncPanel.vue'
 import GlassCard from '@/components/common/GlassCard.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
@@ -82,6 +83,7 @@ const settingsNav = computed(() => {
     // Admin only
     ...(isAdmin.value ? [{ key: 'users', icon: 'ri-admin-line', label: '用户管理' }] : []),
     { key: 'security', icon: 'ri-lock-line', label: '安全设置' },
+    { key: 'data-sync', icon: 'ri-cloud-line', label: '数据同步' },
     { key: 'appearance', icon: 'ri-palette-line', label: '外观设置' },
     { key: 'notification', icon: 'ri-notification-3-line', label: '通知设置' },
     { key: 'about', icon: 'ri-information-line', label: '关于' },
@@ -745,6 +747,13 @@ onMounted(() => {
           </div>
         </div>
       </div>
+    </GlassCard>
+
+    <!-- Data Sync Panel -->
+    <GlassCard
+      v-else-if="activeTab === 'data-sync'"
+    >
+      <DataSyncPanel />
     </GlassCard>
 
 

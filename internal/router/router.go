@@ -133,6 +133,16 @@ func NewRouter() *gin.Engine {
 				systemHandler := handler.NewSystemHandler()
 				system.GET("/updates/check", systemHandler.CheckUpdate)
 			}
+
+			// 数据同步模块
+			sync := authorized.Group("/sync")
+			{
+				syncHandler := handler.NewSyncHandler()
+				sync.GET("/config", syncHandler.GetConfig)                // 获取配置
+				sync.POST("/test-connection", syncHandler.TestConnection) // 测试云端数据库连接
+				sync.POST("/compare", syncHandler.Compare)                // 对比本地与云端数据
+				sync.POST("/execute", syncHandler.Execute)                // 执行数据同步
+			}
 		}
 	}
 

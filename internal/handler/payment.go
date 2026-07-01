@@ -115,7 +115,7 @@ func (h *PaymentHandler) Create(c *gin.Context) {
 
 	payment, err := h.paymentService.Create(req)
 	if err != nil {
-		response.InternalError(c, "创建收款失败")
+		response.HandleServiceError(c, err, "创建收款失败")
 		return
 	}
 
@@ -147,7 +147,7 @@ func (h *PaymentHandler) Update(c *gin.Context) {
 
 	payment, err := h.paymentService.UpdateForUser(userID, id, req)
 	if err != nil {
-		response.InternalError(c, "更新收款失败")
+		response.HandleServiceError(c, err, "更新收款失败")
 		return
 	}
 
@@ -171,7 +171,7 @@ func (h *PaymentHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.paymentService.DeleteForUser(userID, id); err != nil {
-		response.InternalError(c, "删除收款失败")
+		response.HandleServiceError(c, err, "删除收款失败")
 		return
 	}
 
@@ -202,7 +202,7 @@ func (h *PaymentHandler) Confirm(c *gin.Context) {
 	}
 
 	if err := h.paymentService.ConfirmForUser(userID, id, req.ActualDate, req.Method); err != nil {
-		response.InternalError(c, "确认收款失败")
+		response.HandleServiceError(c, err, "确认收款失败")
 		return
 	}
 

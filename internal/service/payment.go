@@ -9,6 +9,7 @@ import (
 	"github.com/FruitsAI/Orange/internal/database"
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
+	pkgerrors "github.com/FruitsAI/Orange/internal/pkg/errors"
 	"github.com/FruitsAI/Orange/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -98,11 +99,15 @@ func (s *PaymentService) ListByDateRange(userID int64, startDate, endDate string
 func (s *PaymentService) Create(input dto.PaymentRequest) (*models.Payment, error) {
 	// 外层权限检查
 	if _, err := s.projectRepo.FindByIDForUser(input.ProjectID, input.UserID); err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, pkgerrors.ErrProjectNotFound
+		}
+		return nil, pkgerrors.Wrap(err, "查询项目失败")
 	}
+
 	planDate, err := time.Parse("2006-01-02", input.PlanDate)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.WrapWithCode(err, 400, "计划日期格式错误")
 	}
 
 	payment := &models.Payment{
@@ -158,10 +163,16 @@ func (s *PaymentService) Update(id int64, input dto.PaymentRequest) (*models.Pay
 func (s *PaymentService) UpdateForUser(userID, id int64, input dto.PaymentRequest) (*models.Payment, error) {
 	payment, err := s.paymentRepo.FindByIDForUser(id, userID)
 	if err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, pkgerrors.ErrPaymentNotFound
+		}
+		return nil, pkgerrors.Wrap(err, "查询款项失败")
 	}
 	if _, err := s.projectRepo.FindByIDForUser(payment.ProjectID, userID); err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, pkgerrors.ErrProjectNotFound
+		}
+		return nil, pkgerrors.Wrap(err, "查询项目失败")
 	}
 	return s.applyUpdate(payment, input)
 }
@@ -170,11 +181,11 @@ func (s *PaymentService) UpdateForUser(userID, id int64, input dto.PaymentReques
 // Update 与 UpdateForUser 仅鉴权查询方式不同，其余流程一致，此处统一收敛避免重复。
 func (s *PaymentService) applyUpdate(payment *models.Payment, input dto.PaymentRequest) (*models.Payment, error) {
 	if input.ProjectID != 0 && input.ProjectID != payment.ProjectID {
-		return nil, errors.New("不允许修改款项所属项目")
+		return nil, pkgerrors.WrapWithCode(errors.New("不允许修改款项所属项目"), 400, "不允许修改款项所属项目")
 	}
 	planDate, err := time.Parse("2006-01-02", input.PlanDate)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.WrapWithCode(err, 400, "计划日期格式错误")
 	}
 
 	// 更新字段
@@ -285,13 +296,16 @@ func (s *PaymentService) Delete(id int64) error {
 func (s *PaymentService) DeleteForUser(userID, id int64) error {
 	payment, err := s.paymentRepo.FindByIDForUser(id, userID)
 	if err != nil {
-		return err
+		if err == gorm.ErrRecordNotFound {
+			return pkgerrors.ErrPaymentNotFound
+		}
+		return pkgerrors.Wrap(err, "查询款项失败")
 	}
 	projectID := payment.ProjectID
 
 	return database.GetDB().Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Payment{}).Error; err != nil {
-			return err
+			return pkgerrors.Wrap(err, "删除款项失败")
 		}
 		return s.syncProjectReceivedAmountInTx(tx, projectID)
 	})
@@ -375,13 +389,16 @@ func (s *PaymentService) Confirm(id int64, actualDate, method string) error {
 func (s *PaymentService) ConfirmForUser(userID, id int64, actualDate, method string) error {
 	actualAt, err := time.Parse("2006-01-02", actualDate)
 	if err != nil {
-		return err
+		return pkgerrors.WrapWithCode(err, 400, "实际日期格式错误")
 	}
 
 	return database.GetDB().Transaction(func(tx *gorm.DB) error {
 		var payment models.Payment
 		if err := tx.Where("id = ? AND user_id = ?", id, userID).First(&payment).Error; err != nil {
-			return err
+			if err == gorm.ErrRecordNotFound {
+				return pkgerrors.ErrPaymentNotFound
+			}
+			return pkgerrors.Wrap(err, "查询款项失败")
 		}
 
 		if payment.Status == "paid" {
@@ -391,7 +408,7 @@ func (s *PaymentService) ConfirmForUser(userID, id int64, actualDate, method str
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("id = ? AND user_id = ?", id, userID).
 			First(&payment).Error; err != nil {
-			return err
+			return pkgerrors.Wrap(err, "锁定款项失败")
 		}
 
 		if payment.Status == "paid" {
@@ -403,7 +420,7 @@ func (s *PaymentService) ConfirmForUser(userID, id int64, actualDate, method str
 			"actual_date": actualAt,
 			"method":      method,
 		}).Error; err != nil {
-			return err
+			return pkgerrors.Wrap(err, "更新款项状态失败")
 		}
 
 		var totalReceived float64
@@ -411,7 +428,7 @@ func (s *PaymentService) ConfirmForUser(userID, id int64, actualDate, method str
 			Where("project_id = ? AND user_id = ? AND status = ?", payment.ProjectID, userID, "paid").
 			Select("COALESCE(SUM(amount), 0)").
 			Scan(&totalReceived).Error; err != nil {
-			return err
+			return pkgerrors.Wrap(err, "计算已收款总额失败")
 		}
 
 		return tx.Model(&models.Project{}).

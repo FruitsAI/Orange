@@ -167,7 +167,7 @@ func TestProjectService_CreateProject(t *testing.T) {
 
 		_, err = svc.Create(input2)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "UNIQUE constraint failed")
+		assert.Contains(t, err.Error(), "合同编号已存在")
 	})
 }
 

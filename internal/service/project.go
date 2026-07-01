@@ -7,6 +7,7 @@ import (
 	"github.com/FruitsAI/Orange/internal/database"
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
+	pkgerrors "github.com/FruitsAI/Orange/internal/pkg/errors"
 	"github.com/FruitsAI/Orange/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -87,7 +88,14 @@ func (s *ProjectService) Get(id int64) (*models.Project, error) {
 }
 
 func (s *ProjectService) GetForUser(userID, id int64) (*models.Project, error) {
-	return s.projectRepo.FindByIDWithPaymentsForUser(id, userID)
+	project, err := s.projectRepo.FindByIDWithPaymentsForUser(id, userID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, pkgerrors.ErrProjectNotFound
+		}
+		return nil, pkgerrors.Wrap(err, "查询项目失败")
+	}
+	return project, nil
 }
 
 // Create 创建新项目
@@ -100,14 +108,25 @@ func (s *ProjectService) GetForUser(userID, id int64) (*models.Project, error) {
 //   - *models.Project: 创建成功的项目实体
 //   - error: 日期解析失败或数据库写入错误
 func (s *ProjectService) Create(input dto.CreateProjectRequest) (*models.Project, error) {
-	// 1. 日期字段解析 (字符串 "YYYY-MM-DD" -> time.Time)
+	// 1. 检查合同编号是否已存在
+	if input.ContractNumber != "" {
+		exists, err := s.projectRepo.ExistsByContractNumber(input.UserID, input.ContractNumber, 0)
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "检查合同编号失败")
+		}
+		if exists {
+			return nil, pkgerrors.ErrContractDuplicate
+		}
+	}
+
+	// 2. 日期字段解析 (字符串 "YYYY-MM-DD" -> time.Time)
 	startDate, err := time.Parse("2006-01-02", input.StartDate)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.WrapWithCode(err, 400, "开始日期格式错误")
 	}
 	endDate, err := time.Parse("2006-01-02", input.EndDate)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.WrapWithCode(err, 400, "结束日期格式错误")
 	}
 
 	// 合同日期为选填项，需处理空值情况
@@ -115,12 +134,12 @@ func (s *ProjectService) Create(input dto.CreateProjectRequest) (*models.Project
 	if input.ContractDate != "" {
 		t, err := time.Parse("2006-01-02", input.ContractDate)
 		if err != nil {
-			return nil, err
+			return nil, pkgerrors.WrapWithCode(err, 400, "合同日期格式错误")
 		}
 		contractDate = &t
 	}
 
-	// 2. 构建项目实体
+	// 3. 构建项目实体
 	project := &models.Project{
 		Name:           input.Name,
 		Company:        input.Company,
@@ -136,14 +155,14 @@ func (s *ProjectService) Create(input dto.CreateProjectRequest) (*models.Project
 		UserID:         input.UserID,
 	}
 
-	// 3. 设置默认状态
+	// 4. 设置默认状态
 	if project.Status == "" {
 		project.Status = "active"
 	}
 
-	// 4. 持久化到数据库
+	// 5. 持久化到数据库
 	if err := s.projectRepo.Create(project); err != nil {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "创建项目失败")
 	}
 
 	return project, nil
@@ -216,22 +235,36 @@ func (s *ProjectService) Update(id int64, input dto.CreateProjectRequest) (*mode
 func (s *ProjectService) UpdateForUser(userID, id int64, input dto.CreateProjectRequest) (*models.Project, error) {
 	project, err := s.projectRepo.FindByIDForUser(id, userID)
 	if err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, pkgerrors.ErrProjectNotFound
+		}
+		return nil, pkgerrors.Wrap(err, "查询项目失败")
+	}
+
+	// 检查合同编号唯一性
+	if input.ContractNumber != "" && input.ContractNumber != project.ContractNumber {
+		exists, err := s.projectRepo.ExistsByContractNumber(userID, input.ContractNumber, id)
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "检查合同编号失败")
+		}
+		if exists {
+			return nil, pkgerrors.ErrContractDuplicate
+		}
 	}
 
 	startDate, err := time.Parse("2006-01-02", input.StartDate)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.WrapWithCode(err, 400, "开始日期格式错误")
 	}
 	endDate, err := time.Parse("2006-01-02", input.EndDate)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.WrapWithCode(err, 400, "结束日期格式错误")
 	}
 	var contractDate *time.Time
 	if input.ContractDate != "" {
 		t, err := time.Parse("2006-01-02", input.ContractDate)
 		if err != nil {
-			return nil, err
+			return nil, pkgerrors.WrapWithCode(err, 400, "合同日期格式错误")
 		}
 		contractDate = &t
 	}
@@ -249,7 +282,7 @@ func (s *ProjectService) UpdateForUser(userID, id int64, input dto.CreateProject
 	project.Description = input.Description
 
 	if err := s.projectRepo.Update(project); err != nil {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "更新项目失败")
 	}
 
 	return project, nil
@@ -273,10 +306,13 @@ func (s *ProjectService) DeleteForUser(userID, id int64) error {
 	return database.GetDB().Transaction(func(tx *gorm.DB) error {
 		var project models.Project
 		if err := tx.Where("id = ? AND user_id = ?", id, userID).First(&project).Error; err != nil {
-			return err
+			if err == gorm.ErrRecordNotFound {
+				return pkgerrors.ErrProjectNotFound
+			}
+			return pkgerrors.Wrap(err, "查询项目失败")
 		}
 		if err := tx.Where("project_id = ?", id).Delete(&models.Payment{}).Error; err != nil {
-			return err
+			return pkgerrors.Wrap(err, "删除关联款项失败")
 		}
 		return tx.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Project{}).Error
 	})

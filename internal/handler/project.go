@@ -66,7 +66,7 @@ func (h *ProjectHandler) Get(c *gin.Context) {
 
 	project, err := h.projectService.GetForUser(userID, id)
 	if err != nil {
-		response.NotFound(c, "项目不存在")
+		response.HandleServiceError(c, err, "查询项目失败")
 		return
 	}
 
@@ -94,7 +94,7 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 
 	project, err := h.projectService.Create(req)
 	if err != nil {
-		response.InternalError(c, "创建项目失败")
+		response.HandleServiceError(c, err, "创建项目失败")
 		return
 	}
 
@@ -126,7 +126,7 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 
 	project, err := h.projectService.UpdateForUser(userID, id, req)
 	if err != nil {
-		response.InternalError(c, "更新项目失败")
+		response.HandleServiceError(c, err, "更新项目失败")
 		return
 	}
 
@@ -150,7 +150,7 @@ func (h *ProjectHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.projectService.DeleteForUser(userID, id); err != nil {
-		response.InternalError(c, "删除项目失败")
+		response.HandleServiceError(c, err, "删除项目失败")
 		return
 	}
 

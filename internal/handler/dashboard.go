@@ -33,7 +33,7 @@ func (h *DashboardHandler) Stats(c *gin.Context) {
 	period := c.Query("period") // 参数为空时，Service层默认视为全局统计
 	stats, err := h.dashboardService.GetStats(userID, period)
 	if err != nil {
-		response.InternalError(c, "获取统计数据失败")
+		response.HandleServiceError(c, err, "获取统计数据失败")
 		return
 	}
 
@@ -54,7 +54,7 @@ func (h *DashboardHandler) IncomeTrend(c *gin.Context) {
 
 	trend, err := h.dashboardService.GetIncomeTrend(userID, period)
 	if err != nil {
-		response.InternalError(c, "获取收入趋势失败")
+		response.HandleServiceError(c, err, "获取收入趋势失败")
 		return
 	}
 
@@ -73,7 +73,7 @@ func (h *DashboardHandler) RecentProjects(c *gin.Context) {
 
 	projects, err := h.dashboardService.GetRecentProjects(userID)
 	if err != nil {
-		response.InternalError(c, "获取最近项目失败")
+		response.HandleServiceError(c, err, "获取最近项目失败")
 		return
 	}
 
@@ -92,7 +92,7 @@ func (h *DashboardHandler) UpcomingPayments(c *gin.Context) {
 
 	payments, err := h.dashboardService.GetUpcomingPayments(userID)
 	if err != nil {
-		response.InternalError(c, "获取即将到期收款失败")
+		response.HandleServiceError(c, err, "获取即将到期收款失败")
 		return
 	}
 

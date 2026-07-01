@@ -1,0 +1,73 @@
+# Pre-commit Hooks Configuration
+# 安装: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+# 使用: 在项目根目录运行 git commit 时自动触发
+
+repos:
+  - repo: local
+    hooks:
+      # Go 格式化
+      - id: go-fmt
+        name: Format Go code
+        entry: gofmt -w
+        language: system
+        types: [go]
+        pass_filenames: true
+
+      # Go imports 排序
+      - id: go-imports
+        name: Sort Go imports
+        entry: goimports -w
+        language: system
+        types: [go]
+        pass_filenames: true
+        require_serial: false
+
+      # Go vet 检查
+      - id: go-vet
+        name: Run go vet
+        entry: go vet
+        language: system
+        types: [go]
+        pass_filenames: false
+        args: ['./...']
+
+      # 运行单元测试
+      - id: go-test
+        name: Run unit tests
+        entry: bash -c 'go test ./internal/service/... -short'
+        language: system
+        types: [go]
+        pass_filenames: false
+        verbose: true
+
+      # 检查代码编译
+      - id: go-build
+        name: Check build
+        entry: go build
+        language: system
+        types: [go]
+        pass_filenames: false
+        args: ['-o', '/dev/null', '.']
+
+      # 检查 go.mod 和 go.sum
+      - id: go-mod-tidy
+        name: Run go mod tidy
+        entry: bash -c 'go mod tidy && git diff --exit-code go.mod go.sum'
+        language: system
+        types: [go]
+        pass_filenames: false
+
+  # Python pre-commit hooks (if needed)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+
+# 配置选项
+default_stages: [commit]
+fail_fast: false

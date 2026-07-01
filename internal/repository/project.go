@@ -73,7 +73,9 @@ func (r *ProjectRepository) List(userID int64, status, keyword string, page, pag
 	}
 
 	// 计算总数
-	query.Count(&total)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 
 	// 分页查询，按创建时间倒序
 	offset := (page - 1) * pageSize
@@ -131,14 +133,18 @@ func (r *ProjectRepository) UpdateStatusForUser(id, userID int64, status string)
 //   - pendingAmount: 待收金额 (total - paid)
 func (r *ProjectRepository) GetStats(userID int64) (totalAmount, paidAmount, pendingAmount float64, err error) {
 	// 1. 统计总合同金额 (SUM project.total_amount)
-	r.db.Model(&models.Project{}).Where("user_id = ?", userID).
-		Select("COALESCE(SUM(total_amount), 0)").Scan(&totalAmount)
+	if err = r.db.Model(&models.Project{}).Where("user_id = ?", userID).
+		Select("COALESCE(SUM(total_amount), 0)").Scan(&totalAmount).Error; err != nil {
+		return
+	}
 
 	// 2. 统计已收金额 (关联查询 payment 表中 status='paid' 的记录)
-	r.db.Model(&models.Payment{}).
+	if err = r.db.Model(&models.Payment{}).
 		Joins("JOIN projects ON payments.project_id = projects.id").
 		Where("projects.user_id = ? AND payments.status = ?", userID, "paid").
-		Select("COALESCE(SUM(payments.amount), 0)").Scan(&paidAmount)
+		Select("COALESCE(SUM(payments.amount), 0)").Scan(&paidAmount).Error; err != nil {
+		return
+	}
 
 	// 3. 计算待收金额
 	pendingAmount = totalAmount - paidAmount

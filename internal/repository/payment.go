@@ -141,34 +141,14 @@ func (r *PaymentRepository) DeleteForUser(id, userID int64) error {
 	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Payment{}).Error
 }
 
-// Confirm 执行确认收款
-// 将状态更新为 'paid' 并记录实际收款信息
-func (r *PaymentRepository) Confirm(id int64, actualDate, method string) error {
-	return r.db.Model(&models.Payment{}).Where("id = ?", id).
-		Updates(map[string]interface{}{
-			"status":      "paid",
-			"actual_date": actualDate,
-			"method":      method,
-		}).Error
-}
-
-// SumByStatus 按状态统计金额
-func (r *PaymentRepository) SumByStatus(userID int64, status string) float64 {
-	var sum float64
-	r.db.Model(&models.Payment{}).
-		Where("user_id = ? AND status = ?", userID, status).
-		Select("COALESCE(SUM(amount), 0)").Scan(&sum)
-	return sum
-}
-
 // SumOverdue 统计逾期金额
-func (r *PaymentRepository) SumOverdue(userID int64) float64 {
+func (r *PaymentRepository) SumOverdue(userID int64) (float64, error) {
 	var sum float64
 	today := time.Now().Format("2006-01-02")
-	r.db.Model(&models.Payment{}).
+	err := r.db.Model(&models.Payment{}).
 		Where("user_id = ? AND status = ? AND plan_date < ?", userID, "pending", today).
-		Select("COALESCE(SUM(amount), 0)").Scan(&sum)
-	return sum
+		Select("COALESCE(SUM(amount), 0)").Scan(&sum).Error
+	return sum, err
 }
 
 // ListByDateRange 根据日期范围获取收款列表
@@ -240,43 +220,44 @@ func (r *PaymentRepository) GetIncomeStats(userID int64, startDate, endDate, int
 //   - avgPeriod: 平均回款周期 (天)
 func (r *PaymentRepository) GetStatsByPeriod(userID int64, startDate, endDate string) (total, paid, pending, overdue, avgPeriod float64, err error) {
 	// 1. Total (TotalExpected): 计划日期在范围内的款项总和
-	r.db.Model(&models.Payment{}).
+	if err = r.db.Model(&models.Payment{}).
 		Where("user_id = ? AND plan_date BETWEEN ? AND ?", userID, startDate, endDate).
-		Select("COALESCE(SUM(amount), 0)").Scan(&total)
+		Select("COALESCE(SUM(amount), 0)").Scan(&total).Error; err != nil {
+		return
+	}
 
 	// 2. Paid: 实际日期在范围内已支付的款项
-	r.db.Model(&models.Payment{}).
+	if err = r.db.Model(&models.Payment{}).
 		Where("user_id = ? AND status = 'paid' AND actual_date BETWEEN ? AND ?", userID, startDate, endDate).
-		Select("COALESCE(SUM(amount), 0)").Scan(&paid)
+		Select("COALESCE(SUM(amount), 0)").Scan(&paid).Error; err != nil {
+		return
+	}
 
 	// 3. Pending: 计划日期在范围内，当前状态仍为 pending 的款项
-	r.db.Model(&models.Payment{}).
+	if err = r.db.Model(&models.Payment{}).
 		Where("user_id = ? AND status = 'pending' AND plan_date BETWEEN ? AND ?", userID, startDate, endDate).
-		Select("COALESCE(SUM(amount), 0)").Scan(&pending)
+		Select("COALESCE(SUM(amount), 0)").Scan(&pending).Error; err != nil {
+		return
+	}
 
 	// 4. Overdue: 计划日期在范围内，且已逾期 (plan_date < today)
 	//    这是 Pending 的子集
 	today := time.Now().Format("2006-01-02")
-	r.db.Model(&models.Payment{}).
+	if err = r.db.Model(&models.Payment{}).
 		Where("user_id = ? AND status = 'pending' AND plan_date BETWEEN ? AND ? AND plan_date < ?", userID, startDate, endDate, today).
-		Select("COALESCE(SUM(amount), 0)").Scan(&overdue)
+		Select("COALESCE(SUM(amount), 0)").Scan(&overdue).Error; err != nil {
+		return
+	}
 
 	// 5. AvgPeriod: 平均回款周期 (Actual Date - Plan Date)
 	//    仅统计在此期间实际到账的款项
 	dbType := database.GetDBType()
 	dateDiffExpr := getDateDiffExpr("actual_date", "plan_date", dbType)
-	r.db.Model(&models.Payment{}).
+	if err = r.db.Model(&models.Payment{}).
 		Where("user_id = ? AND status = 'paid' AND actual_date BETWEEN ? AND ?", userID, startDate, endDate).
-		Select("COALESCE(AVG(" + dateDiffExpr + "), 0)").Scan(&avgPeriod)
+		Select("COALESCE(AVG(" + dateDiffExpr + "), 0)").Scan(&avgPeriod).Error; err != nil {
+		return
+	}
 
 	return total, paid, pending, overdue, avgPeriod, nil
-}
-
-// SumPaidByProject 计算项目中已支付的总金额
-func (r *PaymentRepository) SumPaidByProject(projectID int64) (float64, error) {
-	var total float64
-	err := r.db.Model(&models.Payment{}).
-		Where("project_id = ? AND status = ?", projectID, "paid").
-		Select("COALESCE(SUM(amount), 0)").Scan(&total).Error
-	return total, err
 }

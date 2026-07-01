@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"math"
 	"time"
 
 	"github.com/FruitsAI/Orange/internal/database"
@@ -94,6 +95,7 @@ func (s *PaymentService) ListByDateRange(userID int64, startDate, endDate string
 //   - *models.Payment: 创建成功的款项实体
 //   - error: 业务规则校验失败或数据库错误
 func (s *PaymentService) Create(input dto.PaymentRequest) (*models.Payment, error) {
+	// 外层权限检查
 	if _, err := s.projectRepo.FindByIDForUser(input.ProjectID, input.UserID); err != nil {
 		return nil, err
 	}
@@ -118,22 +120,21 @@ func (s *PaymentService) Create(input dto.PaymentRequest) (*models.Payment, erro
 		payment.Status = "pending"
 	}
 
-	// 执行核心业务规则校验与处理（如计算百分比、自动填充实际日期逻辑等）
-	if err := s.processPaymentRules(payment); err != nil {
-		return nil, err
-	}
+	// 在事务中完成创建 + 规则处理 + 项目金额同步，确保一致性
+	return payment, database.GetDB().Transaction(func(tx *gorm.DB) error {
+		// 执行核心业务规则校验与处理（如计算百分比、自动填充实际日期逻辑等）
+		if err := s.processPaymentRulesInTx(tx, payment); err != nil {
+			return err
+		}
 
-	// 创建收款记录
-	if err := s.paymentRepo.Create(payment); err != nil {
-		return nil, err
-	}
+		// 创建收款记录
+		if err := tx.Create(payment).Error; err != nil {
+			return err
+		}
 
-	// 级联更新: 重新计算并同步该项目对应的"已收款总额"字段
-	if err := s.syncProjectReceivedAmount(payment.ProjectID); err != nil {
-		return nil, err
-	}
-
-	return payment, nil
+		// 级联更新: 重新计算并同步该项目对应的"已收款总额"字段
+		return s.syncProjectReceivedAmountInTx(tx, payment.ProjectID)
+	})
 }
 
 // Update 更新收款计划详情
@@ -150,6 +151,23 @@ func (s *PaymentService) Update(id int64, input dto.PaymentRequest) (*models.Pay
 	if err != nil {
 		return nil, err
 	}
+	return s.applyUpdate(payment, input)
+}
+
+func (s *PaymentService) UpdateForUser(userID, id int64, input dto.PaymentRequest) (*models.Payment, error) {
+	payment, err := s.paymentRepo.FindByIDForUser(id, userID)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.projectRepo.FindByIDForUser(payment.ProjectID, userID); err != nil {
+		return nil, err
+	}
+	return s.applyUpdate(payment, input)
+}
+
+// applyUpdate 应用款项更新的公共逻辑（校验 + 赋值 + 事务内规则处理与金额同步）
+// Update 与 UpdateForUser 仅鉴权查询方式不同，其余流程一致，此处统一收敛避免重复。
+func (s *PaymentService) applyUpdate(payment *models.Payment, input dto.PaymentRequest) (*models.Payment, error) {
 	if input.ProjectID != 0 && input.ProjectID != payment.ProjectID {
 		return nil, errors.New("不允许修改款项所属项目")
 	}
@@ -166,66 +184,25 @@ func (s *PaymentService) Update(id int64, input dto.PaymentRequest) (*models.Pay
 	payment.Method = input.Method
 	payment.Remark = input.Remark
 
-	// 重新应用业务规则（如重新计算百分比，因为金额可能变了）
-	if err := s.processPaymentRules(payment); err != nil {
-		return nil, err
-	}
-
-	// 更新数据库记录
-	if err := s.paymentRepo.Update(payment); err != nil {
-		return nil, err
-	}
-
-	// 级联更新: 数据变更后，必须重新同步项目的总收款状态
-	if err := s.syncProjectReceivedAmount(payment.ProjectID); err != nil {
-		return nil, err
-	}
-
-	return payment, nil
+	// 在事务中完成规则处理 + 保存 + 项目金额同步
+	return payment, database.GetDB().Transaction(func(tx *gorm.DB) error {
+		// 重新应用业务规则（如重新计算百分比，因为金额可能变了）
+		if err := s.processPaymentRulesInTx(tx, payment); err != nil {
+			return err
+		}
+		if err := tx.Save(payment).Error; err != nil {
+			return err
+		}
+		// 级联更新: 数据变更后，必须重新同步项目的总收款状态
+		return s.syncProjectReceivedAmountInTx(tx, payment.ProjectID)
+	})
 }
 
-func (s *PaymentService) UpdateForUser(userID, id int64, input dto.PaymentRequest) (*models.Payment, error) {
-	payment, err := s.paymentRepo.FindByIDForUser(id, userID)
-	if err != nil {
-		return nil, err
-	}
-	if input.ProjectID != 0 && input.ProjectID != payment.ProjectID {
-		return nil, errors.New("不允许修改款项所属项目")
-	}
-	if _, err := s.projectRepo.FindByIDForUser(payment.ProjectID, userID); err != nil {
-		return nil, err
-	}
-
-	planDate, err := time.Parse("2006-01-02", input.PlanDate)
-	if err != nil {
-		return nil, err
-	}
-
-	payment.Stage = input.Stage
-	payment.Amount = input.Amount
-	payment.PlanDate = planDate
-	payment.Status = input.Status
-	payment.Method = input.Method
-	payment.Remark = input.Remark
-
-	if err := s.processPaymentRules(payment); err != nil {
-		return nil, err
-	}
-	if err := s.paymentRepo.Update(payment); err != nil {
-		return nil, err
-	}
-	if err := s.syncProjectReceivedAmount(payment.ProjectID); err != nil {
-		return nil, err
-	}
-
-	return payment, nil
-}
-
-// processPaymentRules 执行通用款项业务规则处理
+// processPaymentRulesInTx 执行通用款项业务规则处理（事务内版本）
 // 包含以下逻辑:
 //  1. 状态与日期的联动: 如果状态改为"paid"(已收款)，自动填充ActualDate(实际收款日)，反之置空。
 //  2. 百分比自动计算: 根据款项金额与项目合同总额，自动计算该笔款项的占比。
-func (s *PaymentService) processPaymentRules(payment *models.Payment) error {
+func (s *PaymentService) processPaymentRulesInTx(tx *gorm.DB, payment *models.Payment) error {
 	// 1. 处理实际收款日期逻辑
 	if payment.Status == "paid" && payment.ActualDate == nil {
 		// 如果标记为已收款但用户未填实际日期，默认等于计划日期
@@ -236,9 +213,9 @@ func (s *PaymentService) processPaymentRules(payment *models.Payment) error {
 		payment.ActualDate = nil
 	}
 
-	// 2. 自动计算百分比
-	project, err := s.projectRepo.FindByID(payment.ProjectID)
-	if err != nil {
+	// 2. 自动计算百分比（在同一事务内读取项目总额，避免脏读）
+	var project models.Project
+	if err := tx.First(&project, payment.ProjectID).Error; err != nil {
 		return err
 	}
 
@@ -251,24 +228,34 @@ func (s *PaymentService) processPaymentRules(payment *models.Payment) error {
 	return nil
 }
 
-// syncProjectReceivedAmount 重新计算并同步项目的"已收款总额"
+// amountEpsilon 金额比较容差
+// 由于金额当前以 float64 存储，直接用 != 比较会因浮点累加误差产生误判，
+// 统一以该容差判断"金额是否发生实质变化"。
+const amountEpsilon = 0.005
+
+// syncProjectReceivedAmountInTx 重新计算并同步项目的"已收款总额"（事务内版本）
 // 此方法应在任何款项金额或状态发生变化后被调用，以确保 Project 表数据的一致性。
-func (s *PaymentService) syncProjectReceivedAmount(projectID int64) error {
-	project, err := s.projectRepo.FindByID(projectID)
-	if err != nil {
+// 全程在同一事务 tx 内读改写，避免读后写竞态导致的 lost update。
+func (s *PaymentService) syncProjectReceivedAmountInTx(tx *gorm.DB, projectID int64) error {
+	var project models.Project
+	if err := tx.First(&project, projectID).Error; err != nil {
 		return err
 	}
 
 	// 聚合计算所有已收款项的总额
-	totalReceived, err := s.paymentRepo.SumPaidByProject(projectID)
-	if err != nil {
+	var totalReceived float64
+	if err := tx.Model(&models.Payment{}).
+		Where("project_id = ? AND status = ?", projectID, "paid").
+		Select("COALESCE(SUM(amount), 0)").
+		Scan(&totalReceived).Error; err != nil {
 		return err
 	}
 
-	// 仅在金额确实变化时执行更新
-	if project.ReceivedAmount != totalReceived {
-		project.ReceivedAmount = totalReceived
-		if err := s.projectRepo.Update(project); err != nil {
+	// 仅在金额确实变化时执行更新（带容差，规避浮点误判）
+	if math.Abs(project.ReceivedAmount-totalReceived) > amountEpsilon {
+		if err := tx.Model(&models.Project{}).
+			Where("id = ?", projectID).
+			Update("received_amount", totalReceived).Error; err != nil {
 			return err
 		}
 	}
@@ -285,13 +272,13 @@ func (s *PaymentService) Delete(id int64) error {
 	}
 	projectID := payment.ProjectID
 
-	// 2. 删除款项
-	if err := s.paymentRepo.Delete(id); err != nil {
-		return err
-	}
-
-	// 3. 同步更新项目已收款金额
-	return s.syncProjectReceivedAmount(projectID)
+	// 2. 在事务中删除款项并同步项目已收款金额，保证一致性
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&models.Payment{}, id).Error; err != nil {
+			return err
+		}
+		return s.syncProjectReceivedAmountInTx(tx, projectID)
+	})
 }
 
 func (s *PaymentService) DeleteForUser(userID, id int64) error {
@@ -301,11 +288,12 @@ func (s *PaymentService) DeleteForUser(userID, id int64) error {
 	}
 	projectID := payment.ProjectID
 
-	if err := s.paymentRepo.DeleteForUser(id, userID); err != nil {
-		return err
-	}
-
-	return s.syncProjectReceivedAmount(projectID)
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Payment{}).Error; err != nil {
+			return err
+		}
+		return s.syncProjectReceivedAmountInTx(tx, projectID)
+	})
 }
 
 // Confirm 确认收款（One-Click 操作）

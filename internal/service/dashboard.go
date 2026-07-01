@@ -59,7 +59,10 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 
 		// 补充逻辑: 计算逾期金额
 		// 逾期金额需要基于 Payment 表中具体款项的截止日期来判断
-		overdueAmount := s.paymentRepo.SumOverdue(userID)
+		overdueAmount, err := s.paymentRepo.SumOverdue(userID)
+		if err != nil {
+			return nil, err
+		}
 
 		// ---------------------------------------------------------------------
 		// 优化: 计算趋势 (Trend)

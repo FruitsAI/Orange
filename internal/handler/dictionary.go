@@ -3,6 +3,7 @@ package handler
 import (
 	"strconv"
 
+	"github.com/FruitsAI/Orange/internal/constants"
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/pkg/response"
 	"github.com/FruitsAI/Orange/internal/service"
@@ -71,7 +72,7 @@ func (h *DictionaryHandler) GetItems(c *gin.Context) {
 // @Router /api/v1/dictionaries/{code}/items [post]
 func (h *DictionaryHandler) CreateItem(c *gin.Context) {
 	// 1. 权限校验
-	if c.GetString("role") != "admin" {
+	if c.GetString("role") != constants.RoleAdmin {
 		response.Forbidden(c, "无权操作")
 		return
 	}
@@ -107,7 +108,7 @@ func (h *DictionaryHandler) CreateItem(c *gin.Context) {
 // @Router /api/v1/dictionaries/{code}/items/{id} [put]
 func (h *DictionaryHandler) UpdateItem(c *gin.Context) {
 	// 1. 权限校验
-	if c.GetString("role") != "admin" {
+	if c.GetString("role") != constants.RoleAdmin {
 		response.Forbidden(c, "无权操作")
 		return
 	}
@@ -147,7 +148,7 @@ func (h *DictionaryHandler) UpdateItem(c *gin.Context) {
 // @Failure 403 {string} string "无权操作"
 // @Router /api/v1/dictionaries/{code}/items/{id} [delete]
 func (h *DictionaryHandler) DeleteItem(c *gin.Context) {
-	if c.GetString("role") != "admin" {
+	if c.GetString("role") != constants.RoleAdmin {
 		response.Forbidden(c, "无权操作")
 		return
 	}

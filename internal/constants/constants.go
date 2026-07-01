@@ -23,5 +23,26 @@ const (
 	TokenExpiryHours = 24 // Token 过期时间（小时）
 )
 
+// 角色常量
+const (
+	RoleAdmin = "admin" // 管理员角色
+	RoleUser  = "user"  // 普通用户角色
+)
+
+// 款项状态常量
+const (
+	PaymentStatusPending   = "pending"   // 待收款
+	PaymentStatusConfirmed = "confirmed" // 已确认
+	PaymentStatusOverdue   = "overdue"   // 已逾期
+)
+
+// 项目状态常量
+const (
+	ProjectStatusPlanning  = "planning"  // 规划中
+	ProjectStatusOngoing   = "ongoing"   // 进行中
+	ProjectStatusCompleted = "completed" // 已完成
+	ProjectStatusPaused    = "paused"    // 已暂停
+)
+
 // AppVersion is the application release version.
 const AppVersion = "0.7.2"

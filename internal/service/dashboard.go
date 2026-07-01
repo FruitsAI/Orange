@@ -6,6 +6,7 @@ import (
 
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
+	"github.com/FruitsAI/Orange/internal/pkg/utils"
 	"github.com/FruitsAI/Orange/internal/repository"
 )
 
@@ -94,17 +95,6 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 			return nil, err
 		}
 
-		// 4. 定义环比计算函数
-		calcTrend := func(curr, prev float64) float64 {
-			if prev == 0 {
-				if curr > 0 {
-					return 100
-				}
-				return 0
-			}
-			return ((curr - prev) / prev) * 100
-		}
-
 		// 5. 组装返回结构
 		// 注意: Amount 字段使用全量数据 (ProjectRepo), Trend 字段使用月度环比
 		return &dto.Stats{
@@ -113,93 +103,42 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 			PendingAmount:          pendingAmount, // 全量
 			OverdueAmount:          overdueAmount, // 全量
 			AvgCollectionDays:      0,             // 全局模式下暂不计算
-			TotalTrend:             calcTrend(currTotal, prevTotal),
-			PaidTrend:              calcTrend(currPaid, prevPaid),
-			PendingTrend:           calcTrend(currPending, prevPending),
-			OverdueTrend:           calcTrend(currOverdue, prevOverdue), // 计算逾期金额的环比趋势
-			AvgCollectionDaysTrend: calcTrend(currAvgDays, prevAvgDays),
+			TotalTrend:             utils.CalcPercentageTrend(currTotal, prevTotal),
+			PaidTrend:              utils.CalcPercentageTrend(currPaid, prevPaid),
+			PendingTrend:           utils.CalcPercentageTrend(currPending, prevPending),
+			OverdueTrend:           utils.CalcPercentageTrend(currOverdue, prevOverdue),
+			AvgCollectionDaysTrend: utils.CalcPercentageTrend(currAvgDays, prevAvgDays),
 		}, nil
 	}
 
 	// 模式 2: 按周期统计模式（通常用于数据分析页面）
 	// 需要计算当前周期和上一周期的数据，以得出趋势百分比
-	now := time.Now()
-	var startDate, endDate string         // 当前周期的时间范围
-	var prevStartDate, prevEndDate string // 上一周期的时间范围（用于计算环比）
-
-	// 根据不同的周期类型计算时间范围
-	switch period {
-	case "week":
-		// 本周（过去7天） vs 上周（再往前7天）
-		startDate = now.AddDate(0, 0, -6).Format("2006-01-02")
-		endDate = now.Format("2006-01-02") + " 23:59:59"
-		prevStartDate = now.AddDate(0, 0, -13).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, 0, -7).Format("2006-01-02") + " 23:59:59"
-	case "month":
-		// 本月（过去30天） vs 上月
-		startDate = now.AddDate(0, 0, -29).Format("2006-01-02")
-		endDate = now.Format("2006-01-02") + " 23:59:59"
-		prevStartDate = now.AddDate(0, 0, -59).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, 0, -30).Format("2006-01-02") + " 23:59:59"
-	case "quarter":
-		// 本季度（过去3个月） vs 上季度
-		startDate = now.AddDate(0, -3, 0).Format("2006-01-02")
-		endDate = now.Format("2006-01-02") + " 23:59:59"
-		prevStartDate = now.AddDate(0, -6, 0).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, -3, 0).Format("2006-01-02") + " 23:59:59"
-	case "year":
-		// 本年（过去12个月/1年） vs 去年
-		startDate = now.AddDate(-1, 0, 0).Format("2006-01-02")
-		endDate = now.Format("2006-01-02") + " 23:59:59"
-		prevStartDate = now.AddDate(-2, 0, 0).Format("2006-01-02")
-		prevEndDate = now.AddDate(-1, 0, 0).Format("2006-01-02") + " 23:59:59"
-	default:
-		// 默认情况：按照最近30天计算 (同 month)
-		startDate = now.AddDate(0, 0, -29).Format("2006-01-02")
-		endDate = now.Format("2006-01-02") + " 23:59:59"
-		prevStartDate = now.AddDate(0, 0, -59).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, 0, -30).Format("2006-01-02") + " 23:59:59"
-	}
+	current, previous := utils.GetCurrentAndPreviousPeriod(period)
 
 	// 步骤 1: 获取当前周期的各项统计指标
-	currTotal, currPaid, currPending, currOverdue, currAvgDays, err := s.paymentRepo.GetStatsByPeriod(userID, startDate, endDate)
+	currTotal, currPaid, currPending, currOverdue, currAvgDays, err := s.paymentRepo.GetStatsByPeriod(userID, current.StartDate, current.EndDate)
 	if err != nil {
 		return nil, err
 	}
-	// 获取当前的逾期总额（逾期是一个状态值，通常通过快照获取，但此处简单处理为当前总逾期）
-	// 注意：在 "all" 模式下，主数值 OverdueAmount 依然使用 SumOverdue(userID) 全量计算
-	// 而 currOverdue 仅用于计算趋势 (本周期内产生的逾期)
 
 	// 步骤 2: 获取上一周期的各项统计指标（用于对比）
-	prevTotal, prevPaid, prevPending, prevOverdue, prevAvgDays, err := s.paymentRepo.GetStatsByPeriod(userID, prevStartDate, prevEndDate)
+	prevTotal, prevPaid, prevPending, prevOverdue, prevAvgDays, err := s.paymentRepo.GetStatsByPeriod(userID, previous.StartDate, previous.EndDate)
 	if err != nil {
 		return nil, err
 	}
 
-	// 内部辅助函数: 计算环比增长率
-	// 公式: ((当前值 - 前值) / 前值) * 100
-	calcTrend := func(curr, prev float64) float64 {
-		if prev == 0 {
-			if curr > 0 {
-				return 100 // 如果前期为0且当前有值，视为增长100%（或可根据业务定义为 N/A）
-			}
-			return 0
-		}
-		return ((curr - prev) / prev) * 100
-	}
-
-	// 步骤 3: 组装最终统计对象
+	// 步骤 3: 组装返回结构
 	return &dto.Stats{
 		TotalAmount:            currTotal,
 		PaidAmount:             currPaid,
 		PendingAmount:          currPending,
 		OverdueAmount:          currOverdue,
 		AvgCollectionDays:      currAvgDays,
-		TotalTrend:             calcTrend(currTotal, prevTotal),
-		PaidTrend:              calcTrend(currPaid, prevPaid),
-		PendingTrend:           calcTrend(currPending, prevPending),
-		OverdueTrend:           calcTrend(currOverdue, prevOverdue), // 计算逾期金额的环比趋势
-		AvgCollectionDaysTrend: calcTrend(currAvgDays, prevAvgDays),
+		TotalTrend:             utils.CalcPercentageTrend(currTotal, prevTotal),
+		PaidTrend:              utils.CalcPercentageTrend(currPaid, prevPaid),
+		PendingTrend:           utils.CalcPercentageTrend(currPending, prevPending),
+		OverdueTrend:           utils.CalcPercentageTrend(currOverdue, prevOverdue),
+		AvgCollectionDaysTrend: utils.CalcPercentageTrend(currAvgDays, prevAvgDays),
 	}, nil
 }
 

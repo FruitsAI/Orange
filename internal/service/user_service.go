@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 
+	"github.com/FruitsAI/Orange/internal/constants"
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
 	"github.com/FruitsAI/Orange/internal/pkg/password"
@@ -29,7 +30,7 @@ func NewUserService() *UserService {
 }
 
 func validateUserRole(role string) error {
-	if role != "admin" && role != "user" {
+	if role != constants.RoleAdmin && role != constants.RoleUser {
 		return errors.New("无效的用户角色")
 	}
 	return nil
@@ -67,7 +68,7 @@ func (s *UserService) CreateUser(input dto.CreateUserRequest) error {
 
 	role := input.Role
 	if role == "" {
-		role = "user"
+		role = constants.RoleUser
 	}
 	if err := validateUserRole(role); err != nil {
 		return err

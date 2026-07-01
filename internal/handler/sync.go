@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/FruitsAI/Orange/internal/constants"
 	"github.com/FruitsAI/Orange/internal/pkg/response"
 	"github.com/FruitsAI/Orange/internal/service"
 	"github.com/gin-gonic/gin"
@@ -16,7 +17,7 @@ type SyncHandler struct {
 }
 
 func (h *SyncHandler) ensureAdmin(c *gin.Context) bool {
-	if c.GetString("role") != "admin" {
+	if c.GetString("role") != constants.RoleAdmin {
 		response.Forbidden(c, "鏉冮檺涓嶈冻")
 		return false
 	}

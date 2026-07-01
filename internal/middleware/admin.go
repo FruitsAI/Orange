@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/FruitsAI/Orange/internal/constants"
 	"github.com/FruitsAI/Orange/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 )
@@ -10,7 +11,7 @@ import (
 // 用于替代各 handler 内重复的 `if role != "admin"` 判断，统一鉴权入口。
 func AdminOnly() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.GetString("role") != "admin" {
+		if c.GetString("role") != constants.RoleAdmin {
 			response.Forbidden(c)
 			return
 		}

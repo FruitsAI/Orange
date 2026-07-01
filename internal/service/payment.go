@@ -5,6 +5,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/FruitsAI/Orange/internal/constants"
 	"github.com/FruitsAI/Orange/internal/database"
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
@@ -117,7 +118,7 @@ func (s *PaymentService) Create(input dto.PaymentRequest) (*models.Payment, erro
 
 	// 默认状态为"待收款"
 	if payment.Status == "" {
-		payment.Status = "pending"
+		payment.Status = constants.PaymentStatusPending
 	}
 
 	// 在事务中完成创建 + 规则处理 + 项目金额同步，确保一致性

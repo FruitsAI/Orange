@@ -61,8 +61,8 @@ func (r *ProjectRepository) List(userID int64, status, keyword string, page, pag
 	var projects []models.Project
 	var total int64
 
-	// 构建基础查询：限定用户，预加载关联
-	query := r.db.Model(&models.Project{}).Preload("User").Where("user_id = ?", userID)
+	// 构建基础查询：使用UserScope实现数据隔离，预加载关联
+	query := r.db.Model(&models.Project{}).Scopes(UserScope(userID)).Preload("User")
 
 	// 动态条件筛选
 	if status != "" && status != "all" {
@@ -89,7 +89,7 @@ func (r *ProjectRepository) List(userID int64, status, keyword string, page, pag
 // ListRecent 获取最近项目
 func (r *ProjectRepository) ListRecent(userID int64, limit int) ([]models.Project, error) {
 	var projects []models.Project
-	if err := r.db.Where("user_id = ?", userID).
+	if err := r.db.Scopes(UserScope(userID)).
 		Order("create_time DESC").
 		Limit(limit).
 		Find(&projects).Error; err != nil {
@@ -133,15 +133,15 @@ func (r *ProjectRepository) UpdateStatusForUser(id, userID int64, status string)
 //   - pendingAmount: 待收金额 (total - paid)
 func (r *ProjectRepository) GetStats(userID int64) (totalAmount, paidAmount, pendingAmount float64, err error) {
 	// 1. 统计总合同金额 (SUM project.total_amount)
-	if err = r.db.Model(&models.Project{}).Where("user_id = ?", userID).
+	if err = r.db.Model(&models.Project{}).Scopes(UserScope(userID)).
 		Select("COALESCE(SUM(total_amount), 0)").Scan(&totalAmount).Error; err != nil {
 		return
 	}
 
-	// 2. 统计已收金额 (关联查询 payment 表中 status='paid' 的记录)
+	// 2. 统计已收金额 (关联查询 payment 表中 status='confirmed' 的记录)
 	if err = r.db.Model(&models.Payment{}).
 		Joins("JOIN projects ON payments.project_id = projects.id").
-		Where("projects.user_id = ? AND payments.status = ?", userID, "paid").
+		Where("projects.user_id = ? AND payments.status = ?", userID, "confirmed").
 		Select("COALESCE(SUM(payments.amount), 0)").Scan(&paidAmount).Error; err != nil {
 		return
 	}
@@ -155,7 +155,7 @@ func (r *ProjectRepository) GetStats(userID int64) (totalAmount, paidAmount, pen
 // ExistsByContractNumber 检查合同编号是否存在（限定用户）
 func (r *ProjectRepository) ExistsByContractNumber(userID int64, contractNumber string, excludeID int64) (bool, error) {
 	var count int64
-	query := r.db.Model(&models.Project{}).Where("user_id = ? AND contract_number = ?", userID, contractNumber)
+	query := r.db.Model(&models.Project{}).Scopes(UserScope(userID)).Where("contract_number = ?", contractNumber)
 	if excludeID > 0 {
 		query = query.Where("id != ?", excludeID)
 	}
@@ -172,7 +172,8 @@ func (r *ProjectRepository) ExistsByContractNumber(userID int64, contractNumber 
 func (r *ProjectRepository) GetMaxContractNumberByPrefix(userID int64, prefix string) (string, error) {
 	var contractNumber string
 	err := r.db.Model(&models.Project{}).
-		Where("user_id = ? AND contract_number LIKE ?", userID, prefix+"%").
+		Scopes(UserScope(userID)).
+		Where("contract_number LIKE ?", prefix+"%").
 		Order("contract_number DESC").
 		Limit(1).
 		Pluck("contract_number", &contractNumber).Error

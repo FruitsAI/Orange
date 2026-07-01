@@ -99,8 +99,8 @@ func (r *PaymentRepository) ListUpcoming(userID int64, days int, limit int) ([]m
 	var payments []models.Payment
 	endDate := time.Now().AddDate(0, 0, days).Format("2006-01-02")
 
-	if err := r.db.Preload("Project").
-		Where("user_id = ? AND status = ? AND plan_date <= ?", userID, "pending", endDate).
+	if err := r.db.Scopes(UserScope(userID)).Preload("Project").
+		Where("status = ? AND plan_date <= ?", "pending", endDate).
 		Order("plan_date ASC").
 		Limit(limit).
 		Find(&payments).Error; err != nil {
@@ -115,7 +115,8 @@ func (r *PaymentRepository) ListOverdue(userID int64) ([]models.Payment, error) 
 	var payments []models.Payment
 	today := time.Now().Format("2006-01-02")
 
-	if err := r.db.Where("user_id = ? AND status = ? AND plan_date < ?", userID, "pending", today).
+	if err := r.db.Scopes(UserScope(userID)).
+		Where("status = ? AND plan_date < ?", "pending", today).
 		Find(&payments).Error; err != nil {
 		return nil, err
 	}
@@ -146,7 +147,8 @@ func (r *PaymentRepository) SumOverdue(userID int64) (float64, error) {
 	var sum float64
 	today := time.Now().Format("2006-01-02")
 	err := r.db.Model(&models.Payment{}).
-		Where("user_id = ? AND status = ? AND plan_date < ?", userID, "pending", today).
+		Scopes(UserScope(userID)).
+		Where("status = ? AND plan_date < ?", "pending", today).
 		Select("COALESCE(SUM(amount), 0)").Scan(&sum).Error
 	return sum, err
 }
@@ -154,8 +156,8 @@ func (r *PaymentRepository) SumOverdue(userID int64) (float64, error) {
 // ListByDateRange 根据日期范围获取收款列表
 func (r *PaymentRepository) ListByDateRange(userID int64, startDate, endDate string) ([]models.Payment, error) {
 	var payments []models.Payment
-	if err := r.db.Preload("Project").
-		Where("user_id = ? AND plan_date BETWEEN ? AND ?", userID, startDate, endDate).
+	if err := r.db.Scopes(UserScope(userID)).Preload("Project").
+		Where("plan_date BETWEEN ? AND ?", startDate, endDate).
 		Order("plan_date ASC").
 		Find(&payments).Error; err != nil {
 		return nil, err
@@ -186,7 +188,8 @@ func (r *PaymentRepository) GetIncomeStats(userID int64, startDate, endDate, int
 	var expectedResults []Result
 	if err := r.db.Model(&models.Payment{}).
 		Select(dateExpr+" as date, COALESCE(SUM(amount), 0) as total").
-		Where("user_id = ? AND plan_date BETWEEN ? AND ?", userID, startDate, endDate).
+		Scopes(UserScope(userID)).
+		Where("plan_date BETWEEN ? AND ?", startDate, endDate).
 		Group("date").
 		Scan(&expectedResults).Error; err != nil {
 		return nil, nil, err
@@ -199,7 +202,8 @@ func (r *PaymentRepository) GetIncomeStats(userID int64, startDate, endDate, int
 	var actualResults []Result
 	if err := r.db.Model(&models.Payment{}).
 		Select(actualDateExpr+" as date, COALESCE(SUM(amount), 0) as total").
-		Where("user_id = ? AND status = 'paid' AND actual_date BETWEEN ? AND ?", userID, startDate, endDate).
+		Scopes(UserScope(userID)).
+		Where("status = 'confirmed' AND actual_date BETWEEN ? AND ?", startDate, endDate).
 		Group("date").
 		Scan(&actualResults).Error; err != nil {
 		return nil, nil, err
@@ -221,21 +225,24 @@ func (r *PaymentRepository) GetIncomeStats(userID int64, startDate, endDate, int
 func (r *PaymentRepository) GetStatsByPeriod(userID int64, startDate, endDate string) (total, paid, pending, overdue, avgPeriod float64, err error) {
 	// 1. Total (TotalExpected): 计划日期在范围内的款项总和
 	if err = r.db.Model(&models.Payment{}).
-		Where("user_id = ? AND plan_date BETWEEN ? AND ?", userID, startDate, endDate).
+		Scopes(UserScope(userID)).
+		Where("plan_date BETWEEN ? AND ?", startDate, endDate).
 		Select("COALESCE(SUM(amount), 0)").Scan(&total).Error; err != nil {
 		return
 	}
 
 	// 2. Paid: 实际日期在范围内已支付的款项
 	if err = r.db.Model(&models.Payment{}).
-		Where("user_id = ? AND status = 'paid' AND actual_date BETWEEN ? AND ?", userID, startDate, endDate).
+		Scopes(UserScope(userID)).
+		Where("status = 'confirmed' AND actual_date BETWEEN ? AND ?", startDate, endDate).
 		Select("COALESCE(SUM(amount), 0)").Scan(&paid).Error; err != nil {
 		return
 	}
 
 	// 3. Pending: 计划日期在范围内，当前状态仍为 pending 的款项
 	if err = r.db.Model(&models.Payment{}).
-		Where("user_id = ? AND status = 'pending' AND plan_date BETWEEN ? AND ?", userID, startDate, endDate).
+		Scopes(UserScope(userID)).
+		Where("status = 'pending' AND plan_date BETWEEN ? AND ?", startDate, endDate).
 		Select("COALESCE(SUM(amount), 0)").Scan(&pending).Error; err != nil {
 		return
 	}
@@ -244,7 +251,8 @@ func (r *PaymentRepository) GetStatsByPeriod(userID int64, startDate, endDate st
 	//    这是 Pending 的子集
 	today := time.Now().Format("2006-01-02")
 	if err = r.db.Model(&models.Payment{}).
-		Where("user_id = ? AND status = 'pending' AND plan_date BETWEEN ? AND ? AND plan_date < ?", userID, startDate, endDate, today).
+		Scopes(UserScope(userID)).
+		Where("status = 'pending' AND plan_date BETWEEN ? AND ? AND plan_date < ?", startDate, endDate, today).
 		Select("COALESCE(SUM(amount), 0)").Scan(&overdue).Error; err != nil {
 		return
 	}
@@ -254,7 +262,8 @@ func (r *PaymentRepository) GetStatsByPeriod(userID int64, startDate, endDate st
 	dbType := database.GetDBType()
 	dateDiffExpr := getDateDiffExpr("actual_date", "plan_date", dbType)
 	if err = r.db.Model(&models.Payment{}).
-		Where("user_id = ? AND status = 'paid' AND actual_date BETWEEN ? AND ?", userID, startDate, endDate).
+		Scopes(UserScope(userID)).
+		Where("status = 'confirmed' AND actual_date BETWEEN ? AND ?", startDate, endDate).
 		Select("COALESCE(AVG(" + dateDiffExpr + "), 0)").Scan(&avgPeriod).Error; err != nil {
 		return
 	}

@@ -52,7 +52,7 @@ func (h *NotificationHandler) Create(c *gin.Context) {
 	// 调用服务层
 	notification, err := h.notificationService.Create(userID, req.Title, req.Content, req.Type, req.TargetUserID)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "创建通知失败")
 		return
 	}
 
@@ -87,7 +87,7 @@ func (h *NotificationHandler) Update(c *gin.Context) {
 	// 执行更新
 	notification, err := h.notificationService.Update(id, req.Title, req.Content, req.Type, req.TargetUserID)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "更新通知失败")
 		return
 	}
 
@@ -116,7 +116,7 @@ func (h *NotificationHandler) List(c *gin.Context) {
 	notifications, total, err = h.notificationService.ListByUser(userID, page, pageSize)
 
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "获取通知列表失败")
 		return
 	}
 
@@ -140,7 +140,7 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 	}
 
 	if err := h.notificationService.MarkAsRead(id, userID); err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "标记已读失败")
 		return
 	}
 
@@ -166,7 +166,7 @@ func (h *NotificationHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.notificationService.Delete(id); err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "删除通知失败")
 		return
 	}
 
@@ -185,7 +185,7 @@ func (h *NotificationHandler) UnreadCount(c *gin.Context) {
 
 	count, err := h.notificationService.GetUnreadCount(userID)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "获取未读数失败")
 		return
 	}
 
@@ -205,7 +205,7 @@ func (h *NotificationHandler) ListUsers(c *gin.Context) {
 
 	users, err := h.notificationService.ListUsers()
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "获取用户列表失败")
 		return
 	}
 
@@ -230,7 +230,7 @@ func (h *NotificationHandler) Get(c *gin.Context) {
 
 	notification, err := h.notificationService.GetForUser(userID, id)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "获取通知详情失败")
 		return
 	}
 

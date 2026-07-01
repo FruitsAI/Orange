@@ -6,6 +6,7 @@ import (
 	"github.com/FruitsAI/Orange/internal/constants"
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
+	pkgerrors "github.com/FruitsAI/Orange/internal/pkg/errors"
 	"github.com/FruitsAI/Orange/internal/pkg/password"
 	"github.com/FruitsAI/Orange/internal/repository"
 )
@@ -51,19 +52,19 @@ func (s *UserService) ListUsers(page, pageSize int, keyword string) (*dto.UserPa
 // CreateUser 创建用户 (管理员)
 func (s *UserService) CreateUser(input dto.CreateUserRequest) error {
 	if s.userRepo.ExistsByUsername(input.Username) {
-		return errors.New("用户名已存在")
+		return pkgerrors.ErrUsernameExists
 	}
 	if input.Email != "" && s.userRepo.ExistsByEmail(input.Email) {
-		return errors.New("邮箱已存在")
+		return pkgerrors.ErrEmailExists
 	}
 
 	if err := validatePasswordStrength(input.Password); err != nil {
-		return err
+		return pkgerrors.WrapWithCode(err, 400, err.Error())
 	}
 
 	hashedPassword, err := password.HashPassword(input.Password)
 	if err != nil {
-		return errors.New("密码加密失败")
+		return pkgerrors.Wrap(err, "密码加密失败")
 	}
 
 	role := input.Role
@@ -71,7 +72,7 @@ func (s *UserService) CreateUser(input dto.CreateUserRequest) error {
 		role = constants.RoleUser
 	}
 	if err := validateUserRole(role); err != nil {
-		return err
+		return pkgerrors.WrapWithCode(err, 400, err.Error())
 	}
 
 	user := &models.User{
@@ -84,7 +85,10 @@ func (s *UserService) CreateUser(input dto.CreateUserRequest) error {
 		Status:   1,
 	}
 
-	return s.userRepo.Create(user)
+	if err := s.userRepo.Create(user); err != nil {
+		return pkgerrors.Wrap(err, "创建用户失败")
+	}
+	return nil
 }
 
 // UpdateUser 更新用户 (管理员)
@@ -95,7 +99,7 @@ func (s *UserService) UpdateUser(id int64, input dto.UpdateUserRequest) error {
 	}
 	if input.Email != "" {
 		if s.userRepo.ExistsByEmailExceptID(input.Email, id) {
-			return errors.New("邮箱已存在")
+			return pkgerrors.ErrEmailExists
 		}
 		updates["email"] = input.Email
 	}
@@ -110,7 +114,7 @@ func (s *UserService) UpdateUser(id int64, input dto.UpdateUserRequest) error {
 	}
 	if input.Role != "" {
 		if err := validateUserRole(input.Role); err != nil {
-			return err
+			return pkgerrors.WrapWithCode(err, 400, err.Error())
 		}
 		updates["role"] = input.Role
 	}
@@ -118,7 +122,10 @@ func (s *UserService) UpdateUser(id int64, input dto.UpdateUserRequest) error {
 		updates["status"] = *input.Status
 	}
 
-	return s.userRepo.UpdateFields(id, updates)
+	if err := s.userRepo.UpdateFields(id, updates); err != nil {
+		return pkgerrors.Wrap(err, "更新用户失败")
+	}
+	return nil
 }
 
 // DeleteUser 删除用户 (管理员)
@@ -131,14 +138,17 @@ func (s *UserService) DeleteUser(id int64) error {
 // ResetPassword 重置用户密码 (管理员)
 func (s *UserService) ResetPassword(id int64, newPassword string) error {
 	if err := validatePasswordStrength(newPassword); err != nil {
-		return err
+		return pkgerrors.WrapWithCode(err, 400, err.Error())
 	}
 
 	hashedPassword, err := password.HashPassword(newPassword)
 	if err != nil {
-		return errors.New("密码加密失败")
+		return pkgerrors.Wrap(err, "密码加密失败")
 	}
-	return s.userRepo.UpdateFields(id, map[string]interface{}{
+	if err := s.userRepo.UpdateFields(id, map[string]interface{}{
 		"password": hashedPassword,
-	})
+	}); err != nil {
+		return pkgerrors.Wrap(err, "重置密码失败")
+	}
+	return nil
 }

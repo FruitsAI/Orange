@@ -45,7 +45,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.userService.CreateUser(req); err != nil {
-		response.ParamError(c, err.Error())
+		response.HandleServiceError(c, err, "创建用户失败")
 		return
 	}
 
@@ -69,7 +69,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.userService.UpdateUser(id, req); err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "更新用户失败")
 		return
 	}
 
@@ -94,7 +94,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.userService.DeleteUser(id); err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "删除用户失败")
 		return
 	}
 
@@ -118,7 +118,7 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 	}
 
 	if err := h.userService.ResetPassword(id, req.NewPassword); err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "重置密码失败")
 		return
 	}
 

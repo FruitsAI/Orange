@@ -4,8 +4,10 @@ import (
 	"errors"
 
 	"github.com/FruitsAI/Orange/internal/models"
+	pkgerrors "github.com/FruitsAI/Orange/internal/pkg/errors"
 	"github.com/FruitsAI/Orange/internal/pkg/password"
 	"github.com/FruitsAI/Orange/internal/repository"
+	"gorm.io/gorm"
 )
 
 // ProfileService 个人信息管理服务
@@ -29,7 +31,14 @@ func NewProfileService() *ProfileService {
 
 // GetCurrentUser 获取当前登录用户详情
 func (s *ProfileService) GetCurrentUser(userID int64) (*models.User, error) {
-	return s.userRepo.FindByID(userID)
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, pkgerrors.ErrUserNotFound
+		}
+		return nil, pkgerrors.Wrap(err, "查询用户失败")
+	}
+	return user, nil
 }
 
 // UpdateProfile 更新个人资料
@@ -50,7 +59,7 @@ func (s *ProfileService) UpdateProfile(userID int64, name, email, phone, departm
 	}
 	if email != "" {
 		if s.userRepo.ExistsByEmailExceptID(email, userID) {
-			return nil, errors.New("邮箱已存在")
+			return nil, pkgerrors.ErrEmailExists
 		}
 		updates["email"] = email
 	}
@@ -66,11 +75,15 @@ func (s *ProfileService) UpdateProfile(userID int64, name, email, phone, departm
 
 	if len(updates) > 0 {
 		if err := s.userRepo.UpdateFields(userID, updates); err != nil {
-			return nil, err
+			return nil, pkgerrors.Wrap(err, "更新个人资料失败")
 		}
 	}
 
-	return s.userRepo.FindByID(userID)
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, pkgerrors.Wrap(err, "查询用户失败")
+	}
+	return user, nil
 }
 
 // ChangePassword 修改密码
@@ -85,27 +98,34 @@ func (s *ProfileService) UpdateProfile(userID int64, name, email, phone, departm
 //   - error: 验证失败或更新错误
 func (s *ProfileService) ChangePassword(userID int64, oldPassword, newPassword string) error {
 	user, err := s.userRepo.FindByID(userID)
-	if err := validatePasswordStrength(newPassword); err != nil {
-		return err
-	}
-
 	if err != nil {
-		return errors.New("用户不存在")
+		if err == gorm.ErrRecordNotFound {
+			return pkgerrors.ErrUserNotFound
+		}
+		return pkgerrors.Wrap(err, "查询用户失败")
 	}
 
 	// 1. 验证旧密码
 	if !password.CheckPassword(oldPassword, user.Password) {
-		return errors.New("原密码错误")
+		return pkgerrors.WrapWithCode(errors.New("原密码错误"), 400, "原密码错误")
 	}
 
-	// 2. 加密新密码
+	// 2. 验证新密码强度
+	if err := validatePasswordStrength(newPassword); err != nil {
+		return pkgerrors.WrapWithCode(err, 400, err.Error())
+	}
+
+	// 3. 加密新密码
 	hashedPassword, err := password.HashPassword(newPassword)
 	if err != nil {
-		return errors.New("密码加密失败")
+		return pkgerrors.Wrap(err, "密码加密失败")
 	}
 
-	// 3. 更新数据库
-	return s.userRepo.UpdateFields(userID, map[string]interface{}{
+	// 4. 更新数据库
+	if err := s.userRepo.UpdateFields(userID, map[string]interface{}{
 		"password": hashedPassword,
-	})
+	}); err != nil {
+		return pkgerrors.Wrap(err, "更新密码失败")
+	}
+	return nil
 }

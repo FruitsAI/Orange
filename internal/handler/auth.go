@@ -42,7 +42,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	// 2. 调用服务层登录逻辑
 	result, err := h.authService.Login(req.Username, req.Password)
 	if err != nil {
-		response.Error(c, response.CodeUnauthorized, err.Error())
+		response.HandleServiceError(c, err, "登录失败")
 		return
 	}
 
@@ -78,7 +78,7 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 
 	user, err := h.profileService.GetCurrentUser(userID)
 	if err != nil {
-		response.NotFound(c, "用户不存在")
+		response.HandleServiceError(c, err, "获取用户信息失败")
 		return
 	}
 
@@ -108,7 +108,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 
 	user, err := h.profileService.UpdateProfile(userID, req.Name, req.Email, req.Phone, req.Department, req.Position)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "更新个人资料失败")
 		return
 	}
 
@@ -137,7 +137,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	}
 
 	if err := h.profileService.ChangePassword(userID, req.OldPassword, req.NewPassword); err != nil {
-		response.ParamError(c, err.Error())
+		response.HandleServiceError(c, err, "修改密码失败")
 		return
 	}
 

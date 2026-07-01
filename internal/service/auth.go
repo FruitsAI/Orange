@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/FruitsAI/Orange/internal/dto"
+	pkgerrors "github.com/FruitsAI/Orange/internal/pkg/errors"
 	"github.com/FruitsAI/Orange/internal/pkg/jwt"
 	"github.com/FruitsAI/Orange/internal/pkg/password"
 	"github.com/FruitsAI/Orange/internal/repository"
+	"gorm.io/gorm"
 )
 
 // validatePasswordStrength 验证密码强度
@@ -73,24 +75,27 @@ func (s *AuthService) Login(username, pwd string) (*dto.LoginResult, error) {
 	// 1. 查找用户
 	user, err := s.userRepo.FindByCredential(username)
 	if err != nil {
-		return nil, errors.New("用户名或密码错误")
+		if err == gorm.ErrRecordNotFound {
+			return nil, pkgerrors.WrapWithCode(err, 401, "用户名或密码错误")
+		}
+		return nil, pkgerrors.Wrap(err, "查询用户失败")
 	}
 
 	// 2. 验证密码 (比对哈希)
 	if !password.CheckPassword(pwd, user.Password) {
-		return nil, errors.New("用户名或密码错误")
+		return nil, pkgerrors.New(401, "用户名或密码错误")
 	}
 
 	// 3. 检查账户状态
 	if user.Status != 1 {
-		return nil, errors.New("账户已被禁用")
+		return nil, pkgerrors.New(403, "账户已被禁用")
 	}
 
 	// 4. 生成 JWT Token
 	// Payload 包含: ID, Username, Role
 	token, err := jwt.GenerateToken(user.ID, user.Username, user.Role)
 	if err != nil {
-		return nil, errors.New("生成Token失败")
+		return nil, pkgerrors.Wrap(err, "生成Token失败")
 	}
 
 	// 5. 异步更新最后登录时间 (非关键路径，暂同步执行，可优化)

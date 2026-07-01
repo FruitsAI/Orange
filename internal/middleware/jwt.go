@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"strings"
 
 	"crypto/sha256"
@@ -58,15 +59,21 @@ func JWTAuth() gin.HandlerFunc {
 				return
 			}
 
-			// 更新最后使用时间 (异步，不阻塞请求)
-			go func(id int64) {
-				// 注意: 这里简单更新，实际可能需要考虑并发或直接使用 SQL Update
-				// 这里为了方便直接复用 DB
-				database.GetDB().Model(&models.PersonalAccessToken{}).Where("id = ?", id).Update("last_used_at", time.Now())
-			}(token.ID)
+			// 降低更新频率：只有超过5分钟未更新才异步更新
+			if token.LastUsedAt == nil || time.Since(*token.LastUsedAt) > 5*time.Minute {
+				go func(id int64) {
+					ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+					defer cancel()
+
+					db := database.GetDB().WithContext(ctx)
+					db.Model(&models.PersonalAccessToken{}).
+						Where("id = ?", id).
+						Update("last_used_at", time.Now())
+				}(token.ID)
+			}
 
 			// 验证关联用户
-			if token.User == nil {
+			if token.User == nil || token.User.Status != 1 {
 				response.Unauthorized(c, "关联用户无效")
 				return
 			}
@@ -90,6 +97,11 @@ func JWTAuth() gin.HandlerFunc {
 		}
 
 		// 4. 将用户信息注入上下文 (Context)
+		if !isActiveUser(claims.UserID) {
+			response.Unauthorized(c, "璐︽埛宸茶绂佺敤")
+			return
+		}
+
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 		c.Set("role", claims.Role)
@@ -99,6 +111,14 @@ func JWTAuth() gin.HandlerFunc {
 }
 
 // GetUserID 从上下文获取用户ID
+func isActiveUser(userID int64) bool {
+	var user models.User
+	if err := database.GetDB().Select("id", "status").First(&user, userID).Error; err != nil {
+		return false
+	}
+	return user.Status == 1
+}
+
 func GetUserID(c *gin.Context) int64 {
 	if userID, exists := c.Get("user_id"); exists {
 		return userID.(int64)

@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/middleware"
 	"github.com/FruitsAI/Orange/internal/pkg/response"
@@ -11,12 +9,12 @@ import (
 )
 
 type UserHandler struct {
-	authService *service.AuthService
+	userService *service.UserService
 }
 
 func NewUserHandler() *UserHandler {
 	return &UserHandler{
-		authService: service.NewAuthService(),
+		userService: service.NewUserService(),
 	}
 }
 
@@ -36,11 +34,10 @@ func (h *UserHandler) List(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	page, pageSize := response.GetPagination(c)
 	keyword := c.Query("keyword")
 
-	result, err := h.authService.ListUsers(page, pageSize, keyword)
+	result, err := h.userService.ListUsers(page, pageSize, keyword)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -61,7 +58,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.CreateUser(req); err != nil {
+	if err := h.userService.CreateUser(req); err != nil {
 		response.ParamError(c, err.Error())
 		return
 	}
@@ -75,7 +72,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 		return
 	}
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的用户ID")
 		return
@@ -87,7 +84,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.UpdateUser(id, req); err != nil {
+	if err := h.userService.UpdateUser(id, req); err != nil {
 		response.InternalError(c, err.Error())
 		return
 	}
@@ -101,7 +98,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的用户ID")
 		return
@@ -114,7 +111,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.DeleteUser(id); err != nil {
+	if err := h.userService.DeleteUser(id); err != nil {
 		response.InternalError(c, err.Error())
 		return
 	}
@@ -128,7 +125,7 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的用户ID")
 		return
@@ -140,7 +137,7 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.ResetPassword(id, req.NewPassword); err != nil {
+	if err := h.userService.ResetPassword(id, req.NewPassword); err != nil {
 		response.InternalError(c, err.Error())
 		return
 	}

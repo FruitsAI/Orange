@@ -66,6 +66,14 @@ func (r *PaymentRepository) FindByID(id int64) (*models.Payment, error) {
 	return &payment, nil
 }
 
+func (r *PaymentRepository) FindByIDForUser(id, userID int64) (*models.Payment, error) {
+	var payment models.Payment
+	if err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&payment).Error; err != nil {
+		return nil, err
+	}
+	return &payment, nil
+}
+
 // FindByIDWithProject 根据ID查找收款（包含项目信息）
 func (r *PaymentRepository) FindByIDWithProject(id int64) (*models.Payment, error) {
 	var payment models.Payment
@@ -127,6 +135,10 @@ func (r *PaymentRepository) Update(payment *models.Payment) error {
 // Delete 删除收款
 func (r *PaymentRepository) Delete(id int64) error {
 	return r.db.Delete(&models.Payment{}, id).Error
+}
+
+func (r *PaymentRepository) DeleteForUser(id, userID int64) error {
+	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Payment{}).Error
 }
 
 // Confirm 执行确认收款

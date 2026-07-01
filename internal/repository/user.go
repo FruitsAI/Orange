@@ -69,6 +69,12 @@ func (r *UserRepository) ExistsByEmail(email string) bool {
 	return count > 0
 }
 
+func (r *UserRepository) ExistsByEmailExceptID(email string, id int64) bool {
+	var count int64
+	r.db.Model(&models.User{}).Where("email = ? AND id <> ?", email, id).Count(&count)
+	return count > 0
+}
+
 // Create 创建用户
 func (r *UserRepository) Create(user *models.User) error {
 	return r.db.Create(user).Error

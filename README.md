@@ -136,7 +136,7 @@ wails3 build
 应用启动并进行数据库播种(Seeding)后，使用以下默认管理员账号登录：
 
 - **用户名**: `admin`
-- **密码**: `admin123`
+- **密码**: 首次启动时写入用户配置目录下的 `initial-credentials.txt`
 
 ## ⚙️ 配置说明
 
@@ -179,14 +179,14 @@ DB_AUTO_CREATE=true
 ```ini
 # JWT Configuration
 # JWT 签名密钥 (生产环境务必修改)
-JWT_SECRET=orange-secret-key-change-in-production
+JWT_SECRET=
 TOKEN_EXPIRY=24
 
 # Logger Configuration
 # 是否启用文件日志
 LOG_ENABLE=true
 # 日志级别: debug, info, warn, error
-LOG_LEVEL=debug
+LOG_LEVEL=info
 # 日志文件路径 (默认: 系统用户配置目录/log/orange.log)
 LOG_PATH=orange.log
 # 单个日志文件最大大小 (MB)

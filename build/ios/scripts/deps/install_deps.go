@@ -182,7 +182,7 @@ func main() {
 					fmt.Printf("   Fix command: %s\n", strings.Join(dep.InstallCmd, " "))
 					if promptUser("Do you want to run this command?") {
 						fmt.Println("Running command...")
-						cmd := exec.Command(dep.InstallCmd[0], dep.InstallCmd[1:]...)
+						cmd := exec.Command(dep.InstallCmd[0], dep.InstallCmd[1:]...) // #nosec G204 -- interactive developer setup runs fixed install commands from this script.
 						cmd.Stdout = os.Stdout
 						cmd.Stderr = os.Stderr
 						cmd.Stdin = os.Stdin
@@ -241,7 +241,7 @@ func main() {
 					createCmd := []string{"xcrun", "simctl", "create", "iPhone 15 Pro", "iPhone 15 Pro", latestRuntime}
 					fmt.Printf("   Command: %s\n", strings.Join(createCmd, " "))
 					if promptUser("Create simulator?") {
-						cmd := exec.Command(createCmd[0], createCmd[1:]...)
+						cmd := exec.Command(createCmd[0], createCmd[1:]...) // #nosec G204 -- simulator creation command is built from fixed xcrun arguments.
 						cmd.Stdout = os.Stdout
 						cmd.Stderr = os.Stderr
 						if err := cmd.Run(); err != nil {
@@ -292,7 +292,7 @@ func checkCommand(args []string) bool {
 	if len(args) == 0 {
 		return false
 	}
-	cmd := exec.Command(args[0], args[1:]...)
+	cmd := exec.Command(args[0], args[1:]...) // #nosec G204 -- dependency checker runs fixed command arguments from this script.
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	err := cmd.Run()

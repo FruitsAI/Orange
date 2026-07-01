@@ -136,7 +136,7 @@ The build artifacts will be located in the `bin` directory.
 After the application starts and seeds the database, use the following default admin account to login:
 
 - **Username**: `admin`
-- **Password**: `admin123`
+- **Password**: written to `initial-credentials.txt` in the user config directory on first launch
 
 ## ⚙️ Configuration
 
@@ -179,7 +179,7 @@ DB_AUTO_CREATE=true
 ```ini
 # JWT Configuration
 # JWT Secret (MUST change in production)
-JWT_SECRET=orange-secret-key-change-in-production
+JWT_SECRET=
 # Token Expiry (Hours)
 TOKEN_EXPIRY=24
 
@@ -187,7 +187,7 @@ TOKEN_EXPIRY=24
 # Enable file logging
 LOG_ENABLE=true
 # Log Level: debug, info, warn, error
-LOG_LEVEL=debug
+LOG_LEVEL=info
 # Log File Path (Default: user config dir/log/orange.log)
 LOG_PATH=orange.log
 # Max size per log file (MB)

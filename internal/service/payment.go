@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"time"
 
 	"github.com/FruitsAI/Orange/internal/database"
@@ -47,6 +48,13 @@ func (s *PaymentService) ListByProject(projectID int64) ([]models.Payment, error
 	return s.paymentRepo.ListByProject(projectID)
 }
 
+func (s *PaymentService) ListByProjectForUser(userID, projectID int64) ([]models.Payment, error) {
+	if _, err := s.projectRepo.FindByIDForUser(projectID, userID); err != nil {
+		return nil, err
+	}
+	return s.paymentRepo.ListByProject(projectID)
+}
+
 // ListUpcoming 获取指定用户近期即将到期的待收款项 (Dashboard用)
 // 通常用于首页"即将收款"卡片，提醒用户关注近期回款。
 //
@@ -86,6 +94,9 @@ func (s *PaymentService) ListByDateRange(userID int64, startDate, endDate string
 //   - *models.Payment: 创建成功的款项实体
 //   - error: 业务规则校验失败或数据库错误
 func (s *PaymentService) Create(input dto.PaymentRequest) (*models.Payment, error) {
+	if _, err := s.projectRepo.FindByIDForUser(input.ProjectID, input.UserID); err != nil {
+		return nil, err
+	}
 	planDate, err := time.Parse("2006-01-02", input.PlanDate)
 	if err != nil {
 		return nil, err
@@ -139,7 +150,9 @@ func (s *PaymentService) Update(id int64, input dto.PaymentRequest) (*models.Pay
 	if err != nil {
 		return nil, err
 	}
-
+	if input.ProjectID != 0 && input.ProjectID != payment.ProjectID {
+		return nil, errors.New("不允许修改款项所属项目")
+	}
 	planDate, err := time.Parse("2006-01-02", input.PlanDate)
 	if err != nil {
 		return nil, err
@@ -164,6 +177,43 @@ func (s *PaymentService) Update(id int64, input dto.PaymentRequest) (*models.Pay
 	}
 
 	// 级联更新: 数据变更后，必须重新同步项目的总收款状态
+	if err := s.syncProjectReceivedAmount(payment.ProjectID); err != nil {
+		return nil, err
+	}
+
+	return payment, nil
+}
+
+func (s *PaymentService) UpdateForUser(userID, id int64, input dto.PaymentRequest) (*models.Payment, error) {
+	payment, err := s.paymentRepo.FindByIDForUser(id, userID)
+	if err != nil {
+		return nil, err
+	}
+	if input.ProjectID != 0 && input.ProjectID != payment.ProjectID {
+		return nil, errors.New("不允许修改款项所属项目")
+	}
+	if _, err := s.projectRepo.FindByIDForUser(payment.ProjectID, userID); err != nil {
+		return nil, err
+	}
+
+	planDate, err := time.Parse("2006-01-02", input.PlanDate)
+	if err != nil {
+		return nil, err
+	}
+
+	payment.Stage = input.Stage
+	payment.Amount = input.Amount
+	payment.PlanDate = planDate
+	payment.Status = input.Status
+	payment.Method = input.Method
+	payment.Remark = input.Remark
+
+	if err := s.processPaymentRules(payment); err != nil {
+		return nil, err
+	}
+	if err := s.paymentRepo.Update(payment); err != nil {
+		return nil, err
+	}
 	if err := s.syncProjectReceivedAmount(payment.ProjectID); err != nil {
 		return nil, err
 	}
@@ -226,9 +276,36 @@ func (s *PaymentService) syncProjectReceivedAmount(projectID int64) error {
 	return nil
 }
 
-// Delete 删除收款
+// Delete 删除收款（同步更新项目已收款金额）
 func (s *PaymentService) Delete(id int64) error {
-	return s.paymentRepo.Delete(id)
+	// 1. 先查询款项获取 project_id
+	payment, err := s.paymentRepo.FindByID(id)
+	if err != nil {
+		return err
+	}
+	projectID := payment.ProjectID
+
+	// 2. 删除款项
+	if err := s.paymentRepo.Delete(id); err != nil {
+		return err
+	}
+
+	// 3. 同步更新项目已收款金额
+	return s.syncProjectReceivedAmount(projectID)
+}
+
+func (s *PaymentService) DeleteForUser(userID, id int64) error {
+	payment, err := s.paymentRepo.FindByIDForUser(id, userID)
+	if err != nil {
+		return err
+	}
+	projectID := payment.ProjectID
+
+	if err := s.paymentRepo.DeleteForUser(id, userID); err != nil {
+		return err
+	}
+
+	return s.syncProjectReceivedAmount(projectID)
 }
 
 // Confirm 确认收款（One-Click 操作）
@@ -249,28 +326,43 @@ func (s *PaymentService) Delete(id int64) error {
 // 返回:
 //   - error: 事务执行失败
 func (s *PaymentService) Confirm(id int64, actualDate, method string) error {
+	actualAt, err := time.Parse("2006-01-02", actualDate)
+	if err != nil {
+		return err
+	}
+
 	return database.GetDB().Transaction(func(tx *gorm.DB) error {
-		// 1. 锁定并获取当前收款记录 (防止并发修改)
+		// 1. 先不加锁快速检查状态
 		var payment models.Payment
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&payment, id).Error; err != nil {
+		if err := tx.First(&payment, id).Error; err != nil {
 			return err
 		}
 
-		// 2. 幂等性检查: 防止重复确认
+		// 2. 幂等性检查: 防止重复确认（无锁）
 		if payment.Status == "paid" {
 			return nil
 		}
 
-		// 3. 更新收款状态为"已收款"
+		// 3. 需要更新时才加锁
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&payment, id).Error; err != nil {
+			return err
+		}
+
+		// 4. Double-check（防止锁等待期间被其他事务更新）
+		if payment.Status == "paid" {
+			return nil
+		}
+
+		// 5. 更新收款状态为"已收款"
 		if err := tx.Model(&payment).Updates(map[string]interface{}{
 			"status":      "paid",
-			"actual_date": actualDate,
+			"actual_date": actualAt,
 			"method":      method,
 		}).Error; err != nil {
 			return err
 		}
 
-		// 4. 同步计算项目已收款总额
+		// 6. 同步计算项目已收款总额
 		// 注意: 必须使用当前事务 tx 进行查询，否则读不到刚才更新的状态
 		var totalReceived float64
 		if err := tx.Model(&models.Payment{}).
@@ -280,7 +372,7 @@ func (s *PaymentService) Confirm(id int64, actualDate, method string) error {
 			return err
 		}
 
-		// 5. 更新项目主表 sum 值
+		// 7. 更新项目主表 sum 值
 		if err := tx.Model(&models.Project{}).
 			Where("id = ?", payment.ProjectID).
 			Update("received_amount", totalReceived).Error; err != nil {
@@ -288,5 +380,53 @@ func (s *PaymentService) Confirm(id int64, actualDate, method string) error {
 		}
 
 		return nil
+	})
+}
+
+func (s *PaymentService) ConfirmForUser(userID, id int64, actualDate, method string) error {
+	actualAt, err := time.Parse("2006-01-02", actualDate)
+	if err != nil {
+		return err
+	}
+
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		var payment models.Payment
+		if err := tx.Where("id = ? AND user_id = ?", id, userID).First(&payment).Error; err != nil {
+			return err
+		}
+
+		if payment.Status == "paid" {
+			return nil
+		}
+
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ? AND user_id = ?", id, userID).
+			First(&payment).Error; err != nil {
+			return err
+		}
+
+		if payment.Status == "paid" {
+			return nil
+		}
+
+		if err := tx.Model(&payment).Updates(map[string]interface{}{
+			"status":      "paid",
+			"actual_date": actualAt,
+			"method":      method,
+		}).Error; err != nil {
+			return err
+		}
+
+		var totalReceived float64
+		if err := tx.Model(&models.Payment{}).
+			Where("project_id = ? AND user_id = ? AND status = ?", payment.ProjectID, userID, "paid").
+			Select("COALESCE(SUM(amount), 0)").
+			Scan(&totalReceived).Error; err != nil {
+			return err
+		}
+
+		return tx.Model(&models.Project{}).
+			Where("id = ? AND user_id = ?", payment.ProjectID, userID).
+			Update("received_amount", totalReceived).Error
 	})
 }

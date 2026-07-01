@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build:dev": "vue-tsc --build && vite build --minify false --mode development",
-    "build": "vue-tsc --build && vite build --mode production",
+    "build": "vue-tsc --build && vite build --mode production && node scripts/cleanup-remixicon-assets.mjs",
     "preview": "vite preview",
     "lint": "eslint . --fix --cache",
     "format": "prettier --write src/"
@@ -18,7 +18,7 @@
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@tailwindcss/postcss": "^4.1.18",
-    "@wailsio/runtime": "latest",
+    "@wailsio/runtime": "3.0.0-alpha.77",
     "autoprefixer": "^10.4.23",
     "axios": "^1.13.2",
     "chart.js": "^4.5.1",

@@ -39,6 +39,8 @@ frontend/.DS_Store
 *.dylib
 *.test
 *.out
+*.syso
+*.db
 cover.out
 
 
@@ -52,3 +54,4 @@ AGENTS.md
 
 .sisyphus/
 .spec-workflow/
+docs/review/

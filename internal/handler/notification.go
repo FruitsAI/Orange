@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/FruitsAI/Orange/internal/models"
 	"github.com/FruitsAI/Orange/internal/pkg/response"
 	"github.com/FruitsAI/Orange/internal/service"
@@ -85,7 +83,7 @@ func (h *NotificationHandler) Update(c *gin.Context) {
 		return
 	}
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的通知ID")
 		return
@@ -119,8 +117,7 @@ func (h *NotificationHandler) Update(c *gin.Context) {
 // @Router /api/v1/notifications [get]
 func (h *NotificationHandler) List(c *gin.Context) {
 	userID := c.GetInt64("user_id")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	page, pageSize := response.GetPagination(c)
 
 	var notifications []models.Notification
 	var total int64
@@ -148,7 +145,7 @@ func (h *NotificationHandler) List(c *gin.Context) {
 // @Router /api/v1/notifications/{id}/read [put]
 func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 	userID := c.GetInt64("user_id")
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的通知ID")
 		return
@@ -180,7 +177,7 @@ func (h *NotificationHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的通知ID")
 		return
@@ -248,13 +245,14 @@ func (h *NotificationHandler) ListUsers(c *gin.Context) {
 // @Success 200 {object} models.Notification
 // @Router /api/v1/notifications/{id} [get]
 func (h *NotificationHandler) Get(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	userID := c.GetInt64("user_id")
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的通知ID")
 		return
 	}
 
-	notification, err := h.notificationService.Get(id)
+	notification, err := h.notificationService.GetForUser(userID, id)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return

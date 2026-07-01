@@ -223,7 +223,7 @@ const handleSubmit = async () => {
         phone: form.phone,
         department: form.department,
         position: form.position,
-        role: form.role,
+        role: form.role as 'admin' | 'user',
         status: form.status
       }
       const res = await authApi.updateUser(form.id, updateData)
@@ -293,7 +293,7 @@ const openResetPwdModal = (user: User) => {
 }
 
 const handleResetPwd = async () => {
-  if (!resetPwdForm.password || resetPwdForm.password.length < 6) {
+  if (!resetPwdForm.password || resetPwdForm.password.length < 8) {
     toast.warning('密码长度至少6位')
     return
   }
@@ -599,7 +599,7 @@ onMounted(() => {
           <div class="modal-body">
                <div class="form-group">
                   <label class="form-label">新密码 <span class="text-danger">*</span></label>
-                  <input type="text" v-model="resetPwdForm.password" class="form-input" placeholder="请输入新密码" spellcheck="false" autocomplete="off" />
+                  <input type="password" v-model="resetPwdForm.password" class="form-input" placeholder="请输入新密码" spellcheck="false" autocomplete="new-password" />
               </div>
           </div>
           <div class="modal-footer">

@@ -33,21 +33,21 @@ func (User) TableName() string {
 // 核心业务对象，记录项目基本信息、合同详情及财务汇总。
 type Project struct {
 	ID             int64      `json:"id" gorm:"primaryKey;autoIncrement"`
-	Name           string     `json:"name" gorm:"size:100;not null"`              // 项目名称
-	Company        string     `json:"company" gorm:"size:100;not null"`           // 建设单位/客户
-	TotalAmount    float64    `json:"total_amount" gorm:"type:real;not null"`     // 合同总金额
-	ReceivedAmount float64    `json:"received_amount" gorm:"type:real;default:0"` // 已回款金额
-	Status         string     `json:"status" gorm:"size:20;not null"`             // 状态: pending, processing, completed, archived
-	Type           string     `json:"type" gorm:"size:50;not null"`               // 项目类型 (字典项)
-	ContractNumber string     `json:"contract_number" gorm:"size:50"`             // 合同编号
-	ContractDate   *time.Time `json:"contract_date" gorm:"type:date"`             // 签订日期
-	PaymentMethod  string     `json:"payment_method" gorm:"size:30"`              // 支付方式 (字典项)
-	StartDate      time.Time  `json:"start_date" gorm:"type:date;not null"`       // 计划开始日期
-	EndDate        time.Time  `json:"end_date" gorm:"type:date;not null"`         // 计划结束日期
-	Description    string     `json:"description"`                                // 项目描述
-	UserID         int64      `json:"user_id" gorm:"not null;index"`              // 负责人ID
-	CreateTime     time.Time  `json:"create_time" gorm:"autoCreateTime"`          // 创建时间
-	UpdateTime     time.Time  `json:"update_time" gorm:"autoUpdateTime"`          // 更新时间
+	Name           string     `json:"name" gorm:"size:100;not null"`                                           // 项目名称
+	Company        string     `json:"company" gorm:"size:100;not null"`                                        // 建设单位/客户
+	TotalAmount    float64    `json:"total_amount" gorm:"type:real;not null"`                                  // 合同总金额
+	ReceivedAmount float64    `json:"received_amount" gorm:"type:real;default:0"`                              // 已回款金额
+	Status         string     `json:"status" gorm:"size:20;not null"`                                          // 状态: pending, processing, completed, archived
+	Type           string     `json:"type" gorm:"size:50;not null"`                                            // 项目类型 (字典项)
+	ContractNumber string     `json:"contract_number" gorm:"size:50;uniqueIndex:idx_user_contract,priority:2"` // 合同编号
+	ContractDate   *time.Time `json:"contract_date" gorm:"type:date"`                                          // 签订日期
+	PaymentMethod  string     `json:"payment_method" gorm:"size:30"`                                           // 支付方式 (字典项)
+	StartDate      time.Time  `json:"start_date" gorm:"type:date;not null"`                                    // 计划开始日期
+	EndDate        time.Time  `json:"end_date" gorm:"type:date;not null"`                                      // 计划结束日期
+	Description    string     `json:"description"`                                                             // 项目描述
+	UserID         int64      `json:"user_id" gorm:"not null;index;uniqueIndex:idx_user_contract,priority:1"`  // 负责人ID
+	CreateTime     time.Time  `json:"create_time" gorm:"autoCreateTime"`                                       // 创建时间
+	UpdateTime     time.Time  `json:"update_time" gorm:"autoUpdateTime"`                                       // 更新时间
 
 	// 关联
 	User     *User     `json:"user,omitempty" gorm:"foreignKey:UserID"`        // 关联负责人
@@ -63,18 +63,18 @@ func (Project) TableName() string {
 // 记录项目分期付款的计划与实际执行情况。
 type Payment struct {
 	ID         int64      `json:"id" gorm:"primaryKey;autoIncrement"`
-	ProjectID  int64      `json:"project_id" gorm:"not null;index"`          // 关联项目ID
-	Stage      string     `json:"stage" gorm:"size:50;not null"`             // 款项阶段 (如: 首付款, 进度款, 尾款)
-	Amount     float64    `json:"amount" gorm:"type:real;not null"`          // 金额
-	Percentage float64    `json:"percentage" gorm:"type:real"`               // 占总金额百分比
-	PlanDate   time.Time  `json:"plan_date" gorm:"type:date;not null;index"` // 计划收款日期
-	Status     string     `json:"status" gorm:"size:20;not null;index"`      // 状态: uncollected, collected
-	ActualDate *time.Time `json:"actual_date" gorm:"type:date"`              // 实际收款日期
-	Method     string     `json:"method" gorm:"size:30"`                     // 收款方式 (如: 银行转账)
-	Remark     string     `json:"remark" gorm:"size:255"`                    // 备注
-	UserID     int64      `json:"user_id" gorm:"not null"`                   // 经办人ID (通常为创建者或当前负责人)
-	CreateTime time.Time  `json:"create_time" gorm:"autoCreateTime"`         // 创建时间
-	UpdateTime time.Time  `json:"update_time" gorm:"autoUpdateTime"`         // 更新时间
+	ProjectID  int64      `json:"project_id" gorm:"not null;index"`                                // 关联项目ID
+	Stage      string     `json:"stage" gorm:"size:50;not null"`                                   // 款项阶段 (如: 首付款, 进度款, 尾款)
+	Amount     float64    `json:"amount" gorm:"type:real;not null"`                                // 金额
+	Percentage float64    `json:"percentage" gorm:"type:real"`                                     // 占总金额百分比
+	PlanDate   time.Time  `json:"plan_date" gorm:"type:date;not null;index"`                       // 计划收款日期
+	Status     string     `json:"status" gorm:"size:20;not null;index:idx_user_status,priority:2"` // 状态: uncollected, collected
+	ActualDate *time.Time `json:"actual_date" gorm:"type:date;index"`                              // 实际收款日期
+	Method     string     `json:"method" gorm:"size:30"`                                           // 收款方式 (如: 银行转账)
+	Remark     string     `json:"remark" gorm:"size:255"`                                          // 备注
+	UserID     int64      `json:"user_id" gorm:"not null;index:idx_user_status,priority:1"`        // 经办人ID (通常为创建者或当前负责人)
+	CreateTime time.Time  `json:"create_time" gorm:"autoCreateTime"`                               // 创建时间
+	UpdateTime time.Time  `json:"update_time" gorm:"autoUpdateTime"`                               // 更新时间
 
 	// 关联
 	Project *Project `json:"project,omitempty" gorm:"foreignKey:ProjectID"` // 关联项目
@@ -137,8 +137,8 @@ type Notification struct {
 	UpdateTime time.Time `json:"update_time" gorm:"autoUpdateTime"` // 更新时间
 
 	// 非数据库字段，用于前端展示
-	IsRead bool  `json:"is_read" gorm:"->"`         // 当前用户是否已读
-	Sender *User `json:"sender,omitempty" gorm:"-"` // 发送者详情
+	IsRead bool  `json:"is_read" gorm:"->"`                           // 当前用户是否已读
+	Sender *User `json:"sender,omitempty" gorm:"foreignKey:SenderID"` // 发送者详情
 }
 
 // TableName 指定表名

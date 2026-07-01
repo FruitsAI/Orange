@@ -3,17 +3,19 @@ package main
 import (
 	"embed"
 	_ "embed"
-	"fmt"
 	"io/fs"
 	"log"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/FruitsAI/Orange/internal/config"
+	"github.com/FruitsAI/Orange/internal/constants"
 	"github.com/FruitsAI/Orange/internal/database"
 	"github.com/FruitsAI/Orange/internal/models"
 	"github.com/FruitsAI/Orange/internal/pkg/jwt"
@@ -29,12 +31,6 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-func init() {
-}
-
-// createAssetHandler 创建一个组合处理器，用于统一处理 HTTP 请求：
-// 1. 将 /api/* 开头的请求路由到 Gin 框架处理 (后端接口)
-// 2. 将其他请求作为静态资源服务，从嵌入的文件系统中提供前端页面
 // createAssetHandler 创建一个组合处理器，用于统一处理 HTTP 请求：
 // 1. 将 /api/* 开头的请求路由到 Gin 框架处理 (后端接口)
 // 2. 将其他请求作为静态资源服务，从嵌入的文件系统中提供前端页面
@@ -61,6 +57,17 @@ func createAssetHandler(ginRouter http.Handler) http.Handler {
 
 // main 是应用程序的入口点。
 // 它负责初始化应用配置、日志、数据库，创建 Wails 应用实例及窗口，并启动主事件循环。
+func newExternalAPIServer(addr string, handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              addr,
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+}
+
 func main() {
 	// 1. 加载配置信息
 	config.Load()
@@ -69,7 +76,7 @@ func main() {
 	logger.Setup()
 	defer logger.Sync()
 
-	slog.Info("Application starting...", "version", "v0.7.1")
+	slog.Info("Application starting...", "version", "v"+constants.AppVersion)
 
 	// 3. 设置全局 Panic 捕获与恢复
 	defer func() {
@@ -89,7 +96,7 @@ func main() {
 	db := database.GetDB()
 
 	// 执行数据库自动迁移 (同步表结构)
-	db.AutoMigrate(
+	if err := db.AutoMigrate(
 		&models.User{},
 		&models.Project{},
 		&models.Payment{},
@@ -98,14 +105,18 @@ func main() {
 		&models.Notification{},
 		&models.UserNotification{},
 		&models.PersonalAccessToken{},
-	)
+	); err != nil {
+		slog.Error("Failed to migrate database", "error", err)
+		if closeErr := database.Close(); closeErr != nil {
+			slog.Warn("Failed to close database after migration error", "error", closeErr)
+		}
+		os.Exit(1)
+	}
 
 	// 播种初始化数据 (如默认用户、字典等)
 	if err := database.Seed(db); err != nil {
 		slog.Error("Failed to seed database", "error", err)
 	}
-
-	defer database.Close()
 
 	defer database.Close()
 
@@ -116,9 +127,14 @@ func main() {
 	if config.AppConfig.EnableAPIServer {
 		go func() {
 			port := config.AppConfig.APIServerPort
-			log.Printf("Starting external API server on :%d\n", port)
+			host := os.Getenv("API_SERVER_HOST")
+			if host == "" {
+				host = "127.0.0.1"
+			}
+			addr := net.JoinHostPort(host, strconv.Itoa(port))
+			slog.Info("Starting external API server", "addr", addr)
 			// 使用 ginRouter 作为一个普通的 http.Handler
-			if err := http.ListenAndServe(fmt.Sprintf(":%d", port), ginRouter); err != nil {
+			if err := newExternalAPIServer(addr, ginRouter).ListenAndServe(); err != nil {
 				log.Printf("Error starting API server: %v\n", err)
 			}
 		}()

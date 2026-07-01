@@ -24,7 +24,7 @@ func main() {
 	//   - pattern: 用于定位旧版本号的正则表达式
 	//   - repl:    包含新版本号的替换内容
 	updateFile := func(path string, pattern string, repl string) {
-		content, err := os.ReadFile(path)
+		content, err := os.ReadFile(path) // #nosec G304 -- path is supplied only by fixed release-script call sites below.
 		if err != nil {
 			fmt.Printf("Error reading %s: %v\n", path, err)
 			return
@@ -42,7 +42,7 @@ func main() {
 		newContent := re.ReplaceAll(content, []byte(repl))
 
 		// 将更新后的内容写回文件，保持 0644 权限
-		if err := os.WriteFile(path, newContent, 0644); err != nil {
+		if err := os.WriteFile(path, newContent, 0644); err != nil { // #nosec G306,G703 -- release metadata files are intentionally written with source-file permissions from fixed paths.
 			fmt.Printf("Error writing %s: %v\n", path, err)
 			return
 		}

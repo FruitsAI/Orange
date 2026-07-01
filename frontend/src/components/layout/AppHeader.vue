@@ -4,7 +4,7 @@
  * @description 应用顶部导航栏
  * 包含页面标题、主题切换、通知中心及用户个人菜单。
  */
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
@@ -125,20 +125,47 @@ const refreshNotifications = () => {
   fetchRecentNotifications()
 }
 
-onMounted(() => {
-  if (authStore.isAuthenticated) {
+// 事件监听器引用
+let eventUnsubscribe: (() => void) | null = null
+
+watch(() => authStore.isAuthenticated, (isAuth) => {
+  if (isAuth) {
+    // 立即刷新
     refreshNotifications()
-    // 简单的轮询机制，每30秒更新一次
+
+    // 启动定时轮询
+    if (pollInterval) {
+      clearInterval(pollInterval)
+    }
     pollInterval = setInterval(refreshNotifications, 30000)
-    
-    // 监听自定义事件
-    Events.On('notification_updated', refreshNotifications)
+
+    // 监听更新事件
+    eventUnsubscribe = Events.On('notification_updated', () => {
+      refreshNotifications()
+    })
+  } else {
+    // 清理定时器和事件监听
+    if (pollInterval) {
+      clearInterval(pollInterval)
+      pollInterval = null
+    }
+    if (eventUnsubscribe) {
+      eventUnsubscribe()
+      eventUnsubscribe = null
+    }
   }
-})
+}, { immediate: true })
 
 onUnmounted(() => {
-  if (pollInterval) clearInterval(pollInterval)
-  Events.Off('notification_updated')
+  // 清理定时器和事件监听
+  if (pollInterval) {
+    clearInterval(pollInterval)
+    pollInterval = null
+  }
+  if (eventUnsubscribe) {
+    eventUnsubscribe()
+    eventUnsubscribe = null
+  }
 })
 </script>
 

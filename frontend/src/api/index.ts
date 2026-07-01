@@ -5,6 +5,7 @@
  * 处理 Token 自动注入、统一错误处理以及登录过期跳转逻辑。
  */
 import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
+import { clearAuthStorage, getStoredToken } from '@/utils/authStorage'
 
 // API 统一响应结构
 export interface ApiResponse<T = unknown> {
@@ -33,7 +34,7 @@ const api: AxiosInstance = axios.create({
 // 请求拦截器：自动注入 JWT Token
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('token')
+    const token = getStoredToken()
     if (token && config.headers) {
       // 如果存在 Token，添加到 Authorization 头 (Bearer Schema)
       config.headers.Authorization = `Bearer ${token}`
@@ -69,9 +70,7 @@ api.interceptors.response.use(
       if (authLogout) {
         authLogout()
       } else {
-        // Fallback
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
+        clearAuthStorage()
         window.location.href = '/login'
       }
       return Promise.reject(new Error('登录已过期，请重新登录'))
@@ -81,16 +80,19 @@ api.interceptors.response.use(
     return Promise.reject(new Error(message || '请求失败'))
   },
   (error) => {
-    if (error.response?.status === 401) {
+    const apiError = error.response?.data as Partial<ApiResponse> | undefined
+    const code = apiError?.code
+
+    if (error.response?.status === 401 || code === 2001 || code === 2002) {
       if (authLogout) {
         authLogout()
       } else {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
+        clearAuthStorage()
         window.location.href = '/login'
       }
     }
-    return Promise.reject(error)
+
+    return Promise.reject(new Error(apiError?.message || error.message || '请求失败'))
   }
 )
 

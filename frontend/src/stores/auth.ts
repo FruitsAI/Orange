@@ -1,18 +1,21 @@
 /**
  * @file stores/auth.ts
  * @description 用户认证状态管理
- * 管理用户登录状态、Token、用户信息及相关操作（登录、注册、注销、更新信息）。
+ * 管理用户登录状态、Token、用户信息及相关操作（登录、注销、更新信息）。
  */
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { authApi, type User, type LoginRequest } from '@/api/auth'
+import { clearAuthStorage, getStoredToken, getStoredUser, saveAuthState, saveStoredUser } from '@/utils/authStorage'
 
 export const useAuthStore = defineStore('auth', () => {
-  // State: 从 localStorage 初始化状态，实现持久化
-  const token = ref<string | null>(localStorage.getItem('token'))
-  const user = ref<User | null>(
-    JSON.parse(localStorage.getItem('user') || 'null')
-  )
+  // State: 从 sessionStorage 初始化状态，实现更安全的持久化
+  // 安全说明：使用 sessionStorage 而非 localStorage
+  // - sessionStorage 在浏览器关闭后自动清除
+  // - 降低了 XSS 攻击窃取 Token 的风险
+  // - 用户需要重新登录，但安全性更高
+  const token = ref<string | null>(getStoredToken())
+  const user = ref<User | null>(getStoredUser<User>())
   const loading = ref(false) // 异步操作加载状态
   const error = ref<string | null>(null) // 错误信息
 
@@ -38,11 +41,7 @@ export const useAuthStore = defineStore('auth', () => {
       // 保存到 state
       token.value = newToken
       user.value = userData
-
-      // 保存到 localStorage
-      localStorage.setItem('token', newToken)
-      localStorage.setItem('user', JSON.stringify(userData))
-      localStorage.setItem('isAuthenticated', 'true')
+      saveAuthState(newToken, userData)
 
       return true
     } catch (err: unknown) {
@@ -53,24 +52,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * 用户注册
-   * @param data 注册信息
-   */
-  async function register(data: { username: string; name: string; email?: string; phone?: string; password: string }) {
-    loading.value = true
-    error.value = null
-
-    try {
-      await authApi.register(data)
-      return true
-    } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : '注册失败'
-      return false
-    } finally {
-      loading.value = false
-    }
-  }
 
   /**
    * 退出登录
@@ -86,11 +67,7 @@ export const useAuthStore = defineStore('auth', () => {
     // 清除状态
     token.value = null
     user.value = null
-
-    // 清除 localStorage
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    localStorage.removeItem('isAuthenticated')
+    clearAuthStorage()
   }
 
   /**
@@ -103,7 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authApi.getCurrentUser()
       user.value = response.data.data
-      localStorage.setItem('user', JSON.stringify(response.data.data))
+      saveStoredUser(response.data.data)
     } catch {
       // Token 可能已过期
       await logout()
@@ -121,7 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authApi.updateProfile(data)
       user.value = response.data.data
-      localStorage.setItem('user', JSON.stringify(response.data.data))
+      saveStoredUser(response.data.data)
       return true
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : '更新失败'
@@ -162,7 +139,6 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     // Actions
     login,
-    register,
     logout,
     refreshUser,
     updateProfile,

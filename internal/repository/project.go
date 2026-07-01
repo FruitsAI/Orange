@@ -25,12 +25,30 @@ func (r *ProjectRepository) FindByID(id int64) (*models.Project, error) {
 	return &project, nil
 }
 
+func (r *ProjectRepository) FindByIDForUser(id, userID int64) (*models.Project, error) {
+	var project models.Project
+	if err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&project).Error; err != nil {
+		return nil, err
+	}
+	return &project, nil
+}
+
 // FindByIDWithPayments 根据ID查找项目（包含收款列表）
 func (r *ProjectRepository) FindByIDWithPayments(id int64) (*models.Project, error) {
 	var project models.Project
 	if err := r.db.Preload("Payments", func(db *gorm.DB) *gorm.DB {
 		return db.Order("plan_date DESC")
 	}).First(&project, id).Error; err != nil {
+		return nil, err
+	}
+	return &project, nil
+}
+
+func (r *ProjectRepository) FindByIDWithPaymentsForUser(id, userID int64) (*models.Project, error) {
+	var project models.Project
+	if err := r.db.Preload("Payments", func(db *gorm.DB) *gorm.DB {
+		return db.Order("plan_date DESC")
+	}).Where("id = ? AND user_id = ?", id, userID).First(&project).Error; err != nil {
 		return nil, err
 	}
 	return &project, nil
@@ -51,7 +69,7 @@ func (r *ProjectRepository) List(userID int64, status, keyword string, page, pag
 		query = query.Where("status = ?", status)
 	}
 	if keyword != "" {
-		query = query.Where("name LIKE ? OR company LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+		query = query.Where("(name LIKE ? OR company LIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
 	}
 
 	// 计算总数
@@ -93,9 +111,17 @@ func (r *ProjectRepository) Delete(id int64) error {
 	return r.db.Delete(&models.Project{}, id).Error
 }
 
+func (r *ProjectRepository) DeleteForUser(id, userID int64) error {
+	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Project{}).Error
+}
+
 // UpdateStatus 更新项目状态
 func (r *ProjectRepository) UpdateStatus(id int64, status string) error {
 	return r.db.Model(&models.Project{}).Where("id = ?", id).Update("status", status).Error
+}
+
+func (r *ProjectRepository) UpdateStatusForUser(id, userID int64, status string) error {
+	return r.db.Model(&models.Project{}).Where("id = ? AND user_id = ?", id, userID).Update("status", status).Error
 }
 
 // GetStats 获取用户维度的项目财务统计

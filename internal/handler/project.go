@@ -37,8 +37,7 @@ func (h *ProjectHandler) List(c *gin.Context) {
 	userID := c.GetInt64("user_id")
 	status := c.Query("status")
 	keyword := c.Query("keyword")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	page, pageSize := response.GetPagination(c)
 
 	result, err := h.projectService.List(userID, status, keyword, page, pageSize)
 	if err != nil {
@@ -58,13 +57,14 @@ func (h *ProjectHandler) List(c *gin.Context) {
 // @Success 200 {object} models.Project
 // @Router /api/v1/projects/{id} [get]
 func (h *ProjectHandler) Get(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	userID := c.GetInt64("user_id")
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的项目ID")
 		return
 	}
 
-	project, err := h.projectService.Get(id)
+	project, err := h.projectService.GetForUser(userID, id)
 	if err != nil {
 		response.NotFound(c, "项目不存在")
 		return
@@ -111,7 +111,8 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 // @Success 200 {object} models.Project
 // @Router /api/v1/projects/{id} [put]
 func (h *ProjectHandler) Update(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	userID := c.GetInt64("user_id")
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的项目ID")
 		return
@@ -123,7 +124,7 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 		return
 	}
 
-	project, err := h.projectService.Update(id, req)
+	project, err := h.projectService.UpdateForUser(userID, id, req)
 	if err != nil {
 		response.InternalError(c, "更新项目失败")
 		return
@@ -141,13 +142,14 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 // @Success 200 {string} string "删除成功"
 // @Router /api/v1/projects/{id} [delete]
 func (h *ProjectHandler) Delete(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	userID := c.GetInt64("user_id")
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的项目ID")
 		return
 	}
 
-	if err := h.projectService.Delete(id); err != nil {
+	if err := h.projectService.DeleteForUser(userID, id); err != nil {
 		response.InternalError(c, "删除项目失败")
 		return
 	}
@@ -164,13 +166,14 @@ func (h *ProjectHandler) Delete(c *gin.Context) {
 // @Success 200 {string} string "归档成功"
 // @Router /api/v1/projects/{id}/archive [post]
 func (h *ProjectHandler) Archive(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	userID := c.GetInt64("user_id")
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的项目ID")
 		return
 	}
 
-	if err := h.projectService.Archive(id); err != nil {
+	if err := h.projectService.ArchiveForUser(userID, id); err != nil {
 		response.InternalError(c, "归档项目失败")
 		return
 	}
@@ -195,7 +198,10 @@ func (h *ProjectHandler) CheckContractNumber(c *gin.Context) {
 		return
 	}
 
-	excludeID, _ := strconv.ParseInt(c.DefaultQuery("exclude_id", "0"), 10, 64)
+	excludeID, err := strconv.ParseInt(c.DefaultQuery("exclude_id", "0"), 10, 64)
+	if err != nil {
+		excludeID = 0
+	}
 
 	exists, err := h.projectService.CheckContractNumberExists(userID, contractNumber, excludeID)
 	if err != nil {

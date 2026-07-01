@@ -9,6 +9,7 @@ import (
 	"github.com/FruitsAI/Orange/internal/models"
 	"github.com/FruitsAI/Orange/internal/repository"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // ProjectService 项目服务
@@ -83,6 +84,10 @@ func (s *ProjectService) List(userID int64, status, keyword string, page, pageSi
 func (s *ProjectService) Get(id int64) (*models.Project, error) {
 	// 使用 FindByIDWithPayments 确保在详情页能展示关联的收款计划
 	return s.projectRepo.FindByIDWithPayments(id)
+}
+
+func (s *ProjectService) GetForUser(userID, id int64) (*models.Project, error) {
+	return s.projectRepo.FindByIDWithPaymentsForUser(id, userID)
 }
 
 // Create 创建新项目
@@ -208,6 +213,48 @@ func (s *ProjectService) Update(id int64, input dto.CreateProjectRequest) (*mode
 //
 // 返回:
 //   - error: 事务执行错误
+func (s *ProjectService) UpdateForUser(userID, id int64, input dto.CreateProjectRequest) (*models.Project, error) {
+	project, err := s.projectRepo.FindByIDForUser(id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	startDate, err := time.Parse("2006-01-02", input.StartDate)
+	if err != nil {
+		return nil, err
+	}
+	endDate, err := time.Parse("2006-01-02", input.EndDate)
+	if err != nil {
+		return nil, err
+	}
+	var contractDate *time.Time
+	if input.ContractDate != "" {
+		t, err := time.Parse("2006-01-02", input.ContractDate)
+		if err != nil {
+			return nil, err
+		}
+		contractDate = &t
+	}
+
+	project.Name = input.Name
+	project.Company = input.Company
+	project.TotalAmount = input.TotalAmount
+	project.Status = input.Status
+	project.Type = input.Type
+	project.ContractNumber = input.ContractNumber
+	project.ContractDate = contractDate
+	project.PaymentMethod = input.PaymentMethod
+	project.StartDate = startDate
+	project.EndDate = endDate
+	project.Description = input.Description
+
+	if err := s.projectRepo.Update(project); err != nil {
+		return nil, err
+	}
+
+	return project, nil
+}
+
 func (s *ProjectService) Delete(id int64) error {
 	return database.GetDB().Transaction(func(tx *gorm.DB) error {
 		// 1. 级联删除: 先删除项目关联的所有款项 (Payments)
@@ -222,10 +269,30 @@ func (s *ProjectService) Delete(id int64) error {
 	})
 }
 
+func (s *ProjectService) DeleteForUser(userID, id int64) error {
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		var project models.Project
+		if err := tx.Where("id = ? AND user_id = ?", id, userID).First(&project).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("project_id = ?", id).Delete(&models.Payment{}).Error; err != nil {
+			return err
+		}
+		return tx.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Project{}).Error
+	})
+}
+
 // Archive 归档项目
 // 将项目状态更新为 "archived"，归档后的项目通常只读或不显示在主列表中。
 func (s *ProjectService) Archive(id int64) error {
 	return s.projectRepo.UpdateStatus(id, "archived")
+}
+
+func (s *ProjectService) ArchiveForUser(userID, id int64) error {
+	if _, err := s.projectRepo.FindByIDForUser(id, userID); err != nil {
+		return err
+	}
+	return s.projectRepo.UpdateStatusForUser(id, userID, "archived")
 }
 
 // CheckContractNumberExists 检查合同编号是否在库中已存在
@@ -266,23 +333,37 @@ func (s *ProjectService) GenerateNextContractNumber(userID int64, date string) (
 	// 构造前缀: HT + YYYYMMDD
 	prefix := "HT" + t.Format("20060102")
 
-	// 获取该日期前缀下的最大编号
-	maxNumber, err := s.projectRepo.GetMaxContractNumberByPrefix(userID, prefix)
-	if err != nil {
-		return "", err
-	}
+	var result string
 
-	// 计算下一个序号
-	nextSeq := 1
-	if maxNumber != "" && len(maxNumber) >= len(prefix)+4 {
-		// 提取现有最大编号的末尾4位作为序号
-		seqStr := maxNumber[len(prefix):]
-		var seq int
-		if _, err := fmt.Sscanf(seqStr, "%d", &seq); err == nil {
-			nextSeq = seq + 1
+	// 使用事务缩小读写窗口；SQLite 不支持 FOR UPDATE，其他数据库使用行锁降低并发竞态。
+	err = database.GetDB().Transaction(func(tx *gorm.DB) error {
+		var maxNumber string
+		query := tx.Model(&models.Project{}).
+			Where("user_id = ? AND contract_number LIKE ?", userID, prefix+"%").
+			Order("contract_number DESC").
+			Limit(1)
+		if database.GetDBType() != "sqlite" {
+			query = query.Clauses(clause.Locking{Strength: "UPDATE"})
 		}
-	}
+		if err := query.Pluck("contract_number", &maxNumber).Error; err != nil {
+			return err
+		}
 
-	// 格式化输出: 前缀 + 4位序号(补零)
-	return fmt.Sprintf("%s%04d", prefix, nextSeq), nil
+		// 计算下一个序号
+		nextSeq := 1
+		if maxNumber != "" && len(maxNumber) >= len(prefix)+4 {
+			// 提取现有最大编号的末尾4位作为序号
+			seqStr := maxNumber[len(prefix):]
+			var seq int
+			if _, err := fmt.Sscanf(seqStr, "%d", &seq); err == nil {
+				nextSeq = seq + 1
+			}
+		}
+
+		// 格式化输出: 前缀 + 4位序号(补零)
+		result = fmt.Sprintf("%s%04d", prefix, nextSeq)
+		return nil
+	})
+
+	return result, err
 }

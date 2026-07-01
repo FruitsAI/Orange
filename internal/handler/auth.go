@@ -10,13 +10,15 @@ import (
 // AuthHandler 认证模块接口处理器
 // 负责处理所有与用户认证授权相关的 HTTP 请求。
 type AuthHandler struct {
-	authService *service.AuthService
+	authService    *service.AuthService
+	profileService *service.ProfileService
 }
 
 // NewAuthHandler 创建认证处理器实例
 func NewAuthHandler() *AuthHandler {
 	return &AuthHandler{
-		authService: service.NewAuthService(),
+		authService:    service.NewAuthService(),
+		profileService: service.NewProfileService(),
 	}
 }
 
@@ -51,31 +53,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
-// Register 用户注册接口
-// @Summary 用户注册
-// @Description 注册新用户账号
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param register body dto.RegisterRequest true "注册参数"
-// @Success 200 {string} string "注册成功"
-// @Router /api/v1/auth/register [post]
-func (h *AuthHandler) Register(c *gin.Context) {
-	var req dto.RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.ParamError(c, err.Error())
-		return
-	}
-
-	err := h.authService.Register(req)
-	if err != nil {
-		response.ParamError(c, err.Error())
-		return
-	}
-
-	response.SuccessWithMessage(c, "注册成功", nil)
-}
-
 // Logout 退出登录
 // @Summary 退出登录
 // @Description 客户端登出（当前由前端清除Token，后端仅做预留）
@@ -99,7 +76,7 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.authService.GetCurrentUser(userID)
+	user, err := h.profileService.GetCurrentUser(userID)
 	if err != nil {
 		response.NotFound(c, "用户不存在")
 		return
@@ -129,7 +106,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	user, err := h.authService.UpdateProfile(userID, req.Name, req.Email, req.Phone, req.Department, req.Position)
+	user, err := h.profileService.UpdateProfile(userID, req.Name, req.Email, req.Phone, req.Department, req.Position)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -159,7 +136,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.ChangePassword(userID, req.OldPassword, req.NewPassword); err != nil {
+	if err := h.profileService.ChangePassword(userID, req.OldPassword, req.NewPassword); err != nil {
 		response.ParamError(c, err.Error())
 		return
 	}

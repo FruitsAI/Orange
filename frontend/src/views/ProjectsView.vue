@@ -17,6 +17,8 @@ import { useConfirm } from '@/composables/useConfirm'
 import { projectApi, type Project } from '@/api/project'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
+import type { ProjectListParams } from '@/types/project'
 import dayjs from 'dayjs'
 
 const { confirm } = useConfirm()
@@ -29,7 +31,7 @@ const projects = ref<Project[]>([])
 const loading = ref(false)
 const totalItems = ref(0)
 const currentPage = ref(1)
-const pageSize = ref(5)
+const pageSize = ref(DEFAULT_PAGE_SIZE)
 const keyword = ref('')
 
 // 筛选状态
@@ -47,14 +49,13 @@ const filters = [
 const fetchProjects = async () => {
   loading.value = true
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const params: Record<string, any> = {
+    const params: ProjectListParams = {
       page: currentPage.value,
       page_size: pageSize.value,
       keyword: keyword.value,
       _t: Date.now() // 防止缓存
     }
-    
+
     if (activeFilter.value !== 'all') {
       params.status = activeFilter.value
     }
@@ -65,7 +66,9 @@ const fetchProjects = async () => {
       totalItems.value = data.data.total
     }
   } catch (error) {
-    console.error('Failed to fetch projects', error)
+    if (import.meta.env.DEV) {
+      console.error('Failed to fetch projects', error)
+    }
     toast.error('获取项目列表失败')
   } finally {
     loading.value = false

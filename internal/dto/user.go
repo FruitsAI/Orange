@@ -8,7 +8,7 @@ type CreateUserRequest struct {
 	Name     string `json:"name" binding:"required"`
 	Email    string `json:"email"`
 	Phone    string `json:"phone"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required,min=8"`
 	Role     string `json:"role"` // admin or user
 }
 
@@ -20,12 +20,12 @@ type UpdateUserRequest struct {
 	Department string `json:"department"`
 	Position   string `json:"position"`
 	Role       string `json:"role"`
-	Status     int    `json:"status"` // 1: active, 0: disabled
+	Status     *int   `json:"status"` // 1: active, 0: disabled
 }
 
 // ResetPasswordRequest 管理员重置密码
 type ResetPasswordRequest struct {
-	NewPassword string `json:"new_password" binding:"required,min=6"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
 
 // UserPageResult 用户分页结果

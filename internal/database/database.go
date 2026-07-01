@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"regexp"
 	"sync"
+	"time"
 
 	"github.com/FruitsAI/Orange/internal/config"
 	"github.com/glebarez/sqlite"
@@ -21,6 +23,8 @@ var (
 	// once 用于确保数据库初始化只执行一次
 	once sync.Once
 )
+
+var safeDatabaseNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,62}$`)
 
 // GetDB 获取数据库连接实例 (单例)
 // 该方法是并发安全的，首次调用时会自动初始化数据库连接。
@@ -50,6 +54,9 @@ func initDB() (*gorm.DB, error) {
 
 	switch cfg.DBType {
 	case "mysql":
+		if err := validateDatabaseName(cfg.DBName); err != nil {
+			return nil, err
+		}
 		// 根据配置决定是否自动创建数据库
 		if cfg.DBAutoCreate {
 			if err := ensureMySQLDatabase(cfg); err != nil {
@@ -62,6 +69,9 @@ func initDB() (*gorm.DB, error) {
 		slog.Info("Connecting to MySQL database", "host", cfg.DBHost, "port", cfg.DBPort, "database", cfg.DBName)
 
 	case "postgres":
+		if err := validateDatabaseName(cfg.DBName); err != nil {
+			return nil, err
+		}
 		// 根据配置决定是否自动创建数据库
 		if cfg.DBAutoCreate {
 			if err := ensurePostgresDatabase(cfg); err != nil {
@@ -84,6 +94,31 @@ func initDB() (*gorm.DB, error) {
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	// 配置连接池参数
+	sqlDB, err := database.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
+	}
+
+	// 设置连接池参数
+	sqlDB.SetMaxOpenConns(25)                  // 最大打开连接数
+	sqlDB.SetMaxIdleConns(5)                   // 最大空闲连接数
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)  // 连接最大生命周期
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute) // 空闲连接最大生命周期
+
+	slog.Info("Database connection pool configured",
+		"max_open_conns", 25,
+		"max_idle_conns", 5,
+		"conn_max_lifetime", "5m")
+
+	if cfg.DBType == "sqlite" {
+		sqlDB.SetMaxOpenConns(1)
+		sqlDB.SetMaxIdleConns(1)
+		_ = database.Exec("PRAGMA busy_timeout = 5000").Error
+		_ = database.Exec("PRAGMA journal_mode = WAL").Error
+		slog.Info("SQLite connection pool adjusted", "max_open_conns", 1, "max_idle_conns", 1)
 	}
 
 	return database, nil
@@ -126,8 +161,8 @@ func ensurePostgresDatabase(cfg *config.Config) error {
 
 	// 检查数据库是否存在
 	var exists bool
-	checkSQL := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '%s')", cfg.DBName)
-	err = db.QueryRow(checkSQL).Scan(&exists)
+	checkSQL := "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = $1)"
+	err = db.QueryRow(checkSQL, cfg.DBName).Scan(&exists)
 	if err != nil {
 		return fmt.Errorf("failed to check database existence: %w", err)
 	}
@@ -149,6 +184,13 @@ func ensurePostgresDatabase(cfg *config.Config) error {
 
 // Close 关闭数据库连接
 // 主要是为了释放底层 sql.DB 的连接资源 (通常在应用退出时调用)
+func validateDatabaseName(name string) error {
+	if !safeDatabaseNamePattern.MatchString(name) {
+		return fmt.Errorf("invalid database name: %q", name)
+	}
+	return nil
+}
+
 func Close() error {
 	if db != nil {
 		sqlDB, err := db.DB()

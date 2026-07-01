@@ -8,6 +8,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import GlassCard from '@/components/common/GlassCard.vue'
 import { paymentApi, type Payment } from '@/api/project'
+import { formatDate } from '@/utils/format'
 import dayjs from 'dayjs'
 
 import { dictionaryApi, type DictionaryItem } from '@/api/dictionary'
@@ -158,10 +159,10 @@ const formatStage = (p: Payment) => {
 }
 
 const formatAmount = (amount: number) => {
-  return amount.toLocaleString()
+  return `¥${amount.toLocaleString()}`
 }
 
-const formatDate = (date: string) => {
+const formatDateShort = (date: string) => {
   return dayjs(date).format('MM-DD')
 }
 </script>
@@ -269,7 +270,7 @@ const formatDate = (date: string) => {
                   class="text-sm"
                   :class="p.status === 'overdue' ? 'text-danger' : 'text-secondary'"
                 >
-                  {{ formatDate(p.plan_date) }}
+                  {{ formatDateShort(p.plan_date) }}
                 </div>
               </div>
             </div>

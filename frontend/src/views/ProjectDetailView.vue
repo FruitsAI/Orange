@@ -15,6 +15,7 @@ import GlassCard from '@/components/common/GlassCard.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { projectApi, type Project, type Payment } from '@/api/project'
 import { dictionaryApi, type DictionaryItem } from '@/api/dictionary'
+import { formatCurrency, formatDate } from '@/utils/format'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -59,9 +60,6 @@ const projectStatusDict = ref<DictionaryItem[]>([])
 // Helper methods
 const goBack = () => router.back()
 const switchTab = (idx: number) => (activeTab.value = idx)
-
-const formatCurrency = (val: number) => `¥${(val || 0).toLocaleString()}`
-const formatDate = (str: string) => str ? dayjs(str).format('YYYY-MM-DD') : '-'
 
 const getDictionaryLabel = (dict: DictionaryItem[], val: string) => {
     const item = dict.find(i => i.value === val)

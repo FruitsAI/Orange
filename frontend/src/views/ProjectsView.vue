@@ -19,6 +19,7 @@ import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
 import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import type { ProjectListParams } from '@/types/project'
+import { formatCurrency, formatDate } from '@/utils/format'
 import dayjs from 'dayjs'
 
 const { confirm } = useConfirm()
@@ -172,15 +173,9 @@ const getStatusLabel = (status: string) => {
   return map[status] || status
 }
 
-const formatCurrency = (val: number) => `¥${val.toLocaleString()}`
 const getProgress = (p: Project) => {
   if (!p.total_amount) return 0
   return Math.round(((p.received_amount || 0) / p.total_amount) * 100)
-}
-
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-'
-  return dayjs(dateStr).format('YYYY-MM-DD')
 }
 
 // 下拉菜单逻辑 (使用 activeDropdownId 控制显示)

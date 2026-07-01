@@ -72,12 +72,12 @@ func NewRouter() *gin.Engine {
 				users.PUT("/me", authHandler.UpdateProfile)
 				users.PUT("/me/password", authHandler.ChangePassword)
 
-				// 管理员接口 (内部已做权限校验)
-				users.GET("", userHandler.List)
-				users.POST("", userHandler.Create)
-				users.PUT("/:id", userHandler.Update)
-				users.DELETE("/:id", userHandler.Delete)
-				users.PUT("/:id/password", userHandler.ResetPassword)
+				// 管理员接口 (通过 AdminOnly 中间件统一鉴权)
+				users.GET("", middleware.AdminOnly(), userHandler.List)
+				users.POST("", middleware.AdminOnly(), userHandler.Create)
+				users.PUT("/:id", middleware.AdminOnly(), userHandler.Update)
+				users.DELETE("/:id", middleware.AdminOnly(), userHandler.Delete)
+				users.PUT("/:id/password", middleware.AdminOnly(), userHandler.ResetPassword)
 			}
 
 			// 项目管理模块
@@ -138,14 +138,14 @@ func NewRouter() *gin.Engine {
 			notifications := authorized.Group("/notifications")
 			{
 				notificationHandler := handler.NewNotificationHandler()
-				notifications.GET("", notificationHandler.List)                     // 通知列表
-				notifications.POST("", notificationHandler.Create)                  // 发送通知 (私信/广播)
-				notifications.GET("/unread-count", notificationHandler.UnreadCount) // 未读数
-				notifications.GET("/users", notificationHandler.ListUsers)          // 可通知用户列表
-				notifications.GET("/:id", notificationHandler.Get)                  // 通知详情
-				notifications.PUT("/:id", notificationHandler.Update)               // 更新通知
-				notifications.PUT("/:id/read", notificationHandler.MarkAsRead)      // 标记已读
-				notifications.DELETE("/:id", notificationHandler.Delete)            // 删除通知
+				notifications.GET("", notificationHandler.List)                                        // 通知列表
+				notifications.POST("", middleware.AdminOnly(), notificationHandler.Create)              // 发送通知 (私信/广播, 仅管理员)
+				notifications.GET("/unread-count", notificationHandler.UnreadCount)                     // 未读数
+				notifications.GET("/users", middleware.AdminOnly(), notificationHandler.ListUsers)      // 可通知用户列表 (仅管理员)
+				notifications.GET("/:id", notificationHandler.Get)                                      // 通知详情
+				notifications.PUT("/:id", middleware.AdminOnly(), notificationHandler.Update)           // 更新通知 (仅管理员)
+				notifications.PUT("/:id/read", notificationHandler.MarkAsRead)                          // 标记已读
+				notifications.DELETE("/:id", middleware.AdminOnly(), notificationHandler.Delete)        // 删除通知 (仅管理员)
 			}
 
 			// 个人访问令牌模块

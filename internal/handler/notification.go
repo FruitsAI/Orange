@@ -39,22 +39,17 @@ type CreateNotificationRequest struct {
 // @Router /api/v1/notifications [post]
 func (h *NotificationHandler) Create(c *gin.Context) {
 	userID := c.GetInt64("user_id")
-	role := c.GetString("role")
 
-	// 1. 权限校验
-	if role != "admin" {
-		response.Forbidden(c)
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
-	// 2. 参数绑定
+	// 参数绑定
 	var req CreateNotificationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamError(c, err.Error())
 		return
 	}
 
-	// 3. 调用服务层
+	// 调用服务层
 	notification, err := h.notificationService.Create(userID, req.Title, req.Content, req.Type, req.TargetUserID)
 	if err != nil {
 		response.InternalError(c, err.Error())
@@ -75,28 +70,21 @@ func (h *NotificationHandler) Create(c *gin.Context) {
 // @Failure 403 {string} string "无权操作"
 // @Router /api/v1/notifications/{id} [put]
 func (h *NotificationHandler) Update(c *gin.Context) {
-	role := c.GetString("role")
-
-	// 1. 权限校验
-	if role != "admin" {
-		response.Forbidden(c)
-		return
-	}
-
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的通知ID")
 		return
 	}
 
-	// 2. 参数绑定
+	// 参数绑定
 	var req CreateNotificationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamError(c, err.Error())
 		return
 	}
 
-	// 3. 执行更新
+	// 执行更新
 	notification, err := h.notificationService.Update(id, req.Title, req.Content, req.Type, req.TargetUserID)
 	if err != nil {
 		response.InternalError(c, err.Error())
@@ -169,13 +157,7 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 // @Failure 403 {string} string "无权操作"
 // @Router /api/v1/notifications/{id} [delete]
 func (h *NotificationHandler) Delete(c *gin.Context) {
-	role := c.GetString("role")
-
-	// 1. 权限校验
-	if role != "admin" {
-		response.Forbidden(c)
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
 	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
@@ -219,13 +201,7 @@ func (h *NotificationHandler) UnreadCount(c *gin.Context) {
 // @Failure 403 {string} string "无权操作"
 // @Router /api/v1/notifications/users [get]
 func (h *NotificationHandler) ListUsers(c *gin.Context) {
-	role := c.GetString("role")
-
-	// 权限校验
-	if role != "admin" {
-		response.Forbidden(c)
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
 	users, err := h.notificationService.ListUsers()
 	if err != nil {

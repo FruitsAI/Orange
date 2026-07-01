@@ -18,21 +18,9 @@ func NewUserHandler() *UserHandler {
 	}
 }
 
-// ensureAdmin 检查当前用户是否为管理员
-func (h *UserHandler) ensureAdmin(c *gin.Context) bool {
-	role := middleware.GetRole(c)
-	if role != "admin" {
-		response.Error(c, response.CodeForbidden, "权限不足")
-		return false
-	}
-	return true
-}
-
 // List 获取用户列表
 func (h *UserHandler) List(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
 	page, pageSize := response.GetPagination(c)
 	keyword := c.Query("keyword")
@@ -48,9 +36,7 @@ func (h *UserHandler) List(c *gin.Context) {
 
 // Create 创建用户
 func (h *UserHandler) Create(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
 	var req dto.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -68,9 +54,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 
 // Update 更新用户
 func (h *UserHandler) Update(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
 	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
@@ -94,9 +78,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 
 // Delete 删除用户
 func (h *UserHandler) Delete(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
 	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
@@ -121,9 +103,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 
 // ResetPassword 重置密码
 func (h *UserHandler) ResetPassword(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
 	id, err := response.ParseIDParam(c, "id")
 	if err != nil {

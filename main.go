@@ -21,6 +21,7 @@ import (
 	"github.com/FruitsAI/Orange/internal/pkg/jwt"
 	"github.com/FruitsAI/Orange/internal/pkg/logger"
 	"github.com/FruitsAI/Orange/internal/router"
+	"github.com/gin-gonic/gin"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -71,6 +72,12 @@ func newExternalAPIServer(addr string, handler http.Handler) *http.Server {
 func main() {
 	// 1. 加载配置信息
 	config.Load()
+
+	// 根据运行环境设置 Gin 模式：非 production 默认 debug（启用 Swagger、宽松 CSP），
+	// production 强制 release，避免打包后的桌面二进制暴露调试信息与文档路由。
+	if os.Getenv("ENV") == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	// 2. 初始化日志系统
 	logger.Setup()
@@ -134,8 +141,11 @@ func main() {
 			addr := net.JoinHostPort(host, strconv.Itoa(port))
 			slog.Info("Starting external API server", "addr", addr)
 			// 使用 ginRouter 作为一个普通的 http.Handler
-			if err := newExternalAPIServer(addr, ginRouter).ListenAndServe(); err != nil {
-				log.Printf("Error starting API server: %v\n", err)
+			// 监听失败（如端口被占用）会导致所有前端 API 调用不可用，属致命错误，
+			// 需明确终止进程而非静默退出 goroutine。ErrServerClosed 是正常关闭，忽略。
+			if err := newExternalAPIServer(addr, ginRouter).ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				slog.Error("External API server failed to start", "addr", addr, "error", err)
+				log.Fatalf("FATAL: 对外 API 服务启动失败 (%s): %v", addr, err)
 			}
 		}()
 	}

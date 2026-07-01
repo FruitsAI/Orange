@@ -41,6 +41,7 @@ const (
 	CodeUnauthorized  = 2001 // 未授权 (未登录或 Token 无效)
 	CodeTokenExpired  = 2002 // Token 已过期
 	CodeForbidden     = 2003 // 禁止访问 (无权限)
+	CodeTooManyReqs   = 4029 // 请求过于频繁 (触发限流)
 	CodeInternalError = 5000 // 服务器内部错误
 )
 
@@ -52,6 +53,7 @@ var codeMessages = map[int]string{ // #nosec G101 -- public API response message
 	CodeUnauthorized:  "未授权",
 	CodeTokenExpired:  "Token已过期",
 	CodeForbidden:     "禁止访问",
+	CodeTooManyReqs:   "请求过于频繁，请稍后再试",
 	CodeInternalError: "服务器内部错误",
 }
 
@@ -102,6 +104,8 @@ func httpStatusForCode(code int) int {
 		return http.StatusUnauthorized
 	case CodeForbidden:
 		return http.StatusForbidden
+	case CodeTooManyReqs:
+		return http.StatusTooManyRequests
 	case CodeInternalError:
 		return http.StatusInternalServerError
 	case CodeSuccess:
@@ -150,6 +154,12 @@ func InternalError(c *gin.Context, message ...string) {
 // Forbidden 禁止访问
 func Forbidden(c *gin.Context, message ...string) {
 	Error(c, CodeForbidden, message...)
+	c.Abort()
+}
+
+// TooManyRequests 请求过于频繁 (限流)
+func TooManyRequests(c *gin.Context, message ...string) {
+	Error(c, CodeTooManyReqs, message...)
 	c.Abort()
 }
 

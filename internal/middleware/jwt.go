@@ -98,7 +98,7 @@ func JWTAuth() gin.HandlerFunc {
 
 		// 4. 将用户信息注入上下文 (Context)
 		if !isActiveUser(claims.UserID) {
-			response.Unauthorized(c, "璐︽埛宸茶绂佺敤")
+			response.Unauthorized(c, "账户已被禁用")
 			return
 		}
 

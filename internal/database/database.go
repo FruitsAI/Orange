@@ -46,6 +46,20 @@ func GetDBType() string {
 	return config.AppConfig.DBType
 }
 
+// gormLogLevel 将应用日志级别映射为 GORM 日志级别
+// debug -> Info(打印全部 SQL)；info/warn -> Warn；其余(error 等) -> Error。
+// 默认不使用 Info，避免在非调试场景泄露 SQL 参数。
+func gormLogLevel(level string) logger.LogLevel {
+	switch level {
+	case "debug":
+		return logger.Info
+	case "info", "warn":
+		return logger.Warn
+	default:
+		return logger.Error
+	}
+}
+
 // initDB 初始化数据库连接
 // 根据配置选择对应的数据库驱动 (SQLite/MySQL/PostgreSQL)
 func initDB() (*gorm.DB, error) {
@@ -89,8 +103,10 @@ func initDB() (*gorm.DB, error) {
 	}
 
 	// 建立 GORM 连接
+	// 日志级别跟随应用配置（生产建议 warn/error），避免固定 Info 级别把每条 SQL
+	// （含登录查询参数、seed 中的密码哈希等敏感数据）打印到日志。
 	database, err := gorm.Open(dialector, &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(gormLogLevel(cfg.LogLevel)),
 	})
 	if err != nil {
 		return nil, err
@@ -103,10 +119,10 @@ func initDB() (*gorm.DB, error) {
 	}
 
 	// 设置连接池参数
-	sqlDB.SetMaxOpenConns(25)                  // 最大打开连接数
-	sqlDB.SetMaxIdleConns(5)                   // 最大空闲连接数
-	sqlDB.SetConnMaxLifetime(5 * time.Minute)  // 连接最大生命周期
-	sqlDB.SetConnMaxIdleTime(10 * time.Minute) // 空闲连接最大生命周期
+	sqlDB.SetMaxOpenConns(25)                 // 最大打开连接数
+	sqlDB.SetMaxIdleConns(5)                  // 最大空闲连接数
+	sqlDB.SetConnMaxLifetime(5 * time.Minute) // 连接最大生命周期
+	sqlDB.SetConnMaxIdleTime(2 * time.Minute) // 空闲连接最大生命周期 (须 <= Lifetime，否则永不触发)
 
 	slog.Info("Database connection pool configured",
 		"max_open_conns", 25,

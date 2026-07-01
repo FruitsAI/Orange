@@ -64,62 +64,49 @@ func Seed(db *gorm.DB) error {
 
 	return db.Transaction(func(tx *gorm.DB) error {
 		// 1. 初始化用户数据 (Users)
-		// 包含:
-		// - 默认管理员 (admin)
-		// - 演示用户 (xu)
-		usersSQL := []string{
-			fmt.Sprintf(`INSERT INTO users (id, username, password, name, email, phone, role, department, position, status, create_time) VALUES
-(1, 'admin', '%s', '管理员', 'admin@orange.com', '13800000000', 'admin', '技术部', '系统管理员', 1, CURRENT_TIMESTAMP);`, string(adminPasswordHash)),
-			fmt.Sprintf(`INSERT INTO users (id, username, password, name, email, phone, role, department, position, status, create_time) VALUES
-(2, 'xu', '%s', '郑旭', 'xu@company.com', '13800000001', 'user', '技术部', '项目经理', 1, CURRENT_TIMESTAMP);`, string(userPasswordHash)),
+		// 使用 GORM 模型创建，不显式指定自增主键 id，
+		// 以保证在 PostgreSQL/MySQL 下自增序列正确前进，避免后续注册主键冲突。
+		users := []models.User{
+			{Username: "admin", Password: string(adminPasswordHash), Name: "管理员", Email: "admin@orange.com", Phone: "13800000000", Role: "admin", Department: "技术部", Position: "系统管理员", Status: 1},
+			{Username: "xu", Password: string(userPasswordHash), Name: "郑旭", Email: "xu@company.com", Phone: "13800000001", Role: "user", Department: "技术部", Position: "项目经理", Status: 1},
 		}
-
-		for _, sql := range usersSQL {
-			if err := tx.Exec(sql).Error; err != nil {
-				return err
-			}
+		if err := tx.Create(&users).Error; err != nil {
+			return err
 		}
 
 		// 2. 初始化字典数据 (Dictionaries)
-		// 对应 SQL 文件: db/seed_dictionaries.sql
-		// 包含: 款项阶段、支付方式、项目状态、项目类型等基础配置
-		dictSQL := []string{
-			// payment_stage
-			`INSERT INTO dictionaries (id, code, name, status, create_time) VALUES (1, 'payment_stage', '款项阶段', 1, CURRENT_TIMESTAMP);`,
-			`INSERT INTO dictionary_item (dictionary_id, label, value, sort, status, create_time) VALUES
-(1, '首付款', 'deposit', 1, 1, CURRENT_TIMESTAMP),
-(1, '进度款', 'progress', 2, 1, CURRENT_TIMESTAMP),
-(1, '尾款', 'final', 3, 1, CURRENT_TIMESTAMP),
-(1, '全款', 'all', 4, 1, CURRENT_TIMESTAMP);`,
-			// payment_method
-			`INSERT INTO dictionaries (id, code, name, status, create_time) VALUES (2, 'payment_method', '支付方式', 1, CURRENT_TIMESTAMP);`,
-			`INSERT INTO dictionary_item (dictionary_id, label, value, sort, status, create_time) VALUES
-(2, '银行转账', 'bank_transfer', 1, 1, CURRENT_TIMESTAMP),
-(2, '支付宝', 'alipay', 2, 1, CURRENT_TIMESTAMP),
-(2, '微信支付', 'wechat', 3, 1, CURRENT_TIMESTAMP),
-(2, '现金', 'cash', 4, 1, CURRENT_TIMESTAMP);`,
-			// project_status
-			`INSERT INTO dictionaries (id, code, name, status, create_time) VALUES (3, 'project_status', '项目状态', 1, CURRENT_TIMESTAMP);`,
-			`INSERT INTO dictionary_item (dictionary_id, label, value, sort, status, create_time) VALUES
-(3, '未开始', 'notstarted', 1, 1, CURRENT_TIMESTAMP),
-(3, '进行中', 'active', 2, 1, CURRENT_TIMESTAMP),
-(3, '已完成', 'completed', 3, 1, CURRENT_TIMESTAMP),
-(3, '已逾期', 'overdue', 4, 1, CURRENT_TIMESTAMP),
-(3, '已归档', 'archived', 5, 1, CURRENT_TIMESTAMP);`,
-			// project_type
-			`INSERT INTO dictionaries (id, code, name, status, create_time) VALUES (4, 'project_type', '项目类型', 1, CURRENT_TIMESTAMP);`,
-			`INSERT INTO dictionary_item (dictionary_id, label, value, sort, status, create_time) VALUES
-(4, 'Web开发', 'web', 1, 1, CURRENT_TIMESTAMP),
-(4, '移动应用', 'mobile', 2, 1, CURRENT_TIMESTAMP),
-(4, 'UI设计', 'design', 3, 1, CURRENT_TIMESTAMP),
-(4, 'SaaS系统', 'saas', 4, 1, CURRENT_TIMESTAMP),
-(4, '其他', 'other', 5, 1, CURRENT_TIMESTAMP);`,
+		// 每个字典及其明细项通过关联(Items)一次性创建，字典项的 dictionary_id
+		// 由 GORM 依据字典创建后分配的主键自动回填，无需硬编码外键。
+		dictionaries := []models.Dictionary{
+			{Code: "payment_stage", Name: "款项阶段", Status: 1, Items: []models.DictionaryItem{
+				{Label: "首付款", Value: "deposit", Sort: 1, Status: 1},
+				{Label: "进度款", Value: "progress", Sort: 2, Status: 1},
+				{Label: "尾款", Value: "final", Sort: 3, Status: 1},
+				{Label: "全款", Value: "all", Sort: 4, Status: 1},
+			}},
+			{Code: "payment_method", Name: "支付方式", Status: 1, Items: []models.DictionaryItem{
+				{Label: "银行转账", Value: "bank_transfer", Sort: 1, Status: 1},
+				{Label: "支付宝", Value: "alipay", Sort: 2, Status: 1},
+				{Label: "微信支付", Value: "wechat", Sort: 3, Status: 1},
+				{Label: "现金", Value: "cash", Sort: 4, Status: 1},
+			}},
+			{Code: "project_status", Name: "项目状态", Status: 1, Items: []models.DictionaryItem{
+				{Label: "未开始", Value: "notstarted", Sort: 1, Status: 1},
+				{Label: "进行中", Value: "active", Sort: 2, Status: 1},
+				{Label: "已完成", Value: "completed", Sort: 3, Status: 1},
+				{Label: "已逾期", Value: "overdue", Sort: 4, Status: 1},
+				{Label: "已归档", Value: "archived", Sort: 5, Status: 1},
+			}},
+			{Code: "project_type", Name: "项目类型", Status: 1, Items: []models.DictionaryItem{
+				{Label: "Web开发", Value: "web", Sort: 1, Status: 1},
+				{Label: "移动应用", Value: "mobile", Sort: 2, Status: 1},
+				{Label: "UI设计", Value: "design", Sort: 3, Status: 1},
+				{Label: "SaaS系统", Value: "saas", Sort: 4, Status: 1},
+				{Label: "其他", Value: "other", Sort: 5, Status: 1},
+			}},
 		}
-
-		for _, sql := range dictSQL {
-			if err := tx.Exec(sql).Error; err != nil {
-				return err
-			}
+		if err := tx.Create(&dictionaries).Error; err != nil {
+			return err
 		}
 
 		return nil

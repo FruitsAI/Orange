@@ -129,13 +129,11 @@ func Load() {
 		LogCompress:    getEnvBool("LOG_COMPRESS", true),     // Compress by default
 	}
 
-	// 安全检查：生产环境必须修改默认 JWT 密钥
-	if envSecret, exists := os.LookupEnv("JWT_SECRET"); exists && envSecret == "orange-secret-key-change-in-production" {
-		env := getEnv("ENV", "development")
-		if env == "production" {
-			log.Fatal("🚨 FATAL: JWT_SECRET must be set in production environment")
-		} else {
-			log.Printf("⚠️  WARNING: Using default JWT secret in %s environment. Please set JWT_SECRET in production!", env)
+	// 安全检查：拒绝使用已知的弱/默认 JWT 密钥（不依赖 ENV 变量，避免误配置绕过）
+	// 任何环境下显式配置了已知弱密钥都直接终止启动，防止用公开密钥伪造 Token。
+	for _, weak := range knownWeakSecrets {
+		if AppConfig.JWTSecret == weak {
+			log.Fatal("🚨 FATAL: 检测到使用已知的默认/弱 JWT 密钥，请通过环境变量 JWT_SECRET 配置一个强随机密钥后再启动")
 		}
 	}
 
@@ -145,6 +143,13 @@ func Load() {
 	}
 }
 
+// knownWeakSecrets 已知的默认/弱 JWT 密钥黑名单
+// 这些值曾出现在示例配置或代码回退分支中，一旦命中即拒绝启动。
+var knownWeakSecrets = []string{
+	"orange-secret-key-change-in-production",
+	"orange-runtime-secret-fallback-change-me",
+}
+
 // getEnvBool 获取布尔类型的环境变量
 func loadJWTSecret() string {
 	if value, exists := os.LookupEnv("JWT_SECRET"); exists && value != "" {
@@ -152,8 +157,8 @@ func loadJWTSecret() string {
 	}
 	secret, err := generateRandomSecret()
 	if err != nil {
-		log.Printf("Warning: failed to generate random JWT secret, using fallback: %v\n", err)
-		return "orange-runtime-secret-fallback-change-me"
+		// 无法生成安全随机密钥时直接终止，绝不回退到硬编码弱值
+		log.Fatalf("🚨 FATAL: 无法生成随机 JWT 密钥，且未配置 JWT_SECRET: %v", err)
 	}
 	log.Println("Info: JWT_SECRET is not set; using a random runtime secret")
 	return secret

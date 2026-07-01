@@ -145,7 +145,7 @@ func (s *SyncService) CompareData(cfg SyncConfig) ([]TableCompareResult, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), syncOperationTimeout)
 	defer cancel()
 	if err := remoteDB.PingContext(ctx); err != nil {
-		return nil, fmt.Errorf("杩炴帴浜戠鏁版嵁搴撳け璐? %w", err)
+		return nil, fmt.Errorf("连接云端数据库失败: %w", err)
 	}
 
 	// 获取本地数据库

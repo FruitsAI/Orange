@@ -20,9 +20,17 @@ import (
 func NewRouter() *gin.Engine {
 	router := gin.New()
 
+	// 安全加固：不信任任何上游代理，使 c.ClientIP() 仅取真实 RemoteAddr，
+	// 防止攻击者伪造 X-Forwarded-For 绕过基于 IP 的登录限流。
+	// 若未来部署在可信反向代理之后，应在此显式配置代理网段。
+	if err := router.SetTrustedProxies(nil); err != nil {
+		slog.Warn("Failed to set trusted proxies", "error", err)
+	}
+
 	// 1. 注册全局中间件
-	router.Use(middleware.Logger()) // 统一请求日志
+	// Recovery 注册在最外层，确保后续任意中间件（含 Logger）内部 panic 也能被兜底捕获。
 	router.Use(gin.Recovery())      // Panic 恢复 (防止服务崩溃)
+	router.Use(middleware.Logger()) // 统一请求日志
 	router.Use(corsMiddleware())    // 跨域处理
 
 	// 2. 健康检查接口 (用于负载均衡或探针检测)
@@ -199,6 +207,10 @@ func corsMiddleware() gin.HandlerFunc {
 				break
 			}
 		}
+
+		// 无论是否命中白名单都声明按 Origin 变化，避免 CDN/缓存把某来源的
+		// Access-Control-Allow-Origin 响应头错误地复用给其他来源。
+		c.Header("Vary", "Origin")
 
 		// 如果在白名单中，则允许访问
 		if allowed {

@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"net/http"
 	"sync"
 	"time"
 
+	"github.com/FruitsAI/Orange/internal/constants"
+	"github.com/FruitsAI/Orange/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 )
 
@@ -44,7 +45,9 @@ func (rl *RateLimiter) Stop() {
 	close(rl.stopChan)
 }
 
-var loginLimiter = NewRateLimiter(10, time.Minute)
+// loginLimiter 全局单例登录限流器，登录与注册共用同一配额。
+// 参数取自 constants，避免魔法数字散落。
+var loginLimiter = NewRateLimiter(constants.LoginRateLimit, time.Duration(constants.LoginRateWindow)*time.Second)
 
 // LoginRateLimiter limits login attempts by client IP.
 func LoginRateLimiter() gin.HandlerFunc {
@@ -52,11 +55,7 @@ func LoginRateLimiter() gin.HandlerFunc {
 		ip := c.ClientIP()
 
 		if !loginLimiter.Allow(ip) {
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"code":    429,
-				"message": "登录尝试过于频繁，请稍后再试",
-			})
-			c.Abort()
+			response.TooManyRequests(c, "登录尝试过于频繁，请稍后再试")
 			return
 		}
 
@@ -99,8 +98,8 @@ func (rl *RateLimiter) Allow(ip string) bool {
 
 	// 检查是否超过限制
 	if visitor.count > rl.limit {
-		// 封禁 5 分钟
-		visitor.blockedUntil = now.Add(5 * time.Minute)
+		// 触发封禁，时长取自 constants
+		visitor.blockedUntil = now.Add(time.Duration(constants.LoginBlockDuration) * time.Second)
 		return false
 	}
 

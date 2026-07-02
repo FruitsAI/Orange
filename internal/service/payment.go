@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
 	pkgerrors "github.com/FruitsAI/Orange/internal/pkg/errors"
+	"github.com/FruitsAI/Orange/internal/pkg/cache"
 	"github.com/FruitsAI/Orange/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -105,7 +107,8 @@ func (s *PaymentService) Create(input dto.PaymentRequest) (*models.Payment, erro
 		return nil, pkgerrors.Wrap(err, "查询项目失败")
 	}
 
-	planDate, err := time.Parse("2006-01-02", input.PlanDate)
+	loc := time.Local
+	planDate, err := time.ParseInLocation("2006-01-02", input.PlanDate, loc)
 	if err != nil {
 		return nil, pkgerrors.WrapWithCode(err, 400, "计划日期格式错误")
 	}
@@ -183,7 +186,8 @@ func (s *PaymentService) applyUpdate(payment *models.Payment, input dto.PaymentR
 	if input.ProjectID != 0 && input.ProjectID != payment.ProjectID {
 		return nil, pkgerrors.WrapWithCode(errors.New("不允许修改款项所属项目"), 400, "不允许修改款项所属项目")
 	}
-	planDate, err := time.Parse("2006-01-02", input.PlanDate)
+	loc := time.Local
+	planDate, err := time.ParseInLocation("2006-01-02", input.PlanDate, loc)
 	if err != nil {
 		return nil, pkgerrors.WrapWithCode(err, 400, "计划日期格式错误")
 	}
@@ -257,7 +261,7 @@ func (s *PaymentService) syncProjectReceivedAmountInTx(tx *gorm.DB, projectID in
 	// 聚合计算所有已收款项的总额
 	var totalReceived float64
 	if err := tx.Model(&models.Payment{}).
-		Where("project_id = ? AND status = ?", projectID, "paid").
+		Where("project_id = ? AND status = ?", projectID, constants.PaymentStatusConfirmed).
 		Select("COALESCE(SUM(amount), 0)").
 		Scan(&totalReceived).Error; err != nil {
 		return err
@@ -329,7 +333,8 @@ func (s *PaymentService) DeleteForUser(userID, id int64) error {
 // 返回:
 //   - error: 事务执行失败
 func (s *PaymentService) Confirm(id int64, actualDate, method string) error {
-	actualAt, err := time.Parse("2006-01-02", actualDate)
+	loc := time.Local
+	actualAt, err := time.ParseInLocation("2006-01-02", actualDate, loc)
 	if err != nil {
 		return err
 	}
@@ -387,12 +392,13 @@ func (s *PaymentService) Confirm(id int64, actualDate, method string) error {
 }
 
 func (s *PaymentService) ConfirmForUser(userID, id int64, actualDate, method string) error {
-	actualAt, err := time.Parse("2006-01-02", actualDate)
+	loc := time.Local
+	actualAt, err := time.ParseInLocation("2006-01-02", actualDate, loc)
 	if err != nil {
 		return pkgerrors.WrapWithCode(err, 400, "实际日期格式错误")
 	}
 
-	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+	err = database.GetDB().Transaction(func(tx *gorm.DB) error {
 		var payment models.Payment
 		if err := tx.Where("id = ? AND user_id = ?", id, userID).First(&payment).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
@@ -401,7 +407,7 @@ func (s *PaymentService) ConfirmForUser(userID, id int64, actualDate, method str
 			return pkgerrors.Wrap(err, "查询款项失败")
 		}
 
-		if payment.Status == "paid" {
+		if payment.Status == constants.PaymentStatusConfirmed {
 			return nil
 		}
 
@@ -411,12 +417,12 @@ func (s *PaymentService) ConfirmForUser(userID, id int64, actualDate, method str
 			return pkgerrors.Wrap(err, "锁定款项失败")
 		}
 
-		if payment.Status == "paid" {
+		if payment.Status == constants.PaymentStatusConfirmed {
 			return nil
 		}
 
 		if err := tx.Model(&payment).Updates(map[string]interface{}{
-			"status":      "paid",
+			"status":      constants.PaymentStatusConfirmed,
 			"actual_date": actualAt,
 			"method":      method,
 		}).Error; err != nil {
@@ -425,14 +431,36 @@ func (s *PaymentService) ConfirmForUser(userID, id int64, actualDate, method str
 
 		var totalReceived float64
 		if err := tx.Model(&models.Payment{}).
-			Where("project_id = ? AND user_id = ? AND status = ?", payment.ProjectID, userID, "paid").
+			Where("project_id = ? AND user_id = ? AND status = ?", payment.ProjectID, userID, constants.PaymentStatusConfirmed).
 			Select("COALESCE(SUM(amount), 0)").
 			Scan(&totalReceived).Error; err != nil {
 			return pkgerrors.Wrap(err, "计算已收款总额失败")
 		}
 
-		return tx.Model(&models.Project{}).
+		// 主动清除相关缓存
+		if err := tx.Model(&models.Project{}).
 			Where("id = ? AND user_id = ?", payment.ProjectID, userID).
-			Update("received_amount", totalReceived).Error
+			Update("received_amount", totalReceived).Error; err != nil {
+			return pkgerrors.Wrap(err, "更新项目已收款金额失败")
+		}
+
+		return nil
 	})
+
+	// 事务成功后清除 Dashboard 缓存
+	if err == nil {
+		s.invalidateDashboardCache(userID)
+	}
+
+	return err
+}
+
+// invalidateDashboardCache 清除 Dashboard 缓存（在 Payment/Project 变更后调用）
+func (s *PaymentService) invalidateDashboardCache(userID int64) {
+	// 清除所有周期的 Dashboard 缓存
+	periods := []string{"all", "month", "week", "today"}
+	for _, period := range periods {
+		cacheKey := fmt.Sprintf("dashboard:stats:v1:%d:%s", userID, period)
+		_ = cache.Delete(cacheKey)
+	}
 }

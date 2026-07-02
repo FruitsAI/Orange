@@ -17,8 +17,9 @@ type Cache interface {
 // MemoryCache 内存缓存实现
 // 适用于单机部署，生产环境建议使用Redis
 type MemoryCache struct {
-	data map[string]*cacheItem
-	mu   sync.RWMutex
+	data     map[string]*cacheItem
+	mu       sync.RWMutex
+	stopChan chan struct{} // 用于停止清理 goroutine
 }
 
 type cacheItem struct {
@@ -29,7 +30,8 @@ type cacheItem struct {
 // NewMemoryCache 创建内存缓存实例
 func NewMemoryCache() *MemoryCache {
 	cache := &MemoryCache{
-		data: make(map[string]*cacheItem),
+		data:     make(map[string]*cacheItem),
+		stopChan: make(chan struct{}),
 	}
 
 	// 启动清理过期数据的goroutine
@@ -92,16 +94,26 @@ func (c *MemoryCache) cleanupExpired() {
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		c.mu.Lock()
-		now := time.Now()
-		for key, item := range c.data {
-			if now.After(item.expiration) {
-				delete(c.data, key)
+	for {
+		select {
+		case <-ticker.C:
+			c.mu.Lock()
+			now := time.Now()
+			for key, item := range c.data {
+				if now.After(item.expiration) {
+					delete(c.data, key)
+				}
 			}
+			c.mu.Unlock()
+		case <-c.stopChan:
+			return
 		}
-		c.mu.Unlock()
 	}
+}
+
+// Stop 停止清理 goroutine
+func (c *MemoryCache) Stop() {
+	close(c.stopChan)
 }
 
 // GetJSON 获取并反序列化JSON

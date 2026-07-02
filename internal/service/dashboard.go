@@ -1,9 +1,7 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/FruitsAI/Orange/internal/dto"
@@ -55,13 +53,9 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 	cacheKey := fmt.Sprintf("dashboard:stats:v1:%d:%s", userID, period)
 	var stats dto.Stats
 
-	cached, err := cache.Get(cacheKey)
-	if err == nil {
-		if json.Unmarshal(cached, &stats) == nil {
-			return &stats, nil
-		}
-		// Unmarshal 失败说明缓存数据损坏，主动删除
-		_ = cache.Delete(cacheKey)
+	// 尝试从缓存读取
+	if err := cache.GetJSON(cacheKey, &stats); err == nil {
+		return &stats, nil
 	}
 
 	// 缓存未命中，从数据库查询
@@ -88,14 +82,19 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 		// 而不是无意义的 0% 或 全量 vs 0。
 		// ---------------------------------------------------------------------
 
-		// 1. 定义 "本月" 和 "上月" 的时间范围
+		// 1. 定义 "本月" 和 "上月" 的时间范围（使用自然月）
 		now := time.Now()
-		// 本月范围
-		startDate := now.AddDate(0, 0, -29).Format("2006-01-02")
+
+		// 本月：从月初到现在
+		currentMonthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		startDate := currentMonthStart.Format("2006-01-02")
 		endDate := now.Format("2006-01-02") + " 23:59:59"
-		// 上月范围
-		prevStartDate := now.AddDate(0, 0, -59).Format("2006-01-02")
-		prevEndDate := now.AddDate(0, 0, -30).Format("2006-01-02") + " 23:59:59"
+
+		// 上月：上个月的第一天到最后一天
+		prevMonthStart := currentMonthStart.AddDate(0, -1, 0)
+		prevMonthEnd := currentMonthStart.Add(-time.Second)
+		prevStartDate := prevMonthStart.Format("2006-01-02")
+		prevEndDate := prevMonthEnd.Format("2006-01-02") + " 23:59:59"
 
 		// 2. 获取本月统计作为 "当前周期值" (只用于计算 Trend)
 		currTotal, currPaid, currPending, currOverdue, currAvgDays, err := s.paymentRepo.GetStatsByPeriod(userID, startDate, endDate)
@@ -127,11 +126,8 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 			AvgCollectionDaysTrend: utils.CalcPercentageTrend(currAvgDays, prevAvgDays),
 		}
 
-		if data, err := json.Marshal(result); err == nil {
-			_ = cache.Set(cacheKey, data, 1*time.Minute)
-		} else {
-			log.Printf("Failed to marshal dashboard stats for cache: %v", err)
-		}
+		// 写入缓存
+		_ = cache.SetJSON(cacheKey, result, 1*time.Minute)
 		return result, nil
 	}
 
@@ -165,9 +161,8 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 		AvgCollectionDaysTrend: utils.CalcPercentageTrend(currAvgDays, prevAvgDays),
 	}
 
-	if data, err := json.Marshal(result); err == nil {
-		_ = cache.Set(cacheKey, data, 1*time.Minute)
-	}
+	// 写入缓存
+	_ = cache.SetJSON(cacheKey, result, 1*time.Minute)
 	return result, nil
 }
 

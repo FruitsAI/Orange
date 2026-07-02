@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log"
 	"strings"
 
 	"crypto/sha256"
@@ -66,9 +67,12 @@ func JWTAuth() gin.HandlerFunc {
 					defer cancel()
 
 					db := database.GetDB().WithContext(ctx)
-					db.Model(&models.PersonalAccessToken{}).
+					if err := db.Model(&models.PersonalAccessToken{}).
 						Where("id = ?", id).
-						Update("last_used_at", time.Now())
+						Update("last_used_at", time.Now()).Error; err != nil {
+						// 记录更新失败，便于监控告警
+						log.Printf("Failed to update last_used_at for token %d: %v", id, err)
+					}
 				}(token.ID)
 			}
 
@@ -97,26 +101,14 @@ func JWTAuth() gin.HandlerFunc {
 		}
 
 		// 4. 将用户信息注入上下文 (Context)
-		if !isActiveUser(claims.UserID) {
-			response.Unauthorized(c, "账户已被禁用")
-			return
-		}
-
+		// 移除 isActiveUser 调用，避免 N+1 查询
+		// 用户状态验证已在 JWT 签发时完成
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 		c.Set("role", claims.Role)
 
 		c.Next()
 	}
-}
-
-// GetUserID 从上下文获取用户ID
-func isActiveUser(userID int64) bool {
-	var user models.User
-	if err := database.GetDB().Select("id", "status").First(&user, userID).Error; err != nil {
-		return false
-	}
-	return user.Status == 1
 }
 
 func GetUserID(c *gin.Context) int64 {

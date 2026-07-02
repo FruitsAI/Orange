@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -218,7 +219,10 @@ func (s *SyncService) SyncTables(cfg SyncConfig, tables []string) ([]SyncResult,
 	committed := false
 	defer func() {
 		if !committed {
-			_ = tx.Rollback()
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				// 记录回滚失败，但不影响主错误返回
+				log.Printf("事务回滚失败: %v", rollbackErr)
+			}
 		}
 	}()
 

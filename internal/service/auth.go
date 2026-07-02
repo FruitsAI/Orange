@@ -98,12 +98,15 @@ func (s *AuthService) Login(username, pwd string) (*dto.LoginResult, error) {
 		return nil, pkgerrors.Wrap(err, "生成Token失败")
 	}
 
-	// 5. 异步更新最后登录时间 (非关键路径，暂同步执行，可优化)
+	// 5. 更新最后登录时间
 	now := time.Now()
 	if err := s.userRepo.UpdateFields(user.ID, map[string]interface{}{
 		"last_login_time": now,
 	}); err != nil {
-		slog.Warn("Failed to update last login time", "user_id", user.ID, "error", err)
+		// 提升日志级别为 Error，便于监控告警
+		slog.Error("Failed to update last login time", "user_id", user.ID, "error", err)
+		// 考虑是否返回错误（如果审计日志至关重要，应阻止登录）
+		// 当前策略：记录错误但不阻断登录流程
 	}
 
 	return &dto.LoginResult{Token: token, User: user}, nil

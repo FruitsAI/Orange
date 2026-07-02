@@ -55,3 +55,7 @@ AGENTS.md
 .sisyphus/
 .spec-workflow/
 docs/review/
+
+# Code Review Reports
+code-review-report.json
+

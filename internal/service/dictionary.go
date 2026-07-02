@@ -1,11 +1,11 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/FruitsAI/Orange/internal/database"
 	"github.com/FruitsAI/Orange/internal/models"
 	"github.com/FruitsAI/Orange/internal/pkg/cache"
 	"github.com/FruitsAI/Orange/internal/repository"
@@ -29,23 +29,20 @@ func NewDictionaryService() *DictionaryService {
 func (s *DictionaryService) List() ([]models.Dictionary, error) {
 	cacheKey := "dict:list:v1"
 	var result []models.Dictionary
-	if cached, err := cache.Get(cacheKey); err == nil {
-		if json.Unmarshal(cached, &result) == nil {
-			return result, nil
-		}
-		// Unmarshal 失败说明缓存数据损坏，主动删除
-		_ = cache.Delete(cacheKey)
+
+	// 尝试从缓存读取
+	if err := cache.GetJSON(cacheKey, &result); err == nil {
+		return result, nil
 	}
 
+	// 缓存未命中，从数据库查询
 	result, err := s.dictRepo.List()
 	if err != nil {
 		return nil, err
 	}
-	if data, err := json.Marshal(result); err == nil {
-		_ = cache.Set(cacheKey, data, 5*time.Minute)
-	} else {
-		log.Printf("Failed to marshal dictionary list for cache: %v", err)
-	}
+
+	// 写入缓存
+	_ = cache.SetJSON(cacheKey, result, 5*time.Minute)
 	return result, nil
 }
 
@@ -60,23 +57,20 @@ func (s *DictionaryService) List() ([]models.Dictionary, error) {
 func (s *DictionaryService) GetItems(code string) ([]models.DictionaryItem, error) {
 	cacheKey := fmt.Sprintf("dict:items:v1:%s", code)
 	var result []models.DictionaryItem
-	if cached, err := cache.Get(cacheKey); err == nil {
-		if json.Unmarshal(cached, &result) == nil {
-			return result, nil
-		}
-		// Unmarshal 失败说明缓存数据损坏，主动删除
-		_ = cache.Delete(cacheKey)
+
+	// 尝试从缓存读取
+	if err := cache.GetJSON(cacheKey, &result); err == nil {
+		return result, nil
 	}
 
+	// 缓存未命中，从数据库查询
 	result, err := s.dictRepo.GetItemsByCode(code)
 	if err != nil {
 		return nil, err
 	}
-	if data, err := json.Marshal(result); err == nil {
-		_ = cache.Set(cacheKey, data, 5*time.Minute)
-	} else {
-		log.Printf("Failed to marshal dictionary items for cache: %v", err)
-	}
+
+	// 写入缓存
+	_ = cache.SetJSON(cacheKey, result, 5*time.Minute)
 	return result, nil
 }
 
@@ -172,6 +166,15 @@ func (s *DictionaryService) invalidateItemCache(dictID int64) {
 	dict, err := s.dictRepo.FindByID(dictID)
 	if err != nil {
 		log.Printf("Failed to find dictionary for cache invalidation (dictID=%d): %v", dictID, err)
+		// 降级策略：尝试通过字典项反查
+		var item models.DictionaryItem
+		if err := database.GetDB().Select("dictionary_id").First(&item, "dictionary_id = ?", dictID).Error; err == nil {
+			// 找到任一字典项，通过其 dictionary_id 清除缓存
+			// 注意：这里无法获取 dict.Code，只能清除通用缓存
+			if err := cache.Delete("dict:list:v1"); err != nil {
+				log.Printf("Failed to invalidate dict:list cache (fallback): %v", err)
+			}
+		}
 		return
 	}
 

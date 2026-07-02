@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/FruitsAI/Orange/internal/database"
@@ -120,11 +121,13 @@ func (s *ProjectService) Create(input dto.CreateProjectRequest) (*models.Project
 	}
 
 	// 2. 日期字段解析 (字符串 "YYYY-MM-DD" -> time.Time)
-	startDate, err := time.Parse("2006-01-02", input.StartDate)
+	// 使用 ParseInLocation 确保时区一致性
+	loc := time.Local // 或使用 time.LoadLocation("Asia/Shanghai")
+	startDate, err := time.ParseInLocation("2006-01-02", input.StartDate, loc)
 	if err != nil {
 		return nil, pkgerrors.WrapWithCode(err, 400, "开始日期格式错误")
 	}
-	endDate, err := time.Parse("2006-01-02", input.EndDate)
+	endDate, err := time.ParseInLocation("2006-01-02", input.EndDate, loc)
 	if err != nil {
 		return nil, pkgerrors.WrapWithCode(err, 400, "结束日期格式错误")
 	}
@@ -132,7 +135,7 @@ func (s *ProjectService) Create(input dto.CreateProjectRequest) (*models.Project
 	// 合同日期为选填项，需处理空值情况
 	var contractDate *time.Time
 	if input.ContractDate != "" {
-		t, err := time.Parse("2006-01-02", input.ContractDate)
+		t, err := time.ParseInLocation("2006-01-02", input.ContractDate, loc)
 		if err != nil {
 			return nil, pkgerrors.WrapWithCode(err, 400, "合同日期格式错误")
 		}
@@ -186,17 +189,18 @@ func (s *ProjectService) Update(id int64, input dto.CreateProjectRequest) (*mode
 	}
 
 	// 2. 解析日期字段
-	startDate, err := time.Parse("2006-01-02", input.StartDate)
+	loc := time.Local
+	startDate, err := time.ParseInLocation("2006-01-02", input.StartDate, loc)
 	if err != nil {
 		return nil, err
 	}
-	endDate, err := time.Parse("2006-01-02", input.EndDate)
+	endDate, err := time.ParseInLocation("2006-01-02", input.EndDate, loc)
 	if err != nil {
 		return nil, err
 	}
 	var contractDate *time.Time
 	if input.ContractDate != "" {
-		t, err := time.Parse("2006-01-02", input.ContractDate)
+		t, err := time.ParseInLocation("2006-01-02", input.ContractDate, loc)
 		if err != nil {
 			return nil, err
 		}
@@ -252,17 +256,18 @@ func (s *ProjectService) UpdateForUser(userID, id int64, input dto.CreateProject
 		}
 	}
 
-	startDate, err := time.Parse("2006-01-02", input.StartDate)
+	loc := time.Local
+	startDate, err := time.ParseInLocation("2006-01-02", input.StartDate, loc)
 	if err != nil {
 		return nil, pkgerrors.WrapWithCode(err, 400, "开始日期格式错误")
 	}
-	endDate, err := time.Parse("2006-01-02", input.EndDate)
+	endDate, err := time.ParseInLocation("2006-01-02", input.EndDate, loc)
 	if err != nil {
 		return nil, pkgerrors.WrapWithCode(err, 400, "结束日期格式错误")
 	}
 	var contractDate *time.Time
 	if input.ContractDate != "" {
-		t, err := time.Parse("2006-01-02", input.ContractDate)
+		t, err := time.ParseInLocation("2006-01-02", input.ContractDate, loc)
 		if err != nil {
 			return nil, pkgerrors.WrapWithCode(err, 400, "合同日期格式错误")
 		}
@@ -361,7 +366,8 @@ func (s *ProjectService) CheckContractNumberExists(userID int64, contractNumber 
 //   - string: 生成的合同编号
 func (s *ProjectService) GenerateNextContractNumber(userID int64, date string) (string, error) {
 	// 解析日期
-	t, err := time.Parse("2006-01-02", date)
+	loc := time.Local
+	t, err := time.ParseInLocation("2006-01-02", date, loc)
 	if err != nil {
 		return "", err
 	}
@@ -372,34 +378,48 @@ func (s *ProjectService) GenerateNextContractNumber(userID int64, date string) (
 	var result string
 
 	// 使用事务缩小读写窗口；SQLite 不支持 FOR UPDATE，其他数据库使用行锁降低并发竞态。
-	err = database.GetDB().Transaction(func(tx *gorm.DB) error {
-		var maxNumber string
-		query := tx.Model(&models.Project{}).
-			Where("user_id = ? AND contract_number LIKE ?", userID, prefix+"%").
-			Order("contract_number DESC").
-			Limit(1)
-		if database.GetDBType() != "sqlite" {
-			query = query.Clauses(clause.Locking{Strength: "UPDATE"})
-		}
-		if err := query.Pluck("contract_number", &maxNumber).Error; err != nil {
-			return err
-		}
-
-		// 计算下一个序号
-		nextSeq := 1
-		if maxNumber != "" && len(maxNumber) >= len(prefix)+4 {
-			// 提取现有最大编号的末尾4位作为序号
-			seqStr := maxNumber[len(prefix):]
-			var seq int
-			if _, err := fmt.Sscanf(seqStr, "%d", &seq); err == nil {
-				nextSeq = seq + 1
+	// SQLite 使用乐观锁重试机制
+	maxRetries := 3
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		err = database.GetDB().Transaction(func(tx *gorm.DB) error {
+			var maxNumber string
+			query := tx.Model(&models.Project{}).
+				Where("user_id = ? AND contract_number LIKE ?", userID, prefix+"%").
+				Order("contract_number DESC").
+				Limit(1)
+			if database.GetDBType() != "sqlite" {
+				query = query.Clauses(clause.Locking{Strength: "UPDATE"})
 			}
+			if err := query.Pluck("contract_number", &maxNumber).Error; err != nil {
+				return err
+			}
+
+			// 计算下一个序号
+			nextSeq := 1
+			if maxNumber != "" && len(maxNumber) >= len(prefix)+4 {
+				// 提取现有最大编号的末尾4位作为序号
+				seqStr := maxNumber[len(prefix):]
+				var seq int
+				if _, err := fmt.Sscanf(seqStr, "%d", &seq); err == nil {
+					nextSeq = seq + 1
+				}
+			}
+
+			// 格式化输出: 前缀 + 4位序号(补零)
+			result = fmt.Sprintf("%s%04d", prefix, nextSeq)
+			return nil
+		})
+
+		// 如果成功或非唯一约束错误，直接返回
+		if err == nil || !strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			break
 		}
 
-		// 格式化输出: 前缀 + 4位序号(补零)
-		result = fmt.Sprintf("%s%04d", prefix, nextSeq)
-		return nil
-	})
+		// SQLite 唯一约束冲突，重试
+		if attempt < maxRetries-1 {
+			time.Sleep(time.Millisecond * time.Duration(10*(attempt+1)))
+		}
+	}
 
 	return result, err
 }

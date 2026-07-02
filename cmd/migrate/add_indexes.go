@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"time"
@@ -9,16 +8,11 @@ import (
 	"github.com/FruitsAI/Orange/internal/config"
 	"github.com/FruitsAI/Orange/internal/database"
 	"github.com/FruitsAI/Orange/internal/models"
+	"gorm.io/gorm"
 )
 
 func main() {
-	configPath := flag.String("config", "config.yml", "配置文件路径")
-	flag.Parse()
-
-	// 加载配置
-	if err := config.LoadConfig(*configPath); err != nil {
-		log.Fatalf("加载配置失败: %v", err)
-	}
+	config.Load()
 
 	db := database.GetDB()
 

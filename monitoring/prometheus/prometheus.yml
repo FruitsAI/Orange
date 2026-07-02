@@ -1,0 +1,43 @@
+# Prometheus 配置文件
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'orange-api'
+    environment: 'production'
+
+# 告警规则文件
+rule_files:
+  - '/etc/prometheus/alerts.yml'
+
+# AlertManager配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# 抓取配置
+scrape_configs:
+  # Orange API 应用监控
+  - job_name: 'orange-api'
+    static_configs:
+      - targets: ['host.docker.internal:8080']  # Windows Docker使用host.docker.internal
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Prometheus 自监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Redis 监控
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+
+  # 节点监控（可选）
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']

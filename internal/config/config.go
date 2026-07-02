@@ -41,6 +41,10 @@ type Config struct {
 	LogMaxBackups  int      // 保留旧日志文件的最大个数
 	LogMaxAge      int      // 保留旧日志文件的最大天数
 	LogCompress    bool     // 是否压缩旧日志文件
+
+	// Prometheus 监控配置
+	PrometheusUser     string // Prometheus /metrics 端点的用户名 (可选)
+	PrometheusPassword string // Prometheus /metrics 端点的密码 (可选)
 }
 
 // AppConfig 全局配置实例
@@ -127,6 +131,9 @@ func Load() {
 		LogMaxBackups:  int(getEnvInt("LOG_MAX_BACKUPS", 5)), // 5 files
 		LogMaxAge:      int(getEnvInt("LOG_MAX_AGE", 30)),    // 30 days
 		LogCompress:    getEnvBool("LOG_COMPRESS", true),     // Compress by default
+
+		PrometheusUser:     getEnv("PROMETHEUS_USER", ""),
+		PrometheusPassword: getEnv("PROMETHEUS_PASSWORD", ""),
 	}
 
 	// 安全检查：拒绝使用已知的弱/默认 JWT 密钥（不依赖 ENV 变量，避免误配置绕过）

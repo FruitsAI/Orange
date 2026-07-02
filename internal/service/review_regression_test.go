@@ -199,7 +199,7 @@ func TestCreateUserDuplicateEmailUsesExistingMessage(t *testing.T) {
 		Role:     "user",
 	})
 
-	require.EqualError(t, err, "邮箱已存在")
+	require.EqualError(t, err, "邮箱已被注册")
 }
 func TestUpdateUserRejectsInvalidRole(t *testing.T) {
 	setupServiceTestDB(t)
@@ -252,7 +252,7 @@ func TestUpdateUserRejectsDuplicateEmail(t *testing.T) {
 	service := NewUserService()
 	err = service.UpdateUser(second.ID, dto.UpdateUserRequest{Email: first.Email})
 
-	require.EqualError(t, err, "邮箱已存在")
+	require.EqualError(t, err, "邮箱已被注册")
 }
 
 func TestConfirmForUserRejectsInvalidActualDate(t *testing.T) {

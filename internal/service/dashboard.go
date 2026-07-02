@@ -1,11 +1,14 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
+	"github.com/FruitsAI/Orange/internal/pkg/cache"
 	"github.com/FruitsAI/Orange/internal/pkg/utils"
 	"github.com/FruitsAI/Orange/internal/repository"
 )
@@ -48,6 +51,20 @@ func NewDashboardService() *DashboardService {
 //   - 当 period 为 "all" 或空字符串时，返回全局统计数据（基于项目合同总额），此时不计算趋势（趋势值为0）。
 //   - 其他周期模式下，统计数据基于实际产生的款项（Payment）计算，并会计算与上一周期的环比趋势。
 func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, error) {
+	// 尝试从缓存获取 (v1 表示缓存数据结构版本)
+	cacheKey := fmt.Sprintf("dashboard:stats:v1:%d:%s", userID, period)
+	var stats dto.Stats
+
+	cached, err := cache.Get(cacheKey)
+	if err == nil {
+		if json.Unmarshal(cached, &stats) == nil {
+			return &stats, nil
+		}
+		// Unmarshal 失败说明缓存数据损坏，主动删除
+		_ = cache.Delete(cacheKey)
+	}
+
+	// 缓存未命中，从数据库查询
 	// 模式 1: 全局统计模式（通常用于工作台概览）
 	// 当未指定周期或周期为 "all" 时触发
 	if period == "all" || period == "" {
@@ -97,7 +114,7 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 
 		// 5. 组装返回结构
 		// 注意: Amount 字段使用全量数据 (ProjectRepo), Trend 字段使用月度环比
-		return &dto.Stats{
+		result := &dto.Stats{
 			TotalAmount:            totalAmount,   // 全量
 			PaidAmount:             paidAmount,    // 全量
 			PendingAmount:          pendingAmount, // 全量
@@ -108,7 +125,14 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 			PendingTrend:           utils.CalcPercentageTrend(currPending, prevPending),
 			OverdueTrend:           utils.CalcPercentageTrend(currOverdue, prevOverdue),
 			AvgCollectionDaysTrend: utils.CalcPercentageTrend(currAvgDays, prevAvgDays),
-		}, nil
+		}
+
+		if data, err := json.Marshal(result); err == nil {
+			_ = cache.Set(cacheKey, data, 1*time.Minute)
+		} else {
+			log.Printf("Failed to marshal dashboard stats for cache: %v", err)
+		}
+		return result, nil
 	}
 
 	// 模式 2: 按周期统计模式（通常用于数据分析页面）
@@ -128,7 +152,7 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 	}
 
 	// 步骤 3: 组装返回结构
-	return &dto.Stats{
+	result := &dto.Stats{
 		TotalAmount:            currTotal,
 		PaidAmount:             currPaid,
 		PendingAmount:          currPending,
@@ -139,7 +163,12 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 		PendingTrend:           utils.CalcPercentageTrend(currPending, prevPending),
 		OverdueTrend:           utils.CalcPercentageTrend(currOverdue, prevOverdue),
 		AvgCollectionDaysTrend: utils.CalcPercentageTrend(currAvgDays, prevAvgDays),
-	}, nil
+	}
+
+	if data, err := json.Marshal(result); err == nil {
+		_ = cache.Set(cacheKey, data, 1*time.Minute)
+	}
+	return result, nil
 }
 
 // GetIncomeTrend 获取收入趋势图表数据

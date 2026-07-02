@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -231,7 +232,7 @@ func main() {
 	flag.Parse()
 
 	fmt.Println("运行性能基准测试...")
-	fmt.Println("=" * 60)
+	fmt.Println(strings.Repeat("=", 60))
 
 	// 运行项目创建测试
 	fmt.Println("\n1. 项目创建性能:")
@@ -268,6 +269,6 @@ func main() {
 	fmt.Printf("   每次操作: %v\n", result.NsPerOp())
 	fmt.Printf("   吞吐量: %.0f ops/s\n", float64(result.N)/result.T.Seconds())
 
-	fmt.Println("\n" + "="*60)
+	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("性能测试完成")
 }

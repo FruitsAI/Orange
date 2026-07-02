@@ -9,6 +9,7 @@ import (
 	"github.com/FruitsAI/Orange/internal/handler"
 	"github.com/FruitsAI/Orange/internal/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -29,12 +30,16 @@ func NewRouter() *gin.Engine {
 
 	// 1. 注册全局中间件
 	// Recovery 注册在最外层，确保后续任意中间件（含 Logger）内部 panic 也能被兜底捕获。
-	router.Use(gin.Recovery())      // Panic 恢复 (防止服务崩溃)
-	router.Use(middleware.Logger()) // 统一请求日志
-	router.Use(corsMiddleware())    // 跨域处理
+	router.Use(gin.Recovery())         // Panic 恢复 (防止服务崩溃)
+	router.Use(middleware.Logger())    // 统一请求日志
+	router.Use(middleware.Metrics())   // Prometheus 指标采集
+	router.Use(corsMiddleware())       // 跨域处理
 
 	// 2. 健康检查接口 (用于负载均衡或探针检测)
 	router.GET("/api/health", healthCheck)
+
+	// 2.1 Prometheus 指标端点 (建议生产环境限制访问)
+	router.GET("/metrics", metricsAuth(), gin.WrapH(promhttp.Handler()))
 
 	// 2.1 Swagger API 文档路由（仅开发环境启用）
 	if gin.Mode() == gin.DebugMode {
@@ -238,6 +243,34 @@ func corsMiddleware() gin.HandlerFunc {
 		// 此处直接返回 204 No Content 即可
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// metricsAuth 为 /metrics 端点提供基本认证保护
+// 生产环境应启用此中间件或使用防火墙/反向代理限制访问
+func metricsAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// 检查是否配置了 Prometheus 认证
+		// 未配置则允许访问（开发环境），生产环境建议配置 PROMETHEUS_USER 和 PROMETHEUS_PASSWORD
+		user := config.AppConfig.PrometheusUser
+		password := config.AppConfig.PrometheusPassword
+
+		if user == "" || password == "" {
+			// 未配置认证，允许访问（记录警告日志）
+			slog.Warn("Prometheus /metrics endpoint is unprotected. Set PROMETHEUS_USER and PROMETHEUS_PASSWORD for production.")
+			c.Next()
+			return
+		}
+
+		// 验证 Basic Auth
+		authUser, authPassword, hasAuth := c.Request.BasicAuth()
+		if !hasAuth || authUser != user || authPassword != password {
+			c.Header("WWW-Authenticate", "Basic realm=\"Prometheus Metrics\"")
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 

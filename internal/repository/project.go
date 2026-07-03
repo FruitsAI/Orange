@@ -33,17 +33,7 @@ func (r *ProjectRepository) FindByIDForUser(id, userID int64) (*models.Project, 
 	return &project, nil
 }
 
-// FindByIDWithPayments 根据ID查找项目（包含收款列表）
-func (r *ProjectRepository) FindByIDWithPayments(id int64) (*models.Project, error) {
-	var project models.Project
-	if err := r.db.Preload("Payments", func(db *gorm.DB) *gorm.DB {
-		return db.Order("plan_date DESC")
-	}).First(&project, id).Error; err != nil {
-		return nil, err
-	}
-	return &project, nil
-}
-
+// FindByIDWithPaymentsForUser 根据ID查找项目（校验归属，包含按计划日期倒序的收款列表）
 func (r *ProjectRepository) FindByIDWithPaymentsForUser(id, userID int64) (*models.Project, error) {
 	var project models.Project
 	if err := r.db.Preload("Payments", func(db *gorm.DB) *gorm.DB {
@@ -108,20 +98,7 @@ func (r *ProjectRepository) Update(project *models.Project) error {
 	return r.db.Save(project).Error
 }
 
-// Delete 删除项目
-func (r *ProjectRepository) Delete(id int64) error {
-	return r.db.Delete(&models.Project{}, id).Error
-}
-
-func (r *ProjectRepository) DeleteForUser(id, userID int64) error {
-	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Project{}).Error
-}
-
-// UpdateStatus 更新项目状态
-func (r *ProjectRepository) UpdateStatus(id int64, status string) error {
-	return r.db.Model(&models.Project{}).Where("id = ?", id).Update("status", status).Error
-}
-
+// UpdateStatusForUser 更新项目状态（校验归属）
 func (r *ProjectRepository) UpdateStatusForUser(id, userID int64, status string) error {
 	return r.db.Model(&models.Project{}).Where("id = ? AND user_id = ?", id, userID).Update("status", status).Error
 }
@@ -163,22 +140,4 @@ func (r *ProjectRepository) ExistsByContractNumber(userID int64, contractNumber 
 		return false, err
 	}
 	return count > 0, nil
-}
-
-// GetMaxContractNumberByPrefix 获取指定日期的最大合同编号
-// 用于生成新的合同编号。例如查询 "HT20231001" 前缀的最新编号。
-// 返回:
-//   - maxContractNumber: 存在的最大编号 (如 "HT202310010005")，如果没有则返回空字符串。
-func (r *ProjectRepository) GetMaxContractNumberByPrefix(userID int64, prefix string) (string, error) {
-	var contractNumber string
-	err := r.db.Model(&models.Project{}).
-		Scopes(UserScope(userID)).
-		Where("contract_number LIKE ?", prefix+"%").
-		Order("contract_number DESC").
-		Limit(1).
-		Pluck("contract_number", &contractNumber).Error
-	if err != nil {
-		return "", err
-	}
-	return contractNumber, nil
 }

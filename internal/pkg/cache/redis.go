@@ -2,7 +2,6 @@ package cache
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -53,24 +52,6 @@ func (c *RedisCache) Delete(key string) error {
 // Clear 清空所有缓存（谨慎使用）
 func (c *RedisCache) Clear() error {
 	return c.client.FlushDB(c.ctx).Err()
-}
-
-// GetJSON 获取并反序列化JSON
-func (c *RedisCache) GetJSON(key string, v interface{}) error {
-	data, err := c.Get(key)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(data, v)
-}
-
-// SetJSON 序列化并设置JSON
-func (c *RedisCache) SetJSON(key string, v interface{}, ttl time.Duration) error {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	return c.Set(key, data, ttl)
 }
 
 // Ping 检查Redis连接

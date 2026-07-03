@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/FruitsAI/Orange/internal/database"
 	"github.com/FruitsAI/Orange/internal/models"
 	"github.com/FruitsAI/Orange/internal/pkg/cache"
 	"github.com/FruitsAI/Orange/internal/repository"
@@ -105,13 +104,7 @@ func (s *DictionaryService) CreateItem(code, label, value string, sort int) (*mo
 		return nil, err
 	}
 
-	// 缓存失效 - 记录失败但不阻止主流程
-	if err := cache.Delete(fmt.Sprintf("dict:items:v1:%s", code)); err != nil {
-		log.Printf("Failed to invalidate dict:items cache: %v", err)
-	}
-	if err := cache.Delete("dict:list:v1"); err != nil {
-		log.Printf("Failed to invalidate dict:list cache: %v", err)
-	}
+	invalidateDictCache(code)
 
 	return item, nil
 }
@@ -161,24 +154,25 @@ func (s *DictionaryService) DeleteItem(id int64) error {
 	return nil
 }
 
+// invalidateItemCache 依据字典ID清除相关缓存
+// 先查出字典编码以精确清除选项缓存；查询失败时至少清除列表缓存兜底。
 func (s *DictionaryService) invalidateItemCache(dictID int64) {
-	// 使用 FindByID 直接查询，避免全表扫描
 	dict, err := s.dictRepo.FindByID(dictID)
 	if err != nil {
 		log.Printf("Failed to find dictionary for cache invalidation (dictID=%d): %v", dictID, err)
-		// 降级策略：尝试通过字典项反查
-		var item models.DictionaryItem
-		if err := database.GetDB().Select("dictionary_id").First(&item, "dictionary_id = ?", dictID).Error; err == nil {
-			// 找到任一字典项，通过其 dictionary_id 清除缓存
-			// 注意：这里无法获取 dict.Code，只能清除通用缓存
-			if err := cache.Delete("dict:list:v1"); err != nil {
-				log.Printf("Failed to invalidate dict:list cache (fallback): %v", err)
-			}
+		if err := cache.Delete("dict:list:v1"); err != nil {
+			log.Printf("Failed to invalidate dict:list cache (fallback): %v", err)
 		}
 		return
 	}
 
-	if err := cache.Delete(fmt.Sprintf("dict:items:v1:%s", dict.Code)); err != nil {
+	invalidateDictCache(dict.Code)
+}
+
+// invalidateDictCache 清除指定编码字典的选项缓存与字典列表缓存
+// 失效失败仅记录日志，不阻断主流程（缓存有 TTL 兜底）。
+func invalidateDictCache(code string) {
+	if err := cache.Delete(fmt.Sprintf("dict:items:v1:%s", code)); err != nil {
 		log.Printf("Failed to invalidate dict:items cache: %v", err)
 	}
 	if err := cache.Delete("dict:list:v1"); err != nil {

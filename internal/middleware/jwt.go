@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"log"
 	"strings"
 
@@ -11,10 +12,12 @@ import (
 
 	"github.com/FruitsAI/Orange/internal/database"
 	"github.com/FruitsAI/Orange/internal/models"
+	"github.com/FruitsAI/Orange/internal/pkg/cache"
 	"github.com/FruitsAI/Orange/internal/pkg/jwt"
 	"github.com/FruitsAI/Orange/internal/pkg/response"
 	"github.com/FruitsAI/Orange/internal/repository"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // JWTAuth JWT 鉴权中间件
@@ -100,15 +103,70 @@ func JWTAuth() gin.HandlerFunc {
 			return
 		}
 
+		// 校验用户当前状态与角色（带短期缓存）：JWT 本身无法撤销，
+		// 此检查保证被禁用/删除的账号、被降级的管理员，
+		// 最迟在缓存 TTL 内失去对应访问权限（不必等 Token 过期）
+		active, role := currentUserAuthState(claims.UserID)
+		if !active {
+			response.Unauthorized(c, "账号已被禁用")
+			return
+		}
+		if role == "" {
+			// 数据库瞬时故障（fail-open）时回退使用 Token 中的角色
+			role = claims.Role
+		}
+
 		// 4. 将用户信息注入上下文 (Context)
-		// 移除 isActiveUser 调用，避免 N+1 查询
-		// 用户状态验证已在 JWT 签发时完成
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
-		c.Set("role", claims.Role)
+		c.Set("role", role)
 
 		c.Next()
 	}
+}
+
+// userAuthCacheTTL 用户鉴权状态（启用+角色）的缓存时长，
+// 同时是禁用账号/角色变更后存量 JWT 生效的最大延迟
+const userAuthCacheTTL = time.Minute
+
+// currentUserAuthState 查询用户当前是否启用及其角色（结果缓存 userAuthCacheTTL）
+// 缓存值格式: "0" 表示禁用或已删除；"1:<role>" 表示启用及当前角色。
+// 数据库查询失败时放行且返回空角色（fail-open，调用方回退 Token 角色），不写缓存，
+// 避免瞬时故障导致全站 401。
+func currentUserAuthState(userID int64) (active bool, role string) {
+	key := cache.UserActiveKey(userID)
+	if v, err := cache.Get(key); err == nil {
+		s := string(v)
+		if strings.HasPrefix(s, "1:") {
+			return true, s[2:]
+		}
+		return false, ""
+	}
+
+	var user struct {
+		Status int
+		Role   string
+	}
+	err := database.GetDB().Model(&models.User{}).
+		Select("status", "role").
+		Where("id = ?", userID).
+		Take(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 用户已被删除：拒绝并缓存结果
+			_ = cache.Set(key, []byte("0"), userAuthCacheTTL)
+			return false, ""
+		}
+		log.Printf("Failed to query user auth state for %d: %v", userID, err)
+		return true, ""
+	}
+
+	if user.Status != 1 {
+		_ = cache.Set(key, []byte("0"), userAuthCacheTTL)
+		return false, ""
+	}
+	_ = cache.Set(key, []byte("1:"+user.Role), userAuthCacheTTL)
+	return true, user.Role
 }
 
 func GetUserID(c *gin.Context) int64 {

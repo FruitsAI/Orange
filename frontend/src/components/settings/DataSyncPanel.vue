@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { syncApi, type SyncConfig, type TableCompareResult, type SyncResult } from '@/api/sync'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -25,6 +25,12 @@ const syncLoading = ref(false)
 const compareResults = ref<TableCompareResult[]>([])
 const syncResults = ref<SyncResult[]>([])
 const step = ref<'config' | 'compare' | 'sync'>('config') // 当前步骤
+
+// 同步成功后延迟刷新对比数据的定时器
+let refreshTimer: ReturnType<typeof setTimeout> | null = null
+onUnmounted(() => {
+  if (refreshTimer) clearTimeout(refreshTimer)
+})
 
 // 数据库类型选项
 const dbTypeOptions = [
@@ -112,7 +118,8 @@ const startSync = async () => {
         toast.warning(`同步完成，但有 ${failed.length} 个表同步失败`)
       } else {
         toast.success('所有数据同步成功！')
-        setTimeout(compareData, 1000)
+        // 记录定时器并在组件卸载时清除，避免卸载后仍发起对比请求
+        refreshTimer = setTimeout(compareData, 1000)
       }
     } else {
       toast.error(`同步请求失败: ${res.data.message}`)

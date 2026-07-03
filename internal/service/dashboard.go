@@ -34,6 +34,28 @@ func NewDashboardService() *DashboardService {
 	}
 }
 
+// dashboardPeriods GetStats 支持的统计周期，同时是缓存键与缓存失效的唯一依据
+var dashboardPeriods = []string{"all", "week", "month", "quarter", "year"}
+
+// normalizeDashboardPeriod 归一化客户端传入的统计周期
+// 空值与未知值一律归为 "all"，保证缓存键有界且失效列表完全覆盖
+func normalizeDashboardPeriod(period string) string {
+	for _, p := range dashboardPeriods {
+		if period == p {
+			return period
+		}
+	}
+	return "all"
+}
+
+// invalidateDashboardCache 清除指定用户所有周期的 Dashboard 统计缓存
+// 供 Payment/Project 服务在数据变更后调用。
+func invalidateDashboardCache(userID int64) {
+	for _, period := range dashboardPeriods {
+		_ = cache.Delete(fmt.Sprintf("dashboard:stats:v1:%d:%s", userID, period))
+	}
+}
+
 // GetStats 获取仪表盘核心统计数据
 // 根据指定的用户ID和时间周期，计算总金额、已收款、待收款、逾期金额及各项数据的环比趋势。
 //
@@ -49,6 +71,9 @@ func NewDashboardService() *DashboardService {
 //   - 当 period 为 "all" 或空字符串时，返回全局统计数据（基于项目合同总额），此时不计算趋势（趋势值为0）。
 //   - 其他周期模式下，统计数据基于实际产生的款项（Payment）计算，并会计算与上一周期的环比趋势。
 func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, error) {
+	// 归一化周期，未知/空值 → "all"，防止任意字符串撑爆缓存键空间
+	period = normalizeDashboardPeriod(period)
+
 	// 尝试从缓存获取 (v1 表示缓存数据结构版本)
 	cacheKey := fmt.Sprintf("dashboard:stats:v1:%d:%s", userID, period)
 	var stats dto.Stats
@@ -60,8 +85,7 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 
 	// 缓存未命中，从数据库查询
 	// 模式 1: 全局统计模式（通常用于工作台概览）
-	// 当未指定周期或周期为 "all" 时触发
-	if period == "all" || period == "" {
+	if period == "all" {
 		// 核心逻辑: 从 Project 表获取基于合同金额的宏观统计
 		// 也就是所有项目的总合同额、已收和待收
 		totalAmount, paidAmount, pendingAmount, err := s.projectRepo.GetStats(userID)
@@ -112,13 +136,15 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 		}
 
 		// 5. 组装返回结构
-		// 注意: Amount 字段使用全量数据 (ProjectRepo), Trend 字段使用月度环比
+		// 注意: Amount 字段使用全量数据 (ProjectRepo)；
+		// AvgCollectionDays 与所有 Trend 字段一致，采用"本月 vs 上月"口径，
+		// 避免出现数值为 0 而趋势非 0 的矛盾展示
 		result := &dto.Stats{
 			TotalAmount:            totalAmount,   // 全量
 			PaidAmount:             paidAmount,    // 全量
 			PendingAmount:          pendingAmount, // 全量
 			OverdueAmount:          overdueAmount, // 全量
-			AvgCollectionDays:      0,             // 全局模式下暂不计算
+			AvgCollectionDays:      currAvgDays,   // 本月均值
 			TotalTrend:             utils.CalcPercentageTrend(currTotal, prevTotal),
 			PaidTrend:              utils.CalcPercentageTrend(currPaid, prevPaid),
 			PendingTrend:           utils.CalcPercentageTrend(currPending, prevPending),

@@ -6,6 +6,7 @@ import (
 	"github.com/FruitsAI/Orange/internal/constants"
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
+	"github.com/FruitsAI/Orange/internal/pkg/cache"
 	pkgerrors "github.com/FruitsAI/Orange/internal/pkg/errors"
 	"github.com/FruitsAI/Orange/internal/pkg/password"
 	"github.com/FruitsAI/Orange/internal/repository"
@@ -125,14 +126,21 @@ func (s *UserService) UpdateUser(id int64, input dto.UpdateUserRequest) error {
 	if err := s.userRepo.UpdateFields(id, updates); err != nil {
 		return pkgerrors.Wrap(err, "更新用户失败")
 	}
+
+	// 任何用户资料变更后都清除鉴权状态缓存（JWT 中间件缓存了状态+角色），
+	// 使禁用/降级尽快生效（并发下最迟一个缓存 TTL）
+	_ = cache.Delete(cache.UserActiveKey(id))
 	return nil
 }
 
 // DeleteUser 删除用户 (管理员)
 func (s *UserService) DeleteUser(id int64) error {
-	// Optional: Check if admin is deleting themselves?
-	// Handler layer might handle "cannot delete self" logic or here.
-	return s.userRepo.Delete(id)
+	if err := s.userRepo.Delete(id); err != nil {
+		return err
+	}
+	// 删除后清除鉴权状态缓存，使该用户的存量 JWT 尽快失效
+	_ = cache.Delete(cache.UserActiveKey(id))
+	return nil
 }
 
 // ResetPassword 重置用户密码 (管理员)

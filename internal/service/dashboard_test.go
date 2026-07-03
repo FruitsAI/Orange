@@ -53,6 +53,10 @@ func createTestDataForDashboard(t *testing.T) (userID int64) {
 
 	// 创建项目
 	now := time.Now()
+	// 锚定自然月边界构造日期：Dashboard 的趋势按"本月 vs 上月"统计，
+	// 若用 now-N天 的相对偏移，月初运行时日期会落入上月导致测试随日期漂移
+	currMonthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	prevMonthMid := currMonthStart.AddDate(0, -1, 0).AddDate(0, 0, 14)
 	project := &models.Project{
 		ID:             1,
 		UserID:         userID,
@@ -76,8 +80,8 @@ func createTestDataForDashboard(t *testing.T) (userID int64) {
 			Stage:      "首付款",
 			Amount:     100000,
 			Status:     constants.PaymentStatusConfirmed,
-			PlanDate:   now.AddDate(0, 0, -10),
-			ActualDate: ptrTime(now.AddDate(0, 0, -8)),
+			PlanDate:   currMonthStart,
+			ActualDate: ptrTime(currMonthStart),
 		},
 		// 本月待收款项
 		{
@@ -104,8 +108,8 @@ func createTestDataForDashboard(t *testing.T) (userID int64) {
 			Stage:      "上月款",
 			Amount:     80000,
 			Status:     constants.PaymentStatusConfirmed,
-			PlanDate:   now.AddDate(0, 0, -40),
-			ActualDate: ptrTime(now.AddDate(0, 0, -38)),
+			PlanDate:   prevMonthMid,
+			ActualDate: ptrTime(prevMonthMid),
 		},
 		// 上月待收款项
 		{
@@ -114,7 +118,7 @@ func createTestDataForDashboard(t *testing.T) (userID int64) {
 			Stage:     "上月待收",
 			Amount:    60000,
 			Status:    constants.PaymentStatusPending,
-			PlanDate:  now.AddDate(0, 0, -35),
+			PlanDate:  prevMonthMid,
 		},
 	}
 

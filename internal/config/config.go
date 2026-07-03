@@ -157,7 +157,8 @@ var knownWeakSecrets = []string{
 	"orange-runtime-secret-fallback-change-me",
 }
 
-// getEnvBool 获取布尔类型的环境变量
+// loadJWTSecret 加载 JWT 密钥
+// 优先取环境变量 JWT_SECRET；未配置时生成一次性随机密钥（重启后旧 Token 全部失效）。
 func loadJWTSecret() string {
 	if value, exists := os.LookupEnv("JWT_SECRET"); exists && value != "" {
 		return value
@@ -179,6 +180,7 @@ func generateRandomSecret() (string, error) {
 	return base64.StdEncoding.EncodeToString(buf), nil
 }
 
+// getEnvBool 获取布尔类型的环境变量
 func getEnvBool(key string, fallback bool) bool {
 	if value, exists := os.LookupEnv(key); exists {
 		if boolVal, err := strconv.ParseBool(value); err == nil {

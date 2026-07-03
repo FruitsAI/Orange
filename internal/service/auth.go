@@ -61,6 +61,11 @@ func NewAuthService() *AuthService {
 	}
 }
 
+// dummyBcryptHash 任意密码的 bcrypt 哈希（内容无意义）
+// 用户名不存在时也执行一次同代价的哈希比对，抹平响应时间差，
+// 防止通过登录耗时探测用户名是否存在。
+const dummyBcryptHash = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+
 // Login 用户登录
 // 验证用户名和密码，成功后颁发 JWT Token 并更新最后登录时间。
 //
@@ -76,6 +81,7 @@ func (s *AuthService) Login(username, pwd string) (*dto.LoginResult, error) {
 	user, err := s.userRepo.FindByCredential(username)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
+			password.CheckPassword(pwd, dummyBcryptHash)
 			return nil, pkgerrors.WrapWithCode(err, 401, "用户名或密码错误")
 		}
 		return nil, pkgerrors.Wrap(err, "查询用户失败")
@@ -110,28 +116,4 @@ func (s *AuthService) Login(username, pwd string) (*dto.LoginResult, error) {
 	}
 
 	return &dto.LoginResult{Token: token, User: user}, nil
-}
-
-// Logout 用户登出
-// 如果需要维护 Token 黑名单或会话管理，可在此实现。
-// 当前实现为无状态 JWT，登出由前端清除 Token 完成。
-func (s *AuthService) Logout() error {
-	// 无状态 JWT 场景下，服务端无需额外操作
-	// 如需维护黑名单或撤销机制，可在此添加逻辑
-	return nil
-}
-
-// ResetPassword 重置密码（通过邮箱验证码等方式）
-// 注意：此方法为管理员重置他人密码，实际业务场景可能需要邮箱验证
-func (s *AuthService) ResetPassword(userID int64, newPassword string) error {
-	if err := validatePasswordStrength(newPassword); err != nil {
-		return err
-	}
-	hashedPassword, err := password.HashPassword(newPassword)
-	if err != nil {
-		return errors.New("密码加密失败")
-	}
-	return s.userRepo.UpdateFields(userID, map[string]interface{}{
-		"password": hashedPassword,
-	})
 }

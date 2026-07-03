@@ -48,10 +48,29 @@ api.interceptors.request.use(
 
 // 处理 Token 过期逻辑的全局回调
 // 为了避免循环引用 (store 依赖 api, api 依赖 store)，此处采用 setter 注入方式
-let authLogout: (() => void) | null = null
+let authLogout: (() => void | Promise<void>) | null = null
 
-export const setAuthLogout = (fn: () => void) => {
+export const setAuthLogout = (fn: () => void | Promise<void>) => {
   authLogout = fn
+}
+
+// 单飞保护：Token 失效瞬间往往有多个并发请求同时失败，
+// 只让第一个触发登出/跳转，避免重复登出请求与多次路由跳转
+let handlingAuthFailure = false
+
+const handleAuthFailure = async () => {
+  if (handlingAuthFailure) return
+  handlingAuthFailure = true
+
+  if (authLogout) {
+    await authLogout()
+  } else {
+    clearAuthStorage()
+    window.location.href = '/login'
+  }
+
+  // 登出操作已同步清除 token 并触发路由跳转，守卫会拦截后续请求，
+  // 不再需要重置 flag（避免 1s 窗口导致快速重复 401 绕过单飞保护）
 }
 
 // 响应拦截器：处理业务错误和 Token 过期
@@ -65,14 +84,9 @@ api.interceptors.response.use(
       return response
     }
 
-    // Token 过期
-    if (code === 2002) {
-      if (authLogout) {
-        authLogout()
-      } else {
-        clearAuthStorage()
-        window.location.href = '/login'
-      }
+    // Token 无效 (2001) 或已过期 (2002)，统一登出
+    if (code === 2001 || code === 2002) {
+      handleAuthFailure()
       return Promise.reject(new Error('登录已过期，请重新登录'))
     }
 
@@ -84,12 +98,7 @@ api.interceptors.response.use(
     const code = apiError?.code
 
     if (error.response?.status === 401 || code === 2001 || code === 2002) {
-      if (authLogout) {
-        authLogout()
-      } else {
-        clearAuthStorage()
-        window.location.href = '/login'
-      }
+      handleAuthFailure()
     }
 
     return Promise.reject(new Error(apiError?.message || error.message || '请求失败'))

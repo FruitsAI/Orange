@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"encoding/json"
 	"sync"
 	"time"
 )
@@ -114,26 +113,6 @@ func (c *MemoryCache) cleanupExpired() {
 // Stop 停止清理 goroutine
 func (c *MemoryCache) Stop() {
 	close(c.stopChan)
-}
-
-// GetJSON 获取并反序列化JSON
-func (c *MemoryCache) GetJSON(key string, v interface{}) error {
-	data, err := c.Get(key)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(data, v)
-}
-
-// SetJSON 序列化并设置JSON
-func (c *MemoryCache) SetJSON(key string, v interface{}, ttl time.Duration) error {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	return c.Set(key, data, ttl)
 }
 
 // Stats 缓存统计信息

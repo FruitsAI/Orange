@@ -2,9 +2,17 @@ package cache
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 )
+
+// UserActiveKey 用户鉴权状态的缓存键
+// JWT 中间件用它缓存"用户是否启用及当前角色"（值格式 "0" 或 "1:<role>"）；
+// 管理端修改用户（状态/角色）或删除用户后应 Delete 该键，使变更尽快生效。
+func UserActiveKey(userID int64) string {
+	return fmt.Sprintf("user:active:v1:%d", userID)
+}
 
 // GetJSON 获取并反序列化JSON（通用函数）
 func GetJSON(key string, v interface{}) error {

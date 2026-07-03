@@ -7,7 +7,8 @@ type PaymentRequest struct {
 	Amount     float64 `json:"amount" binding:"required"`
 	Percentage float64 `json:"percentage"`
 	PlanDate   string  `json:"plan_date" binding:"required"`
-	Status     string  `json:"status"`
+	// Status 收款状态；"paid" 为历史兼容值，服务层会归一为 "confirmed"
+	Status string `json:"status" binding:"omitempty,oneof=pending confirmed overdue paid"`
 	Method     string  `json:"method"`
 	Remark     string  `json:"remark"`
 	UserID     int64   `json:"-"`

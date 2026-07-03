@@ -34,15 +34,6 @@ export function formatDate(date: string | Date | null | undefined, format: strin
 }
 
 /**
- * 格式化日期时间
- * @param datetime 日期时间字符串或Date对象
- * @returns 格式化后的日期时间字符串，如 "2024-01-01 12:30"
- */
-export function formatDateTime(datetime: string | Date | null | undefined): string {
-  return formatDate(datetime, 'YYYY-MM-DD HH:mm')
-}
-
-/**
  * 格式化相对时间（如 "2小时前"）
  * @param date 日期字符串或Date对象
  * @returns 相对时间描述
@@ -64,40 +55,4 @@ export function formatRelativeTime(date: string | Date | null | undefined): stri
   if (diffDays < 30) return `${Math.floor(diffDays / 7)}周前`
   if (diffDays < 365) return `${Math.floor(diffDays / 30)}个月前`
   return `${Math.floor(diffDays / 365)}年前`
-}
-
-/**
- * 格式化百分比
- * @param value 数值（0-100）
- * @param decimals 小数位数，默认1位
- * @returns 格式化后的百分比字符串，如 "85.5%"
- */
-export function formatPercentage(value: number, decimals: number = 1): string {
-  if (value == null || isNaN(value)) return '0%'
-  return `${value.toFixed(decimals)}%`
-}
-
-/**
- * 格式化文件大小
- * @param bytes 字节数
- * @returns 格式化后的文件大小，如 "1.5 MB"
- */
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`
-}
-
-/**
- * 截断文本
- * @param text 原始文本
- * @param maxLength 最大长度
- * @param suffix 后缀，默认 '...'
- * @returns 截断后的文本
- */
-export function truncate(text: string, maxLength: number, suffix: string = '...'): string {
-  if (!text || text.length <= maxLength) return text
-  return text.slice(0, maxLength - suffix.length) + suffix
 }

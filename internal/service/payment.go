@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
 	pkgerrors "github.com/FruitsAI/Orange/internal/pkg/errors"
-	"github.com/FruitsAI/Orange/internal/pkg/cache"
 	"github.com/FruitsAI/Orange/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -40,39 +38,13 @@ func NewPaymentService() *PaymentService {
 	}
 }
 
-// ListByProject 根据项目ID获取该项目的所有收款计划
+// ListByProjectForUser 根据项目ID获取该项目的所有收款计划（校验项目归属）
 // 用于在项目详情页展示款项列表。
-//
-// 参数:
-//   - projectID: 项目ID
-//
-// 返回:
-//   - []models.Payment: 款项列表
-//   - error: 数据库查询错误
-func (s *PaymentService) ListByProject(projectID int64) ([]models.Payment, error) {
-	return s.paymentRepo.ListByProject(projectID)
-}
-
 func (s *PaymentService) ListByProjectForUser(userID, projectID int64) ([]models.Payment, error) {
 	if _, err := s.projectRepo.FindByIDForUser(projectID, userID); err != nil {
 		return nil, err
 	}
 	return s.paymentRepo.ListByProject(projectID)
-}
-
-// ListUpcoming 获取指定用户近期即将到期的待收款项 (Dashboard用)
-// 通常用于首页"即将收款"卡片，提醒用户关注近期回款。
-//
-// 参数:
-//   - userID: 用户ID
-//   - days: 未来多少天内 (如 7天)
-//   - limit: 最大返回数量 (如 5条)
-//
-// 返回:
-//   - []models.Payment: 即将到期的款项列表
-//   - error: 数据库查询错误
-func (s *PaymentService) ListUpcoming(userID int64, days, limit int) ([]models.Payment, error) {
-	return s.paymentRepo.ListUpcoming(userID, days, limit)
 }
 
 // ListByDateRange 获取指定日期范围内的所有款项记录 (报表/日历用)
@@ -130,7 +102,7 @@ func (s *PaymentService) Create(input dto.PaymentRequest) (*models.Payment, erro
 	}
 
 	// 在事务中完成创建 + 规则处理 + 项目金额同步，确保一致性
-	return payment, database.GetDB().Transaction(func(tx *gorm.DB) error {
+	err = database.GetDB().Transaction(func(tx *gorm.DB) error {
 		// 执行核心业务规则校验与处理（如计算百分比、自动填充实际日期逻辑等）
 		if err := s.processPaymentRulesInTx(tx, payment); err != nil {
 			return err
@@ -144,25 +116,16 @@ func (s *PaymentService) Create(input dto.PaymentRequest) (*models.Payment, erro
 		// 级联更新: 重新计算并同步该项目对应的"已收款总额"字段
 		return s.syncProjectReceivedAmountInTx(tx, payment.ProjectID)
 	})
-}
-
-// Update 更新收款计划详情
-//
-// 参数:
-//   - id: 款项ID
-//   - input: 更新内容
-//
-// 返回:
-//   - *models.Payment: 更新后的实体
-//   - error: 更新失败
-func (s *PaymentService) Update(id int64, input dto.PaymentRequest) (*models.Payment, error) {
-	payment, err := s.paymentRepo.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
-	return s.applyUpdate(payment, input)
+
+	// 事务提交后清除该用户的 Dashboard 统计缓存
+	invalidateDashboardCache(payment.UserID)
+	return payment, nil
 }
 
+// UpdateForUser 更新收款计划详情（校验款项与项目归属）
 func (s *PaymentService) UpdateForUser(userID, id int64, input dto.PaymentRequest) (*models.Payment, error) {
 	payment, err := s.paymentRepo.FindByIDForUser(id, userID)
 	if err != nil {
@@ -201,7 +164,7 @@ func (s *PaymentService) applyUpdate(payment *models.Payment, input dto.PaymentR
 	payment.Remark = input.Remark
 
 	// 在事务中完成规则处理 + 保存 + 项目金额同步
-	return payment, database.GetDB().Transaction(func(tx *gorm.DB) error {
+	err = database.GetDB().Transaction(func(tx *gorm.DB) error {
 		// 重新应用业务规则（如重新计算百分比，因为金额可能变了）
 		if err := s.processPaymentRulesInTx(tx, payment); err != nil {
 			return err
@@ -212,20 +175,33 @@ func (s *PaymentService) applyUpdate(payment *models.Payment, input dto.PaymentR
 		// 级联更新: 数据变更后，必须重新同步项目的总收款状态
 		return s.syncProjectReceivedAmountInTx(tx, payment.ProjectID)
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	// 事务提交后清除该用户的 Dashboard 统计缓存
+	invalidateDashboardCache(payment.UserID)
+	return payment, nil
 }
 
 // processPaymentRulesInTx 执行通用款项业务规则处理（事务内版本）
 // 包含以下逻辑:
-//  1. 状态与日期的联动: 如果状态改为"paid"(已收款)，自动填充ActualDate(实际收款日)，反之置空。
+//  1. 状态与日期的联动: 状态为"已确认"时自动填充ActualDate(实际收款日)，否则置空。
 //  2. 百分比自动计算: 根据款项金额与项目合同总额，自动计算该笔款项的占比。
 func (s *PaymentService) processPaymentRulesInTx(tx *gorm.DB, payment *models.Payment) error {
+	// 0. 状态归一：历史版本前端/外部客户端曾用 "paid" 表示已收款，
+	// 统一归一为 constants.PaymentStatusConfirmed，避免统计口径分裂
+	if payment.Status == "paid" {
+		payment.Status = constants.PaymentStatusConfirmed
+	}
+
 	// 1. 处理实际收款日期逻辑
-	if payment.Status == "paid" && payment.ActualDate == nil {
+	if payment.Status == constants.PaymentStatusConfirmed && payment.ActualDate == nil {
 		// 如果标记为已收款但用户未填实际日期，默认等于计划日期
 		payment.ActualDate = &payment.PlanDate
 	}
 	// 如果不是已收款状态，清除实际收款日期
-	if payment.Status != "paid" {
+	if payment.Status != constants.PaymentStatusConfirmed {
 		payment.ActualDate = nil
 	}
 
@@ -279,24 +255,7 @@ func (s *PaymentService) syncProjectReceivedAmountInTx(tx *gorm.DB, projectID in
 	return nil
 }
 
-// Delete 删除收款（同步更新项目已收款金额）
-func (s *PaymentService) Delete(id int64) error {
-	// 1. 先查询款项获取 project_id
-	payment, err := s.paymentRepo.FindByID(id)
-	if err != nil {
-		return err
-	}
-	projectID := payment.ProjectID
-
-	// 2. 在事务中删除款项并同步项目已收款金额，保证一致性
-	return database.GetDB().Transaction(func(tx *gorm.DB) error {
-		if err := tx.Delete(&models.Payment{}, id).Error; err != nil {
-			return err
-		}
-		return s.syncProjectReceivedAmountInTx(tx, projectID)
-	})
-}
-
+// DeleteForUser 删除收款（校验归属，同步更新项目已收款金额）
 func (s *PaymentService) DeleteForUser(userID, id int64) error {
 	payment, err := s.paymentRepo.FindByIDForUser(id, userID)
 	if err != nil {
@@ -307,90 +266,24 @@ func (s *PaymentService) DeleteForUser(userID, id int64) error {
 	}
 	projectID := payment.ProjectID
 
-	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+	err = database.GetDB().Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Payment{}).Error; err != nil {
 			return pkgerrors.Wrap(err, "删除款项失败")
 		}
 		return s.syncProjectReceivedAmountInTx(tx, projectID)
 	})
-}
-
-// Confirm 确认收款（One-Click 操作）
-// 将款项标记为已收款，并自动更新实际收款日期和方式。通过数据库事务保证原子性。
-//
-// 事务流程:
-//  1. 悲观锁锁定该款项记录 (Avoid Race Conditions)
-//  2. 检查幂等性 (如果已支付直接返回)
-//  3. 更新 Payment 记录状态
-//  4. 重新计算该项目下所有已支付总额 (Sum)
-//  5. 更新 Project 记录的 received_amount
-//
-// 参数:
-//   - id: 款项ID
-//   - actualDate: 实际收款日期字符串
-//   - method: 收款方式 (如 银行转账, 支付宝)
-//
-// 返回:
-//   - error: 事务执行失败
-func (s *PaymentService) Confirm(id int64, actualDate, method string) error {
-	loc := time.Local
-	actualAt, err := time.ParseInLocation("2006-01-02", actualDate, loc)
 	if err != nil {
 		return err
 	}
 
-	return database.GetDB().Transaction(func(tx *gorm.DB) error {
-		// 1. 先不加锁快速检查状态
-		var payment models.Payment
-		if err := tx.First(&payment, id).Error; err != nil {
-			return err
-		}
-
-		// 2. 幂等性检查: 防止重复确认（无锁）
-		if payment.Status == "paid" {
-			return nil
-		}
-
-		// 3. 需要更新时才加锁
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&payment, id).Error; err != nil {
-			return err
-		}
-
-		// 4. Double-check（防止锁等待期间被其他事务更新）
-		if payment.Status == "paid" {
-			return nil
-		}
-
-		// 5. 更新收款状态为"已收款"
-		if err := tx.Model(&payment).Updates(map[string]interface{}{
-			"status":      "paid",
-			"actual_date": actualAt,
-			"method":      method,
-		}).Error; err != nil {
-			return err
-		}
-
-		// 6. 同步计算项目已收款总额
-		// 注意: 必须使用当前事务 tx 进行查询，否则读不到刚才更新的状态
-		var totalReceived float64
-		if err := tx.Model(&models.Payment{}).
-			Where("project_id = ? AND status = ?", payment.ProjectID, "paid").
-			Select("COALESCE(SUM(amount), 0)").
-			Scan(&totalReceived).Error; err != nil {
-			return err
-		}
-
-		// 7. 更新项目主表 sum 值
-		if err := tx.Model(&models.Project{}).
-			Where("id = ?", payment.ProjectID).
-			Update("received_amount", totalReceived).Error; err != nil {
-			return err
-		}
-
-		return nil
-	})
+	// 事务提交后清除该用户的 Dashboard 统计缓存
+	invalidateDashboardCache(userID)
+	return nil
 }
 
+// ConfirmForUser 确认收款（One-Click 操作，校验归属）
+// 将款项标记为已确认，并自动更新实际收款日期和方式。通过数据库事务保证原子性:
+// 悲观锁锁定款项 → 幂等性检查 → 更新状态 → 重算项目已收款总额。
 func (s *PaymentService) ConfirmForUser(userID, id int64, actualDate, method string) error {
 	loc := time.Local
 	actualAt, err := time.ParseInLocation("2006-01-02", actualDate, loc)
@@ -449,18 +342,8 @@ func (s *PaymentService) ConfirmForUser(userID, id int64, actualDate, method str
 
 	// 事务成功后清除 Dashboard 缓存
 	if err == nil {
-		s.invalidateDashboardCache(userID)
+		invalidateDashboardCache(userID)
 	}
 
 	return err
-}
-
-// invalidateDashboardCache 清除 Dashboard 缓存（在 Payment/Project 变更后调用）
-func (s *PaymentService) invalidateDashboardCache(userID int64) {
-	// 清除所有周期的 Dashboard 缓存
-	periods := []string{"all", "month", "week", "today"}
-	for _, period := range periods {
-		cacheKey := fmt.Sprintf("dashboard:stats:v1:%d:%s", userID, period)
-		_ = cache.Delete(cacheKey)
-	}
 }

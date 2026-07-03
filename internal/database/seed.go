@@ -2,6 +2,7 @@ package database
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/big"
@@ -28,31 +29,23 @@ func Seed(db *gorm.DB) error {
 
 	slog.Info("Seeding database...")
 
-	// 生成随机强密码
+	// 生成随机强密码并写入本地凭据文件（密码绝不进日志，避免被日志采集泄露）
 	adminPassword := generateStrongPassword(16)
 	userPassword := generateStrongPassword(16)
 	credentialsPath := writeInitialCredentials(adminPassword, userPassword)
-	realAdminPassword := adminPassword
-	realUserPassword := userPassword
-	adminPassword = "[written-to-initial-credentials-file]"
-	userPassword = "[written-to-initial-credentials-file]"
+	if credentialsPath == "" {
+		// 凭据无处可查时中止播种（用户表保持为空），下次启动会自动重试，
+		// 避免创建出密码永远无人知晓的账号
+		return errors.New("无法写入初始凭据文件，已跳过初始用户创建；请检查应用配置目录权限后重启")
+	}
 
-	// 输出默认密码到日志（仅首次启动）
-	slog.Warn("=" + "===========================================")
+	slog.Warn("============================================")
 	slog.Warn("首次启动检测到空数据库，已创建默认用户")
-	slog.Warn("管理员账号: admin")
-	slog.Warn(fmt.Sprintf("管理员密码: %s", adminPassword))
-	slog.Warn("普通用户账号: xu")
-	slog.Warn(fmt.Sprintf("普通用户密码: %s", userPassword))
-	slog.Warn("请立即登录并修改默认密码！")
-	slog.Warn("=" + "===========================================")
+	slog.Warn("管理员账号: admin，普通用户账号: xu")
+	slog.Warn("初始密码已写入凭据文件，请立即登录并修改", "path", credentialsPath)
+	slog.Warn("============================================")
 
 	// 对密码进行 bcrypt 加密
-	if credentialsPath != "" {
-		slog.Warn("initial credentials file", "path", credentialsPath)
-	}
-	adminPassword = realAdminPassword
-	userPassword = realUserPassword
 	adminPasswordHash, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -113,8 +106,8 @@ func Seed(db *gorm.DB) error {
 	})
 }
 
-// generateStrongPassword 生成随机强密码
-// 密码包含大小写字母、数字和特殊字符，满足强密码要求
+// writeInitialCredentials 将首次启动生成的初始密码写入用户配置目录下的凭据文件 (0600)
+// 返回文件路径；写入失败时返回空字符串。
 func writeInitialCredentials(adminPassword, userPassword string) string {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -130,11 +123,15 @@ func writeInitialCredentials(adminPassword, userPassword string) string {
 	content := fmt.Sprintf("admin: %s\nxu: %s\n", adminPassword, userPassword)
 	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 		slog.Error("failed to write initial credentials file", "error", err)
+		// 清理可能的半写文件，避免残留不完整/过期的凭据误导使用者
+		_ = os.Remove(path)
 		return ""
 	}
 	return path
 }
 
+// generateStrongPassword 生成随机强密码
+// 密码包含大小写字母、数字和特殊字符，满足强密码要求
 func generateStrongPassword(length int) string {
 	const (
 		upperChars   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

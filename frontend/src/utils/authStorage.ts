@@ -9,7 +9,14 @@ export function getStoredToken(): string | null {
 
 export function getStoredUser<T>(): T | null {
   const raw = AUTH_STORAGE.getItem(USER_KEY)
-  return raw ? JSON.parse(raw) as T : null
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    // 存储内容损坏时清除并返回 null，避免应用启动时崩溃白屏
+    AUTH_STORAGE.removeItem(USER_KEY)
+    return null
+  }
 }
 
 export function saveAuthState(token: string, user: unknown) {

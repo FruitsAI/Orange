@@ -162,7 +162,7 @@ func TestPaymentService_ConfirmPayment(t *testing.T) {
 		err = db.Where("id = ? AND project_id IN (SELECT id FROM projects WHERE user_id = ?)",
 			payment.ID, user.ID).First(&updatedPayment).Error
 		require.NoError(t, err)
-		assert.Equal(t, "paid", updatedPayment.Status)
+		assert.Equal(t, constants.PaymentStatusConfirmed, updatedPayment.Status)
 
 		// 验证项目金额同步
 		updatedProject, err := projectSvc.GetForUser(user.ID, project.ID)
@@ -335,7 +335,7 @@ func TestPaymentService_UpdatePayment(t *testing.T) {
 			Amount:    25000,
 			Stage:     "尾款",
 			PlanDate:  time.Now().Format("2006-01-02"),
-			Status:    "paid",
+			Status:    constants.PaymentStatusConfirmed,
 			UserID:    user.ID,
 		}
 		_, err = paymentSvc.UpdateForUser(user.ID, payment2.ID, updateReq)

@@ -25,15 +25,6 @@ func (r *UserRepository) FindByID(id int64) (*models.User, error) {
 	return &user, nil
 }
 
-// FindByUsername 根据用户名查找用户
-func (r *UserRepository) FindByUsername(username string) (*models.User, error) {
-	var user models.User
-	if err := r.db.Where("username = ?", username).First(&user).Error; err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
-
 // FindByCredential 根据唯一凭证查找用户
 // 支持通过 用户名(username)、邮箱(email) 或 手机号(phone) 进行统一登录查询。
 func (r *UserRepository) FindByCredential(credential string) (*models.User, error) {
@@ -41,15 +32,6 @@ func (r *UserRepository) FindByCredential(credential string) (*models.User, erro
 	// 组合 OR 查询条件
 	if err := r.db.Where("username = ? OR email = ? OR phone = ?",
 		credential, credential, credential).First(&user).Error; err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
-
-// FindByEmail 根据邮箱查找用户
-func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
-	var user models.User
-	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -78,11 +60,6 @@ func (r *UserRepository) ExistsByEmailExceptID(email string, id int64) bool {
 // Create 创建用户
 func (r *UserRepository) Create(user *models.User) error {
 	return r.db.Create(user).Error
-}
-
-// Update 更新用户
-func (r *UserRepository) Update(user *models.User) error {
-	return r.db.Save(user).Error
 }
 
 // UpdateFields 动态更新指定字段

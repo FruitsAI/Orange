@@ -5,32 +5,20 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/FruitsAI/Orange/internal/constants"
 	"github.com/FruitsAI/Orange/internal/pkg/response"
 	"github.com/FruitsAI/Orange/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
 // SyncHandler 数据同步 HTTP Handler
+// 权限: 所有 /sync 路由已在 router 层通过 middleware.AdminOnly() 限制为管理员。
 type SyncHandler struct {
 	syncService *service.SyncService
-}
-
-func (h *SyncHandler) ensureAdmin(c *gin.Context) bool {
-	if c.GetString("role") != constants.RoleAdmin {
-		response.Forbidden(c, "鏉冮檺涓嶈冻")
-		return false
-	}
-	return true
 }
 
 // GetConfig 获取同步配置 (从环境变量)
 // @Router /api/v1/sync/config [get]
 func (h *SyncHandler) GetConfig(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
-
 	port, err := strconv.Atoi(os.Getenv("SYNC_DB_PORT"))
 	if err != nil || port == 0 {
 		port = 5432
@@ -78,10 +66,6 @@ func resolveSyncPassword(password string) string {
 // TestConnection 测试云端数据库连接
 // @Router /api/v1/sync/test-connection [post]
 func (h *SyncHandler) TestConnection(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
-
 	var req TestConnectionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamError(c, "参数错误: "+err.Error())
@@ -110,10 +94,6 @@ func (h *SyncHandler) TestConnection(c *gin.Context) {
 // Compare 对比本地与云端表的记录数
 // @Router /api/v1/sync/compare [post]
 func (h *SyncHandler) Compare(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
-
 	var req TestConnectionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamError(c, "参数错误: "+err.Error())
@@ -132,7 +112,9 @@ func (h *SyncHandler) Compare(c *gin.Context) {
 
 	results, err := h.syncService.CompareData(cfg)
 	if err != nil {
-		response.Error(c, 1, err.Error())
+		// 详细错误仅记录日志，避免向客户端泄露远端数据库驱动/主机信息
+		slog.Error("Sync data comparison failed", "error", err)
+		response.Error(c, 1, "数据对比失败，请检查连接配置")
 		return
 	}
 
@@ -154,10 +136,6 @@ type ExecuteRequest struct {
 // Execute 执行数据同步
 // @Router /api/v1/sync/execute [post]
 func (h *SyncHandler) Execute(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
-
 	var req ExecuteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamError(c, "参数错误: "+err.Error())
@@ -176,7 +154,9 @@ func (h *SyncHandler) Execute(c *gin.Context) {
 
 	results, err := h.syncService.SyncTables(cfg, req.Tables)
 	if err != nil {
-		response.Error(c, 1, err.Error())
+		// 详细错误仅记录日志，避免向客户端泄露远端数据库驱动/主机信息
+		slog.Error("Sync execution failed", "error", err)
+		response.Error(c, 1, "数据同步失败，请检查连接配置")
 		return
 	}
 

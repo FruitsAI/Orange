@@ -1,6 +1,7 @@
 package router
 
 import (
+	"crypto/subtle"
 	"log/slog"
 	"net/http"
 
@@ -170,8 +171,8 @@ func NewRouter() *gin.Engine {
 				system.GET("/updates/check", systemHandler.CheckUpdate)
 			}
 
-			// 数据同步模块
-			sync := authorized.Group("/sync")
+			// 数据同步模块 (涉及云端数据库连接与全量数据导出，仅管理员)
+			sync := authorized.Group("/sync", middleware.AdminOnly())
 			{
 				syncHandler := handler.NewSyncHandler()
 				sync.GET("/config", syncHandler.GetConfig)                // 获取配置
@@ -266,9 +267,11 @@ func metricsAuth() gin.HandlerFunc {
 			return
 		}
 
-		// 验证 Basic Auth
+		// 验证 Basic Auth（常量时间比较，避免时序侧信道泄露凭据）
 		authUser, authPassword, hasAuth := c.Request.BasicAuth()
-		if !hasAuth || authUser != user || authPassword != password {
+		userOK := subtle.ConstantTimeCompare([]byte(authUser), []byte(user)) == 1
+		passOK := subtle.ConstantTimeCompare([]byte(authPassword), []byte(password)) == 1
+		if !hasAuth || !userOK || !passOK {
 			c.Header("WWW-Authenticate", "Basic realm=\"Prometheus Metrics\"")
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return

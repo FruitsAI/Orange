@@ -58,8 +58,3 @@ func Set(key string, value []byte, ttl time.Duration) error {
 func Delete(key string) error {
 	return GetCache().Delete(key)
 }
-
-// Clear 清空缓存（便捷方法）
-func Clear() error {
-	return GetCache().Clear()
-}

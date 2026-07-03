@@ -34,9 +34,9 @@ app.use(router)
 
 // 设置 API 登出回调
 // 当后端返回 401 Unauthorized 时，会自动调用此回调清理本地状态并跳转登录页
-setAuthLogout(() => {
+setAuthLogout(async () => {
   const authStore = useAuthStore()
-  authStore.logout()
+  await authStore.logout()
   router.push('/login')
 })
 

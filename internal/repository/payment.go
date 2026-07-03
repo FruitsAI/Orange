@@ -74,15 +74,6 @@ func (r *PaymentRepository) FindByIDForUser(id, userID int64) (*models.Payment, 
 	return &payment, nil
 }
 
-// FindByIDWithProject 根据ID查找收款（包含项目信息）
-func (r *PaymentRepository) FindByIDWithProject(id int64) (*models.Payment, error) {
-	var payment models.Payment
-	if err := r.db.Preload("Project").First(&payment, id).Error; err != nil {
-		return nil, err
-	}
-	return &payment, nil
-}
-
 // ListByProject 根据项目ID获取收款列表
 func (r *PaymentRepository) ListByProject(projectID int64) ([]models.Payment, error) {
 	var payments []models.Payment
@@ -107,39 +98,6 @@ func (r *PaymentRepository) ListUpcoming(userID int64, days int, limit int) ([]m
 		return nil, err
 	}
 	return payments, nil
-}
-
-// ListOverdue 获取当前已逾期的待收款项
-// 逾期定义: status="pending" 且 plan_date 小于今天
-func (r *PaymentRepository) ListOverdue(userID int64) ([]models.Payment, error) {
-	var payments []models.Payment
-	today := time.Now().Format("2006-01-02")
-
-	if err := r.db.Scopes(UserScope(userID)).
-		Where("status = ? AND plan_date < ?", "pending", today).
-		Find(&payments).Error; err != nil {
-		return nil, err
-	}
-	return payments, nil
-}
-
-// Create 创建收款
-func (r *PaymentRepository) Create(payment *models.Payment) error {
-	return r.db.Create(payment).Error
-}
-
-// Update 更新收款
-func (r *PaymentRepository) Update(payment *models.Payment) error {
-	return r.db.Save(payment).Error
-}
-
-// Delete 删除收款
-func (r *PaymentRepository) Delete(id int64) error {
-	return r.db.Delete(&models.Payment{}, id).Error
-}
-
-func (r *PaymentRepository) DeleteForUser(id, userID int64) error {
-	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Payment{}).Error
 }
 
 // SumOverdue 统计逾期金额

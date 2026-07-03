@@ -74,20 +74,9 @@ func (s *ProjectService) List(userID int64, status, keyword string, page, pageSi
 	}, nil
 }
 
-// Get 获取项目详情
-// 根据项目ID获取单个项目的详细信息，并默认包含该项目关联的所有款项数据。
-//
-// 参数:
-//   - id: 项目ID
-//
-// 返回:
-//   - *models.Project: 项目实体（包含 Preloaded Payments）
-//   - error: 记录不存在或数据库错误
-func (s *ProjectService) Get(id int64) (*models.Project, error) {
-	// 使用 FindByIDWithPayments 确保在详情页能展示关联的收款计划
-	return s.projectRepo.FindByIDWithPayments(id)
-}
-
+// GetForUser 获取项目详情（校验归属）
+// 根据项目ID获取单个项目的详细信息，并包含该项目关联的所有款项数据，
+// 用于详情页展示收款计划。
 func (s *ProjectService) GetForUser(userID, id int64) (*models.Project, error) {
 	project, err := s.projectRepo.FindByIDWithPaymentsForUser(id, userID)
 	if err != nil {
@@ -168,74 +157,12 @@ func (s *ProjectService) Create(input dto.CreateProjectRequest) (*models.Project
 		return nil, pkgerrors.Wrap(err, "创建项目失败")
 	}
 
+	// 项目合同总额影响 Dashboard 全局统计，创建后清除缓存
+	invalidateDashboardCache(input.UserID)
 	return project, nil
 }
 
-// Update 更新项目详情
-// 根据项目ID更新指定字段。
-//
-// 参数:
-//   - id: 项目ID
-//   - input: 更新请求DTO
-//
-// 返回:
-//   - *models.Project: 更新后的项目实体
-//   - error: 记录不存在或更新失败
-func (s *ProjectService) Update(id int64, input dto.CreateProjectRequest) (*models.Project, error) {
-	// 1. 检查是否存在
-	project, err := s.projectRepo.FindByID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	// 2. 解析日期字段
-	loc := time.Local
-	startDate, err := time.ParseInLocation("2006-01-02", input.StartDate, loc)
-	if err != nil {
-		return nil, err
-	}
-	endDate, err := time.ParseInLocation("2006-01-02", input.EndDate, loc)
-	if err != nil {
-		return nil, err
-	}
-	var contractDate *time.Time
-	if input.ContractDate != "" {
-		t, err := time.ParseInLocation("2006-01-02", input.ContractDate, loc)
-		if err != nil {
-			return nil, err
-		}
-		contractDate = &t
-	}
-
-	// 3. 更新实体字段
-	project.Name = input.Name
-	project.Company = input.Company
-	project.TotalAmount = input.TotalAmount
-	project.Status = input.Status
-	project.Type = input.Type
-	project.ContractNumber = input.ContractNumber
-	project.ContractDate = contractDate
-	project.PaymentMethod = input.PaymentMethod
-	project.StartDate = startDate
-	project.EndDate = endDate
-	project.Description = input.Description
-
-	// 4. 执行数据库更新
-	if err := s.projectRepo.Update(project); err != nil {
-		return nil, err
-	}
-
-	return project, nil
-}
-
-// Delete 删除项目及关联数据
-// 这是一个事务操作，会同时删除项目本身及其下属的所有款项记录。
-//
-// 参数:
-//   - id: 待删除的项目ID
-//
-// 返回:
-//   - error: 事务执行错误
+// UpdateForUser 更新项目详情（校验归属与合同编号唯一性）
 func (s *ProjectService) UpdateForUser(userID, id int64, input dto.CreateProjectRequest) (*models.Project, error) {
 	project, err := s.projectRepo.FindByIDForUser(id, userID)
 	if err != nil {
@@ -290,25 +217,15 @@ func (s *ProjectService) UpdateForUser(userID, id int64, input dto.CreateProject
 		return nil, pkgerrors.Wrap(err, "更新项目失败")
 	}
 
+	// 合同总额/状态变更影响 Dashboard 统计，更新后清除缓存
+	invalidateDashboardCache(userID)
 	return project, nil
 }
 
-func (s *ProjectService) Delete(id int64) error {
-	return database.GetDB().Transaction(func(tx *gorm.DB) error {
-		// 1. 级联删除: 先删除项目关联的所有款项 (Payments)
-		if err := tx.Where("project_id = ?", id).Delete(&models.Payment{}).Error; err != nil {
-			return err
-		}
-		// 2. 主体删除: 删除项目本身
-		if err := tx.Delete(&models.Project{}, id).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-}
-
+// DeleteForUser 删除项目及关联数据（校验归属）
+// 事务操作: 同时删除项目本身及其下属的所有款项记录。
 func (s *ProjectService) DeleteForUser(userID, id int64) error {
-	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
 		var project models.Project
 		if err := tx.Where("id = ? AND user_id = ?", id, userID).First(&project).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
@@ -321,14 +238,17 @@ func (s *ProjectService) DeleteForUser(userID, id int64) error {
 		}
 		return tx.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Project{}).Error
 	})
+	if err != nil {
+		return err
+	}
+
+	// 事务提交后清除该用户的 Dashboard 统计缓存
+	invalidateDashboardCache(userID)
+	return nil
 }
 
-// Archive 归档项目
+// ArchiveForUser 归档项目（校验归属）
 // 将项目状态更新为 "archived"，归档后的项目通常只读或不显示在主列表中。
-func (s *ProjectService) Archive(id int64) error {
-	return s.projectRepo.UpdateStatus(id, "archived")
-}
-
 func (s *ProjectService) ArchiveForUser(userID, id int64) error {
 	if _, err := s.projectRepo.FindByIDForUser(id, userID); err != nil {
 		return err

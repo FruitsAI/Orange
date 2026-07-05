@@ -58,4 +58,5 @@ docs/review/
 
 # Code Review Reports
 code-review-report.json
-
+.agents/
+.claude/

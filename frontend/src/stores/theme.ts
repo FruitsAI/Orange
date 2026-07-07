@@ -1,66 +1,75 @@
 /**
  * @file stores/theme.ts
- * @description 主题状态管理
- * 支持 Light (亮色模式), Dark (暗色模式) 和 Auto (跟随系统)。
+ * @description React/Zustand theme state.
  */
-import { ref } from 'vue'
-import { defineStore } from 'pinia'
+import { create } from 'zustand'
 
-export const useThemeStore = defineStore('theme', () => {
-  // 当前选择的主题模式: 'light' | 'dark' | 'auto'
-  const theme = ref(localStorage.getItem('theme') || 'auto')
-  // 实际生效的主题 (当 theme 为 auto 时，会根据系统偏好计算为 light 或 dark)
-  const effectiveTheme = ref('light')
+export type ThemeMode = 'light' | 'dark' | 'auto'
+export type EffectiveTheme = 'light' | 'dark'
 
-  /** 应用主题到 DOM */
-  function applyTheme() {
-    const root = document.documentElement
-    let targetTheme = theme.value
+interface ThemeState {
+  theme: ThemeMode
+  effectiveTheme: EffectiveTheme
+  initializeTheme: () => () => void
+  applyTheme: () => void
+  setTheme: (theme: ThemeMode) => void
+  toggleTheme: () => void
+}
 
-    // 如果是自动模式，根据系统偏好决定
-    if (targetTheme === 'auto') {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      targetTheme = isDark ? 'dark' : 'light'
+const isThemeMode = (value: string | null): value is ThemeMode =>
+  value === 'light' || value === 'dark' || value === 'auto'
+
+const getStoredTheme = (): ThemeMode => {
+  if (typeof window === 'undefined') return 'auto'
+  const stored = window.localStorage.getItem('theme')
+  return isThemeMode(stored) ? stored : 'auto'
+}
+
+const resolveEffectiveTheme = (theme: ThemeMode): EffectiveTheme => {
+  if (theme !== 'auto') return theme
+  if (typeof window === 'undefined') return 'light'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+export const useThemeStore = create<ThemeState>((set, get) => ({
+  theme: getStoredTheme(),
+  effectiveTheme: resolveEffectiveTheme(getStoredTheme()),
+
+  initializeTheme() {
+    get().applyTheme()
+
+    if (typeof window === 'undefined') return () => {}
+
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => {
+      if (get().theme === 'auto') {
+        get().applyTheme()
+      }
     }
 
-    effectiveTheme.value = targetTheme
-    // 设置 html 标签的 data-theme 属性，供 CSS 变量使用
-    root.setAttribute('data-theme', targetTheme)
-  }
+    media.addEventListener('change', handleChange)
+    return () => media.removeEventListener('change', handleChange)
+  },
 
-  /**
-   * 手动设置主题
-   * @param newTheme 主题模式
-   */
-  function setTheme(newTheme: string) {
-    theme.value = newTheme
-    localStorage.setItem('theme', newTheme)
-    applyTheme()
-  }
+  applyTheme() {
+    const effectiveTheme = resolveEffectiveTheme(get().theme)
+    set({ effectiveTheme })
 
-  /**
-   * 切换主题 (Light/Dark 循环)
-   * 跳过 Auto 模式
-   */
-  function toggleTheme() {
-    // Cycle: Light <-> Dark (Skip Auto)
-    if (theme.value === 'dark') {
-      setTheme('light')
-    } else {
-      setTheme('dark')
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', effectiveTheme)
     }
-  }
+  },
 
-  // 监听系统主题变化事件
-  // 当设置为自动模式时，系统主题切换会立即反映到界面上
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if (theme.value === 'auto') {
-      applyTheme()
+  setTheme(theme) {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('theme', theme)
     }
-  })
 
-  // 初始化应用
-  applyTheme()
+    set({ theme })
+    get().applyTheme()
+  },
 
-  return { theme, effectiveTheme, setTheme, toggleTheme }
-})
+  toggleTheme() {
+    get().setTheme(get().effectiveTheme === 'dark' ? 'light' : 'dark')
+  },
+}))

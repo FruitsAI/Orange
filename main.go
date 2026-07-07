@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -44,8 +45,23 @@ func createAssetHandler(ginRouter http.Handler) http.Handler {
 			ginRouter.ServeHTTP(w, r)
 			return
 		}
-		// 否则作为静态资源处理 (前端页面)
-		staticHandler.ServeHTTP(w, r)
+		// 否则作为静态资源处理。React Router 的深层路由在桌面端也需要
+		// 和 Vercel rewrite 一样回退到 index.html。
+		assetPath := strings.TrimPrefix(path.Clean("/"+r.URL.Path), "/")
+		if assetPath != "" && assetPath != "." {
+			if info, err := fs.Stat(frontendFS, assetPath); err == nil && !info.IsDir() {
+				staticHandler.ServeHTTP(w, r)
+				return
+			}
+		}
+
+		index, err := fs.ReadFile(frontendFS, "index.html")
+		if err != nil {
+			http.Error(w, "index.html not found", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write(index)
 	})
 }
 

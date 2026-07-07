@@ -9,19 +9,12 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/FruitsAI/Orange/internal/app"
 	"github.com/FruitsAI/Orange/internal/config"
-	"github.com/FruitsAI/Orange/internal/constants"
-	"github.com/FruitsAI/Orange/internal/database"
-	"github.com/FruitsAI/Orange/internal/models"
-	"github.com/FruitsAI/Orange/internal/pkg/jwt"
-	"github.com/FruitsAI/Orange/internal/pkg/logger"
-	"github.com/FruitsAI/Orange/internal/router"
-	"github.com/gin-gonic/gin"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -70,65 +63,12 @@ func newExternalAPIServer(addr string, handler http.Handler) *http.Server {
 }
 
 func main() {
-	// 1. 加载配置信息
-	config.Load()
-
-	// 根据运行环境设置 Gin 模式：非 production 默认 debug（启用 Swagger、宽松 CSP），
-	// production 强制 release，避免打包后的桌面二进制暴露调试信息与文档路由。
-	if os.Getenv("ENV") == "production" {
-		gin.SetMode(gin.ReleaseMode)
+	runtime, cleanup, err := app.Bootstrap(app.RuntimeModeDesktop)
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	// 2. 初始化日志系统
-	logger.Setup()
-	defer logger.Sync()
-
-	slog.Info("Application starting...", "version", "v"+constants.AppVersion)
-
-	// 3. 设置全局 Panic 捕获与恢复
-	defer func() {
-		if r := recover(); r != nil {
-			slog.Error("CRITICAL PANIC", "error", r, "stack", string(debug.Stack()))
-			log.Printf("PANIC: %v\nStack: %s", r, debug.Stack())
-			os.Exit(1)
-		}
-	}()
-
-	// 4. 初始化 JWT 密钥配置
-	jwt.SecretKey = []byte(config.AppConfig.JWTSecret)
-	jwt.TokenExpiry = time.Duration(config.AppConfig.TokenExpiry) * time.Hour
-
-	// 5. 初始化数据库连接
-	slog.Info("Initializing database...")
-	db := database.GetDB()
-
-	// 执行数据库自动迁移 (同步表结构)
-	if err := db.AutoMigrate(
-		&models.User{},
-		&models.Project{},
-		&models.Payment{},
-		&models.Dictionary{},
-		&models.DictionaryItem{},
-		&models.Notification{},
-		&models.UserNotification{},
-		&models.PersonalAccessToken{},
-	); err != nil {
-		slog.Error("Failed to migrate database", "error", err)
-		if closeErr := database.Close(); closeErr != nil {
-			slog.Warn("Failed to close database after migration error", "error", closeErr)
-		}
-		os.Exit(1)
-	}
-
-	// 播种初始化数据 (如默认用户、字典等)
-	if err := database.Seed(db); err != nil {
-		slog.Error("Failed to seed database", "error", err)
-	}
-
-	defer database.Close()
-
-	// 6. 初始化 Gin 路由器 (API 处理器)
-	ginRouter := router.NewRouter()
+	defer cleanup()
+	ginRouter := runtime.Router
 
 	// 7. 启动对外 API 服务 (如果启用)
 	if config.AppConfig.EnableAPIServer {
@@ -190,7 +130,7 @@ func main() {
 
 	// 9. 启动应用程序
 	// Run() 会阻塞当前 goroutine 直到应用退出
-	err := app.Run()
+	err = app.Run()
 
 	// 如果运行时发生错误，记录日志并退出
 	if err != nil {

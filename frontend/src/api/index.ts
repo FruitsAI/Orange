@@ -5,6 +5,7 @@
  * 处理 Token 自动注入、统一错误处理以及登录过期跳转逻辑。
  */
 import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
+import { API_BASE_URL } from '@/config/api'
 import { clearAuthStorage, getStoredToken } from '@/utils/authStorage'
 
 // API 统一响应结构
@@ -24,7 +25,7 @@ export interface PageData<T> {
 
 // 创建全局 Axios 实例
 const api: AxiosInstance = axios.create({
-  baseURL: '/api/v1', // API 接口前缀
+  baseURL: `${API_BASE_URL}/api/v1`, // API 接口前缀
   timeout: 10000,     // 请求超时时间 (10秒)
   headers: {
     'Content-Type': 'application/json',

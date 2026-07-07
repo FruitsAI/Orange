@@ -20,6 +20,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.vercel/
 
 # Logs
 *.log
@@ -61,3 +62,4 @@ docs/review/
 code-review-report.json
 .agents/
 .claude/
+.vercel

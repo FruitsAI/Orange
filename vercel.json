@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/health",
+      "destination": "/api/health.go"
+    }
+  ]
+}
+

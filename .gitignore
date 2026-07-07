@@ -3,6 +3,7 @@ bin
 build/bin
 build/linux/appimage/build
 build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+.worktrees/
 
 # System
 .DS_Store

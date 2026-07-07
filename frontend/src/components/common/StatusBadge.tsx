@@ -20,6 +20,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   overdue: { label: '已逾期', className: 'status-badge--danger' },
   notstarted: { label: '未开始', className: 'status-badge--overdue' },
   archived: { label: '已归档', className: 'status-badge--overdue' },
+  confirmed: { label: '已收款', className: 'status-badge--completed' },
   paid: { label: '已收款', className: 'status-badge--completed' },
 }
 

@@ -126,7 +126,7 @@ export default function ProjectDetailView() {
                       <StatusBadge status={payment.status} />
                     </td>
                     <td>
-                      {payment.status !== 'paid' ? (
+                      {payment.status !== 'paid' && payment.status !== 'confirmed' ? (
                         <button className="btn btn-ghost btn-sm" onClick={() => confirmPayment(payment.id)} type="button">
                           确认收款
                         </button>

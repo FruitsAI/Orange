@@ -27,8 +27,10 @@ type Config struct {
 	DBAutoCreate bool   // 是否自动创建数据库 (本地 true, 云托管 false)
 
 	// API 服务配置
-	APIServerPort   int  // 对外 API 服务端口 (默认 3456)
-	EnableAPIServer bool // 是否启用对外 API 服务
+	APIServerPort   int    // 对外 API 服务端口 (默认 3456)
+	EnableAPIServer bool   // 是否启用对外 API 服务
+	FrontendURL     string // Web 前端部署地址，用于默认 CORS 白名单
+	APIBaseURL      string // Web API 对外访问地址，用于部署文档和前端配置对齐
 
 	JWTSecret      string   // JWT 签名密钥
 	AllowedOrigins []string // CORS 允许的域名白名单
@@ -91,6 +93,11 @@ func Load() {
 
 	// 默认 CORS 允许的源
 	defaultAllowedOrigins := []string{"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"}
+	frontendURL := getEnv("FRONTEND_URL", "")
+	if frontendURL != "" {
+		defaultAllowedOrigins = append(defaultAllowedOrigins, frontendURL)
+	}
+	apiBaseURL := getEnv("API_BASE_URL", "")
 
 	// 从环境变量读取 CORS 配置
 	allowedOriginsEnv := getEnv("ALLOWED_ORIGINS", "")
@@ -119,6 +126,8 @@ func Load() {
 
 		APIServerPort:   int(getEnvInt("API_SERVER_PORT", 3456)),
 		EnableAPIServer: getEnvBool("ENABLE_API_SERVER", true),
+		FrontendURL:     frontendURL,
+		APIBaseURL:      apiBaseURL,
 
 		JWTSecret:      loadJWTSecret(),
 		AllowedOrigins: allowedOrigins,

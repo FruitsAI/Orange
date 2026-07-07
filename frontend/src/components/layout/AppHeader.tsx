@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { notificationApi, type Notification } from '@/api/notification'
 import NotificationDetailModal from '@/components/notification/NotificationDetailModal'
@@ -42,7 +42,7 @@ export default function AppHeader() {
 
   const userInitial = (user?.name || user?.username || 'U').charAt(0).toUpperCase()
 
-  const refreshNotifications = async () => {
+  const refreshNotifications = useCallback(async () => {
     if (!isAuthenticated) return
 
     try {
@@ -55,14 +55,14 @@ export default function AppHeader() {
     } catch {
       // Notification polling should never break primary navigation.
     }
-  }
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (!isAuthenticated) return
-    refreshNotifications()
+    window.setTimeout(refreshNotifications, 0)
     const interval = window.setInterval(refreshNotifications, 30000)
     return () => window.clearInterval(interval)
-  }, [isAuthenticated])
+  }, [isAuthenticated, refreshNotifications])
 
   const handleNotificationClick = async (item: Notification) => {
     setShowNotifications(false)

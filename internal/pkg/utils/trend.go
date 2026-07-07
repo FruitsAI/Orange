@@ -8,9 +8,9 @@ package utils
 //
 // 返回:
 //   - float64: 环比增长百分比
-//     - 如果 previous = 0 且 current > 0，返回 100 (代表从无到有)
-//     - 如果 previous = 0 且 current = 0，返回 0
-//     - 其他情况返回 ((current - previous) / previous) * 100
+//   - 如果 previous = 0 且 current > 0，返回 100 (代表从无到有)
+//   - 如果 previous = 0 且 current = 0，返回 0
+//   - 其他情况返回 ((current - previous) / previous) * 100
 //
 // 示例:
 //   - CalcPercentageTrend(150, 100) = 50.0 (增长50%)

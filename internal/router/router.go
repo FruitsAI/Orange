@@ -31,10 +31,10 @@ func NewRouter() *gin.Engine {
 
 	// 1. 注册全局中间件
 	// Recovery 注册在最外层，确保后续任意中间件（含 Logger）内部 panic 也能被兜底捕获。
-	router.Use(gin.Recovery())         // Panic 恢复 (防止服务崩溃)
-	router.Use(middleware.Logger())    // 统一请求日志
-	router.Use(middleware.Metrics())   // Prometheus 指标采集
-	router.Use(corsMiddleware())       // 跨域处理
+	router.Use(gin.Recovery())       // Panic 恢复 (防止服务崩溃)
+	router.Use(middleware.Logger())  // 统一请求日志
+	router.Use(middleware.Metrics()) // Prometheus 指标采集
+	router.Use(corsMiddleware())     // 跨域处理
 
 	// 2. 健康检查接口 (用于负载均衡或探针检测)
 	router.GET("/api/health", healthCheck)
@@ -144,14 +144,14 @@ func NewRouter() *gin.Engine {
 			notifications := authorized.Group("/notifications")
 			{
 				notificationHandler := handler.NewNotificationHandler()
-				notifications.GET("", notificationHandler.List)                                        // 通知列表
-				notifications.POST("", middleware.AdminOnly(), notificationHandler.Create)              // 发送通知 (私信/广播, 仅管理员)
-				notifications.GET("/unread-count", notificationHandler.UnreadCount)                     // 未读数
-				notifications.GET("/users", middleware.AdminOnly(), notificationHandler.ListUsers)      // 可通知用户列表 (仅管理员)
-				notifications.GET("/:id", notificationHandler.Get)                                      // 通知详情
-				notifications.PUT("/:id", middleware.AdminOnly(), notificationHandler.Update)           // 更新通知 (仅管理员)
-				notifications.PUT("/:id/read", notificationHandler.MarkAsRead)                          // 标记已读
-				notifications.DELETE("/:id", middleware.AdminOnly(), notificationHandler.Delete)        // 删除通知 (仅管理员)
+				notifications.GET("", notificationHandler.List)                                    // 通知列表
+				notifications.POST("", middleware.AdminOnly(), notificationHandler.Create)         // 发送通知 (私信/广播, 仅管理员)
+				notifications.GET("/unread-count", notificationHandler.UnreadCount)                // 未读数
+				notifications.GET("/users", middleware.AdminOnly(), notificationHandler.ListUsers) // 可通知用户列表 (仅管理员)
+				notifications.GET("/:id", notificationHandler.Get)                                 // 通知详情
+				notifications.PUT("/:id", middleware.AdminOnly(), notificationHandler.Update)      // 更新通知 (仅管理员)
+				notifications.PUT("/:id/read", notificationHandler.MarkAsRead)                     // 标记已读
+				notifications.DELETE("/:id", middleware.AdminOnly(), notificationHandler.Delete)   // 删除通知 (仅管理员)
 			}
 
 			// 个人访问令牌模块

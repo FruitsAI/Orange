@@ -9,9 +9,9 @@ type PaymentRequest struct {
 	PlanDate   string  `json:"plan_date" binding:"required"`
 	// Status 收款状态；"paid" 为历史兼容值，服务层会归一为 "confirmed"
 	Status string `json:"status" binding:"omitempty,oneof=pending confirmed overdue paid"`
-	Method     string  `json:"method"`
-	Remark     string  `json:"remark"`
-	UserID     int64   `json:"-"`
+	Method string `json:"method"`
+	Remark string `json:"remark"`
+	UserID int64  `json:"-"`
 }
 
 // ConfirmPaymentRequest 确认收款请求

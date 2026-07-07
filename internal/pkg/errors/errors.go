@@ -38,9 +38,9 @@ var (
 	ErrInvalidToken = &BizError{Code: 401, Message: "令牌无效或已过期"}
 
 	// 403 Forbidden - 无权限
-	ErrForbidden    = &BizError{Code: 403, Message: "无权访问此资源"}
-	ErrNotOwner     = &BizError{Code: 403, Message: "您不是此资源的所有者"}
-	ErrAdminOnly    = &BizError{Code: 403, Message: "此操作仅限管理员"}
+	ErrForbidden = &BizError{Code: 403, Message: "无权访问此资源"}
+	ErrNotOwner  = &BizError{Code: 403, Message: "您不是此资源的所有者"}
+	ErrAdminOnly = &BizError{Code: 403, Message: "此操作仅限管理员"}
 
 	// 404 Not Found - 资源不存在
 	ErrNotFound        = &BizError{Code: 404, Message: "资源不存在"}
@@ -49,14 +49,14 @@ var (
 	ErrUserNotFound    = &BizError{Code: 404, Message: "用户不存在"}
 
 	// 409 Conflict - 资源冲突
-	ErrConflict         = &BizError{Code: 409, Message: "资源冲突"}
-	ErrUsernameExists   = &BizError{Code: 409, Message: "用户名已存在"}
-	ErrEmailExists      = &BizError{Code: 409, Message: "邮箱已被注册"}
+	ErrConflict       = &BizError{Code: 409, Message: "资源冲突"}
+	ErrUsernameExists = &BizError{Code: 409, Message: "用户名已存在"}
+	ErrEmailExists    = &BizError{Code: 409, Message: "邮箱已被注册"}
 
 	// 500 Internal Server Error - 系统错误
-	ErrInternal     = &BizError{Code: 500, Message: "服务器内部错误"}
-	ErrDatabase     = &BizError{Code: 500, Message: "数据库操作失败"}
-	ErrTransaction  = &BizError{Code: 500, Message: "事务执行失败"}
+	ErrInternal    = &BizError{Code: 500, Message: "服务器内部错误"}
+	ErrDatabase    = &BizError{Code: 500, Message: "数据库操作失败"}
+	ErrTransaction = &BizError{Code: 500, Message: "事务执行失败"}
 )
 
 // New 创建一个新的业务错误
@@ -71,8 +71,9 @@ func New(code int, message string) *BizError {
 // 用于保留原始错误信息,同时提供用户友好的消息。
 //
 // 示例:
-//   err := db.Create(&project).Error
-//   return errors.Wrap(err, "创建项目失败")
+//
+//	err := db.Create(&project).Error
+//	return errors.Wrap(err, "创建项目失败")
 func Wrap(err error, message string) *BizError {
 	if err == nil {
 		return nil

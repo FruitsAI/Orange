@@ -146,9 +146,9 @@ func TestDashboardService_GetStats_AllMode(t *testing.T) {
 		require.NoError(t, err)
 
 		// 验证金额统计
-		assert.Equal(t, float64(300000), stats.TotalAmount)       // 项目总金额
-		assert.Equal(t, float64(180000), stats.PaidAmount)        // 已确认: 100000 + 80000
-		assert.Equal(t, float64(120000), stats.PendingAmount)     // 待收: 300000 - 180000
+		assert.Equal(t, float64(300000), stats.TotalAmount)   // 项目总金额
+		assert.Equal(t, float64(180000), stats.PaidAmount)    // 已确认: 100000 + 80000
+		assert.Equal(t, float64(120000), stats.PendingAmount) // 待收: 300000 - 180000
 
 		// 逾期金额:本月逾期50000 + 上月逾期60000 = 110000
 		// 注意:GetStats的all模式使用SumOverdue统计所有逾期

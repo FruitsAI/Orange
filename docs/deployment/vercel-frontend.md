@@ -30,10 +30,16 @@ The earlier `/api/health` Go function POC is archived in `docs/deployment/exampl
 
 ## Preview Result
 
-- Status: Previous root deploy failed because Vercel detected the Go project; retry with `--cwd frontend` or project Root Directory `frontend`.
-- Preview URL: `https://react-web-desktop-go-deployment-chuk2na7q-fruitsai.vercel.app` (failed deployment)
-- Backend URL:
+- Status: Deployed successfully with frontend project root.
+- Production deployment URL: `https://frontend-g082ouaug-fruitsai.vercel.app`
+- Production inspector URL: `https://vercel.com/fruitsai/frontend/GDv8taaQ9bnfkGzPNSBNBHsSRqLo`
+- Preview deployment URL: `https://frontend-oawg1bk0k-fruitsai.vercel.app`
+- Preview inspector URL: `https://vercel.com/fruitsai/frontend/7H5wqqx82xp6sjbxYMLS7ZbLXBau`
+- Backend URL: Pending hosted Go API deployment and `VITE_API_BASE_URL` configuration.
 - Smoke test:
-  - `/login` direct load: Pending retry
-  - `/dashboard` refresh fallback: Pending retry
-  - Login against API: Pending backend URL/env
+  - Remote Vercel build: Passed.
+  - `/login` direct load: Blocked by Vercel Deployment Protection; curl follows to `https://vercel.com/login?...`.
+  - `/dashboard` refresh fallback: Blocked by Vercel Deployment Protection; curl follows to `https://vercel.com/login?...`.
+  - Login against API: Pending backend URL/env.
+
+To complete public route smoke tests, disable Deployment Protection for this project/environment or test through an authenticated Vercel session.

@@ -25,5 +25,15 @@ Verify whether the Orange Go backend can run on Vercel without forcing a backend
 
 ## Decision
 
-- Use Vercel for Go backend: Pending
-- Use separate Go hosting platform: Pending
+- Use Vercel for Go backend: No for the primary production API at this stage.
+- Use separate Go hosting platform: Yes.
+- Selected path: deploy the standalone `cmd/server` API as a container/server process and keep Vercel focused on the static React frontend.
+
+## Rationale
+
+- The full backend initializes config, logger, JWT, database connections, migrations, seed data, middleware, and the Gin router as one service.
+- Hosted web production should use PostgreSQL/MySQL connection pooling and predictable process lifetime.
+- The local Vercel Go POC did not serve successfully under `vercel dev` because the local Go runtime cache failed before startup.
+- Vercel can still host the static React app and the narrow `/api/health` POC can stay as a future experiment.
+
+Revisit Vercel for the Go backend only after a clean preview deployment proves a full router adapter can initialize safely, connect to hosted DB, and meet cold-start/timeout requirements.

@@ -18,10 +18,11 @@ orange
 *.so
 *.dylib
 
-# 前端构建产物（如果是 Web 应用）
+# 前端构建产物（API 镜像不需要）
 frontend/dist
 frontend/node_modules
 frontend/.vite
+frontend/.eslintcache
 
 # ============================================
 # 数据库文件（不应打包进镜像）

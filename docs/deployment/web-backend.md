@@ -52,3 +52,57 @@ Then verify:
 curl http://127.0.0.1:3457/api/health
 ```
 
+## Backend Host Decision
+
+- Selected host: container/server platform for the Go API, such as Fly.io, Railway, Render, Cloud Run, or any Docker-capable VPS/PaaS.
+- Reason: Orange's backend is a Gin service with shared startup, migrations, seed data, JWT setup, and database pooling. That model is simpler and safer as a long-running Go API than as many serverless function invocations. The Vercel Go POC remains useful for a narrow health endpoint but has not yet passed full local/preview validation.
+- Deployment artifact: `Dockerfile` builds `./cmd/server` into the `orange-api` container.
+- Deployment command:
+
+```bash
+docker build -t orange-api:local .
+```
+
+- Required runtime environment:
+  - `ENV=production`
+  - `RUNTIME_MODE=server`
+  - `API_SERVER_HOST=0.0.0.0`
+  - `API_SERVER_PORT=3456`
+  - `JWT_SECRET`
+  - `DB_TYPE=postgres` or `DB_TYPE=mysql`
+  - `DB_HOST`
+  - `DB_PORT`
+  - `DB_USER`
+  - `DB_PASSWORD`
+  - `DB_NAME`
+  - `DB_SSL_MODE`
+  - `DB_AUTO_CREATE=false`
+  - `ALLOWED_ORIGINS`
+  - `FRONTEND_URL`
+
+## Container Smoke Test
+
+For local container smoke testing only, SQLite can be enabled explicitly:
+
+```bash
+docker run --rm -p 3456:3456 \
+  -e ENV=production \
+  -e RUNTIME_MODE=server \
+  -e JWT_SECRET=replace-with-a-strong-dev-secret-32-characters \
+  -e DB_TYPE=sqlite \
+  -e ALLOW_PRODUCTION_SQLITE=true \
+  orange-api:local
+```
+
+Then verify:
+
+```bash
+curl http://127.0.0.1:3456/api/health
+```
+
+## Rollback Plan
+
+- Keep the previous container image tag available.
+- Roll back the API service to the previous image if health checks or login smoke tests fail.
+- Roll back the Vercel frontend deployment to the previous deployment if the frontend cannot reach the API.
+- Restore the production database backup if a migration introduces data issues.

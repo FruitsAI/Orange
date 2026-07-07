@@ -33,6 +33,12 @@ type Runtime struct {
 
 // Bootstrap initializes shared backend dependencies for desktop and server hosts.
 func Bootstrap(mode RuntimeMode) (*Runtime, func(), error) {
+	if _, ok := os.LookupEnv("RUNTIME_MODE"); !ok {
+		if err := os.Setenv("RUNTIME_MODE", string(mode)); err != nil {
+			return nil, nil, err
+		}
+	}
+
 	config.Load()
 
 	if os.Getenv("ENV") == "production" {

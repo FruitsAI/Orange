@@ -3,6 +3,7 @@ package config
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -29,6 +30,7 @@ type Config struct {
 	// API 服务配置
 	APIServerPort   int    // 对外 API 服务端口 (默认 3456)
 	EnableAPIServer bool   // 是否启用对外 API 服务
+	RuntimeMode     string // 运行模式: desktop 或 server
 	FrontendURL     string // Web 前端部署地址，用于默认 CORS 白名单
 	APIBaseURL      string // Web API 对外访问地址，用于部署文档和前端配置对齐
 
@@ -112,6 +114,7 @@ func Load() {
 	}
 
 	// 组装配置对象，优先从环境变量读取
+	runtimeMode := getEnv("RUNTIME_MODE", "desktop")
 	AppConfig = &Config{
 		// 数据库配置
 		DBType:       getEnv("DB_TYPE", "sqlite"),
@@ -126,6 +129,7 @@ func Load() {
 
 		APIServerPort:   int(getEnvInt("API_SERVER_PORT", 3456)),
 		EnableAPIServer: getEnvBool("ENABLE_API_SERVER", true),
+		RuntimeMode:     runtimeMode,
 		FrontendURL:     frontendURL,
 		APIBaseURL:      apiBaseURL,
 
@@ -145,6 +149,10 @@ func Load() {
 		PrometheusPassword: getEnv("PROMETHEUS_PASSWORD", ""),
 	}
 
+	if err := validateProductionDatabasePolicy(AppConfig, getEnv("ENV", ""), getEnvBool("ALLOW_PRODUCTION_SQLITE", false)); err != nil {
+		log.Fatal(err)
+	}
+
 	// 安全检查：拒绝使用已知的弱/默认 JWT 密钥（不依赖 ENV 变量，避免误配置绕过）
 	// 任何环境下显式配置了已知弱密钥都直接终止启动，防止用公开密钥伪造 Token。
 	for _, weak := range knownWeakSecrets {
@@ -157,6 +165,13 @@ func Load() {
 	if len(AppConfig.JWTSecret) < 32 {
 		log.Printf("⚠️  WARNING: JWT secret is short (<%d chars). Consider using a longer key for better security.", 32)
 	}
+}
+
+func validateProductionDatabasePolicy(cfg *Config, env string, allowProductionSQLite bool) error {
+	if env == "production" && cfg.RuntimeMode == "server" && cfg.DBType == "sqlite" && !allowProductionSQLite {
+		return fmt.Errorf("production server deployments must use mysql or postgres; set ALLOW_PRODUCTION_SQLITE=true only for an intentional exception")
+	}
+	return nil
 }
 
 // knownWeakSecrets 已知的默认/弱 JWT 密钥黑名单

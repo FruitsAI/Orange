@@ -23,3 +23,28 @@ func TestLoadIncludesWebDeploymentURLs(t *testing.T) {
 		t.Fatalf("AllowedOrigins = %#v, want frontend URL included", AppConfig.AllowedOrigins)
 	}
 }
+
+func TestValidateProductionDatabasePolicyRejectsServerSQLite(t *testing.T) {
+	cfg := &Config{RuntimeMode: "server", DBType: "sqlite"}
+
+	err := validateProductionDatabasePolicy(cfg, "production", false)
+	if err == nil {
+		t.Fatal("expected production server sqlite policy error")
+	}
+}
+
+func TestValidateProductionDatabasePolicyAllowsDesktopSQLite(t *testing.T) {
+	cfg := &Config{RuntimeMode: "desktop", DBType: "sqlite"}
+
+	if err := validateProductionDatabasePolicy(cfg, "production", false); err != nil {
+		t.Fatalf("unexpected desktop sqlite policy error: %v", err)
+	}
+}
+
+func TestValidateProductionDatabasePolicyAllowsExplicitSQLiteOverride(t *testing.T) {
+	cfg := &Config{RuntimeMode: "server", DBType: "sqlite"}
+
+	if err := validateProductionDatabasePolicy(cfg, "production", true); err != nil {
+		t.Fatalf("unexpected override policy error: %v", err)
+	}
+}

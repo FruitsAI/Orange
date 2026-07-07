@@ -2,11 +2,11 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Move Orange toward a shared React frontend that can run on Vercel and inside Wails, while splitting the Go backend into a deployable HTTP API without breaking the current desktop app.
+**Goal:** Move Orange to a shared React frontend that can run on Vercel and inside Wails, while splitting the Go backend into a deployable HTTP API without breaking the current desktop app.
 
-**Architecture:** Use React + Vite as the default frontend target because Orange is an authenticated business application and the same SPA can be reused by Vercel static hosting and Wails. Extract the Go startup path so the desktop app and web API server share config, database, router, migrations, seed data, auth, and handlers. Treat Go-on-Vercel as an early proof-of-concept decision gate; if the Gin service does not fit Vercel's Go runtime constraints cleanly, deploy the Go API to a container/server platform and keep Vercel for the frontend.
+**Architecture:** Use React + Vite as the default frontend target because Orange is an authenticated business application and the same SPA can be reused by Vercel static hosting and Wails. Extract the Go startup path so the desktop app and web API server share config, database, router, migrations, seed data, auth, and handlers. Use Vercel only for the static frontend project rooted at `frontend`; deploy the Go API through `cmd/server` on a container/server platform because the repository-root Go/Vercel proof of concept conflicts with the frontend deployment shape.
 
-**Tech Stack:** Go 1.25+, Gin, GORM, Wails v3, React, Vite, TypeScript, React Router, Zustand or React Context, Axios, Tailwind, Vercel, PostgreSQL/MySQL for hosted web, SQLite for desktop local mode.
+**Tech Stack:** Go 1.26+, Gin, GORM, Wails v3, React, Vite, TypeScript, React Router, Zustand, Axios, Tailwind, Vercel static hosting, Docker/container hosting for Go, PostgreSQL/MySQL for hosted web, SQLite for desktop local mode.
 
 ---
 
@@ -51,8 +51,13 @@ Reconsider Next.js only if one of these becomes a hard requirement:
         auth.ts               # Pinia -> Zustand/Context
       api/
         index.ts              # Axios base URL supports Vercel and Wails
-  vercel.json                 # Frontend deployment config, later backend PoC config if viable
+  Dockerfile                  # API-only container build for ./cmd/server
+  frontend/
+    vercel.json               # Frontend-only Vercel SPA rewrites
   docs/
+    deployment/
+      examples/
+        vercel-health.go.example
     plans/
       2026-07-07-react-web-desktop-go-deployment.md
 ```
@@ -63,9 +68,9 @@ Reconsider Next.js only if one of these becomes a hard requirement:
 
 ```text
 Browser
-  -> Vercel static frontend (React + Vite)
-  -> HTTPS API base URL
-  -> Go API service
+  -> Vercel static frontend (React + Vite, project root: frontend)
+  -> HTTPS API base URL from VITE_API_BASE_URL
+  -> Go API service from ./cmd/server
   -> Hosted PostgreSQL/MySQL
 ```
 
@@ -79,18 +84,17 @@ Wails WebView
   -> SQLite by default
 ```
 
-### Backend Deployment Decision Gate
+### Backend Deployment Decision
 
-The plan explicitly tests whether the current Gin API can run on Vercel with acceptable limitations.
+The current decision is: keep Vercel for the React frontend only, and deploy the Go API as a normal long-running HTTP service.
 
-Pass criteria for Go on Vercel:
-- `GET /api/health` works in a Vercel preview deployment.
-- Authenticated routes can initialize config, JWT, DB, and router without module-scope side effects.
-- Database connections work with hosted PostgreSQL/MySQL.
-- Cold start and timeout behavior are acceptable for normal dashboard workflows.
-- No requirement exists for long-lived background processes, local file persistence, or direct SQLite persistence in production web.
+Reasons:
+- Vercel detects the repository-root `go.mod` as a Go project when the project root is the repository root.
+- A root deployment that mixes React build commands and Go functions failed with `No compiled Go binary found after buildCommand`.
+- Local Vercel Go runtime testing failed before serving the minimal `/api/health` proof of concept.
+- The existing Gin router, migrations, seeding, DB pooling, and desktop runtime are a better fit for a server/container process than per-route serverless functions.
 
-If any pass criterion fails, deploy the Go API to Fly.io, Railway, Render, Cloud Run, or another container/server platform. Keep frontend on Vercel.
+Keep the archived Go-on-Vercel health example only as a reference in `docs/deployment/examples/vercel-health.go.example`. Do not add active root `api/*.go` files or a root `vercel.json` unless the backend strategy is reopened deliberately.
 
 ## Phase 0: Baseline and Safety
 
@@ -688,118 +692,70 @@ git commit -m "docs: define web backend deployment policy"
 
 Expected: commit succeeds.
 
-### Task 8: Vercel Go Backend Proof of Concept
+### Task 8: Archive Vercel Go Backend POC
 
 **Files:**
-- Create: `api/health.go`
-- Create: `vercel.json`
-- Create: `docs/deployment/vercel-go-poc.md`
-- Test: local Vercel dev or documented manual check
+- Move: `api/health.go` -> `docs/deployment/examples/vercel-health.go.example`
+- Delete: `vercel.json`
+- Modify: `docs/deployment/vercel-go-poc.md`
+- Test: `npx --yes vercel build --cwd frontend --yes`
 
-**Step 1: Create a minimal Vercel Go health endpoint**
+**Step 1: Preserve the minimal Go function as documentation**
 
-Create `api/health.go`:
+Move the proof-of-concept handler out of active Vercel function discovery:
 
-```go
-package handler
-
-import (
-	"encoding/json"
-	"net/http"
-
-	"github.com/FruitsAI/Orange/internal/constants"
-)
-
-func Handler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"code":    0,
-		"message": "ok",
-		"data": map[string]any{
-			"service": "Orange API POC",
-			"version": constants.AppVersion,
-		},
-	})
-}
+```bash
+mkdir -p docs/deployment/examples
+git mv api/health.go docs/deployment/examples/vercel-health.go.example
 ```
 
-**Step 2: Add Vercel config**
+Expected: the handler is still available for reference, but Vercel will not treat it as an active deployment function.
 
-Create or update `vercel.json`:
+**Step 2: Remove repository-root Vercel config**
 
-```json
-{
-  "version": 2,
-  "rewrites": [
-    {
-      "source": "/api/health",
-      "destination": "/api/health.go"
-    }
-  ]
-}
-```
+Delete root `vercel.json`.
 
-**Step 3: Document outcome**
+Expected: there is no root Vercel project configuration that mixes the repository `go.mod`, Go function discovery, and frontend build commands.
 
-Create `docs/deployment/vercel-go-poc.md`:
+**Step 3: Document the result**
+
+Update `docs/deployment/vercel-go-poc.md`:
 
 ```markdown
-# Vercel Go Backend POC
-
-## Goal
-
-Verify whether the Orange Go backend can run on Vercel without forcing a backend rewrite.
-
-## Checks
-
-- `GET /api/health` works.
-- Gin router can be adapted or mounted.
-- Environment variables load correctly.
-- Hosted database connection works.
-- Cold start is acceptable.
-
 ## Result
 
-- Status: Pending
-- Preview URL:
-- Notes:
+- Status: Failed for current architecture.
+- Local Vercel Go runtime failed before serving `/api/health`.
+- Root frontend preview deployment failed because Vercel detected repository-root `go.mod` and expected a compiled Go function binary after the React frontend build.
+- POC handler archived at `docs/deployment/examples/vercel-health.go.example`.
 
 ## Decision
 
-- Use Vercel for Go backend: Pending
-- Use separate Go hosting platform: Pending
+- Use Vercel for Go backend: No, not for this migration.
+- Use separate Go hosting platform: Yes, use `cmd/server` and Docker/container hosting.
 ```
 
-**Step 4: Local check**
+**Step 4: Verify frontend-only Vercel build**
 
 Run:
 
 ```bash
-npx vercel dev
+npx --yes vercel build --cwd frontend --yes
 ```
 
-Then:
-
-```bash
-curl -s http://127.0.0.1:3000/api/health
-```
-
-Expected: response contains `"Orange API POC"`.
+Expected: PASS. Vercel builds the Vite frontend project from `frontend` and does not inspect root Go functions.
 
 **Step 5: Commit**
 
 Run:
 
 ```bash
-git add api/health.go vercel.json docs/deployment/vercel-go-poc.md
-git commit -m "test: add vercel go backend poc"
+git add docs/deployment/examples/vercel-health.go.example docs/deployment/vercel-go-poc.md
+git add -u api/health.go vercel.json
+git commit -m "fix: archive vercel go poc"
 ```
 
 Expected: commit succeeds.
-
-**Step 6: Decision gate**
-
-If Vercel Go runtime cannot mount the full Gin app safely, stop expanding backend-on-Vercel and use the standalone `cmd/server` deployment path instead.
 
 ## Phase 3: Frontend API Abstraction Before Framework Migration
 
@@ -1758,28 +1714,32 @@ Expected: commit only if changes were needed.
 ### Task 23: Add Vercel Static Frontend Configuration
 
 **Files:**
-- Modify: `vercel.json`
+- Create: `frontend/vercel.json`
+- Create: `frontend/.gitignore`
 - Create: `docs/deployment/vercel-frontend.md`
 
 **Step 1: Configure frontend build**
 
-If using one Vercel project for frontend from repo root, use:
+Create `frontend/vercel.json`:
 
 ```json
 {
-  "buildCommand": "cd frontend && npm ci && npm run build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "cd frontend && npm ci",
   "rewrites": [
     {
-      "source": "/((?!api/.*).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
 }
 ```
 
-If keeping the backend POC in the same Vercel project, preserve `/api/*` rewrites for the POC and route non-API traffic to `index.html`.
+Create `frontend/.gitignore`:
+
+```text
+.vercel
+```
+
+Expected: Vercel treats `frontend` as a Vite static app and preserves React Router deep links.
 
 **Step 2: Document Vercel settings**
 
@@ -1791,10 +1751,10 @@ Create `docs/deployment/vercel-frontend.md`:
 ## Project Settings
 
 - Framework Preset: Vite
-- Root Directory: repository root
-- Install Command: `cd frontend && npm ci`
-- Build Command: `cd frontend && npm run build`
-- Output Directory: `frontend/dist`
+- Root Directory: `frontend`
+- Install Command: `npm ci`
+- Build Command: `npm run build`
+- Output Directory: `dist`
 
 ## Environment Variables
 
@@ -1802,7 +1762,11 @@ Create `docs/deployment/vercel-frontend.md`:
 
 ## SPA Routing
 
-All non-API routes rewrite to `/index.html`.
+All routes rewrite to `/index.html` through `frontend/vercel.json`.
+
+## Important
+
+Do not deploy the repository root as the Vercel frontend project. The repository root contains `go.mod`, which makes Vercel detect a Go project and can fail with `No compiled Go binary found after buildCommand`.
 ```
 
 **Step 3: Local build**
@@ -1810,7 +1774,7 @@ All non-API routes rewrite to `/index.html`.
 Run:
 
 ```bash
-cd frontend && npm ci && npm run build
+npx --yes vercel build --cwd frontend --yes
 ```
 
 Expected: PASS.
@@ -1820,7 +1784,7 @@ Expected: PASS.
 Run:
 
 ```bash
-git add vercel.json docs/deployment/vercel-frontend.md
+git add frontend/vercel.json frontend/.gitignore docs/deployment/vercel-frontend.md
 git commit -m "feat: configure vercel frontend deployment"
 ```
 
@@ -1836,7 +1800,7 @@ Expected: commit succeeds.
 Run:
 
 ```bash
-vercel
+npx --yes vercel deploy --cwd frontend --yes
 ```
 
 Expected: Vercel preview URL is created.
@@ -1883,28 +1847,46 @@ Expected: commit succeeds.
 - Modify: `docs/deployment/web-backend.md`
 - Modify: `docs/deployment/vercel-go-poc.md`
 
-**Step 1: Evaluate Vercel Go POC**
+**Step 1: Record the backend host decision**
 
-Record:
-- Can full Gin router be adapted?
-- Does hosted DB work?
-- Are cold starts acceptable?
-- Are route/function limits acceptable?
-- Are background jobs or long-lived processes needed?
-
-**Step 2: Decide**
-
-Choose one:
+Append to `docs/deployment/web-backend.md`:
 
 ```markdown
 ## Backend Host Decision
 
-- Selected host:
-- Reason:
-- Deployment command:
+- Selected host: Container/server platform for `cmd/server` (Fly.io, Railway, Render, Cloud Run, or equivalent).
+- Reason: Orange's Gin API, migrations, seed data, DB pooling, and desktop-compatible runtime fit a long-running HTTP process better than Vercel Go functions.
+- Deployment artifact: `Dockerfile` builds `/orange-api` from `./cmd/server`.
 - Environment variables:
+  - `ENV=production`
+  - `RUNTIME_MODE=server`
+  - `JWT_SECRET`
+  - `DB_TYPE=postgres` or `DB_TYPE=mysql`
+  - `DB_HOST`
+  - `DB_PORT`
+  - `DB_USER`
+  - `DB_PASSWORD`
+  - `DB_NAME`
+  - `DB_SSL_MODE=require` for hosted Postgres unless the provider says otherwise
+  - `DB_AUTO_CREATE=false`
+  - `ALLOWED_ORIGINS=<vercel-production-origin>`
 - Rollback plan:
+  - Redeploy the previous backend image/release.
+  - Restore the previous frontend deployment if API compatibility changed.
+  - Restore database backup only if a schema/data migration caused the failure.
 ```
+
+Update `docs/deployment/vercel-go-poc.md` with the same final decision.
+
+**Step 2: Verify Dockerfile builds the API entrypoint**
+
+Run:
+
+```bash
+docker build -t orange-api:local .
+```
+
+Expected: PASS when Docker daemon is running. If Docker is unavailable locally, record that the image build is blocked by Docker daemon state, not by source code.
 
 **Step 3: Commit**
 
@@ -1919,7 +1901,7 @@ Expected: commit succeeds.
 
 ### Task 26A: Deploy Go API to Container/Server Platform
 
-Use this task if Vercel Go POC is not a good fit.
+Use this task because the Vercel Go POC is not a good fit for the current architecture.
 
 **Files:**
 - Create: `Dockerfile`
@@ -1931,19 +1913,38 @@ Use this task if Vercel Go POC is not a good fit.
 Create `Dockerfile`:
 
 ```dockerfile
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26-alpine AS builder
+
 WORKDIR /app
+
+RUN apk add --no-cache git gcc musl-dev
+
 COPY go.mod go.sum ./
 RUN go mod download
+
 COPY . .
-RUN go build -o /orange-api ./cmd/server
+RUN go build -ldflags="-w -s" -o /orange-api ./cmd/server
 
 FROM alpine:3.22
-RUN adduser -D -H orange
+
+RUN apk --no-cache add ca-certificates tzdata wget && adduser -D -H orange
+
+ENV API_SERVER_HOST=0.0.0.0
+ENV API_SERVER_PORT=3456
+ENV RUNTIME_MODE=server
+ENV TZ=Asia/Shanghai
+
 WORKDIR /app
+
 COPY --from=builder /orange-api /usr/local/bin/orange-api
+
 USER orange
+
 EXPOSE 3456
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3456/api/health || exit 1
+
 CMD ["orange-api"]
 ```
 
@@ -2001,69 +2002,45 @@ git commit -m "feat: containerize go api"
 
 Expected: commit succeeds.
 
-### Task 26B: Expand Vercel Go Backend
+### Task 26B: Do Not Expand Vercel Go Backend
 
-Use this task only if Task 8 passes.
+This task is intentionally a non-implementation task for this migration.
 
 **Files:**
-- Modify: `api/health.go`
-- Create: `api/[...path].go` or equivalent Vercel Go entrypoint supported by current Vercel runtime
-- Modify: `vercel.json`
-- Modify: `docs/deployment/vercel-go-poc.md`
+- Read: `docs/deployment/vercel-go-poc.md`
+- Read: `docs/deployment/examples/vercel-health.go.example`
 
-**Step 1: Create serverless adapter**
-
-Adapt `router.NewRouter()` to the Vercel Go function handler.
-
-Expected shape:
-
-```go
-var once sync.Once
-var handler http.Handler
-
-func Handler(w http.ResponseWriter, r *http.Request) {
-	once.Do(func() {
-		runtime, _, err := app.Bootstrap(app.RuntimeModeServer)
-		if err != nil {
-			panic(err)
-		}
-		handler = runtime.Router
-	})
-	handler.ServeHTTP(w, r)
-}
-```
-
-**Step 2: Validate no unsafe per-invocation migration behavior**
-
-Confirm `AutoMigrate` and `Seed` are safe under serverless cold starts. If not, move migrations to an explicit command.
-
-**Step 3: Deploy preview**
+**Step 1: Confirm the archived decision**
 
 Run:
 
 ```bash
-vercel
+rg -n "Use Vercel for Go backend|Use separate Go hosting platform|archived" docs/deployment/vercel-go-poc.md
 ```
 
-Expected: preview deployment with working `/api/health`.
+Expected: the document says Vercel Go backend is not selected for this migration and the POC handler is archived.
 
-**Step 4: Smoke test**
-
-Check:
-- Login.
-- Dashboard stats.
-- Project list.
-
-**Step 5: Commit**
+**Step 2: Confirm no active Vercel Go functions remain**
 
 Run:
 
 ```bash
-git add api vercel.json docs/deployment/vercel-go-poc.md
-git commit -m "feat: deploy go api on vercel"
+test ! -d api || find api -type f
+test ! -f vercel.json
 ```
 
-Expected: commit succeeds.
+Expected: no active root `api/*.go` functions and no root `vercel.json`.
+
+**Step 3: Commit only if documentation needed correction**
+
+Run:
+
+```bash
+git add docs/deployment/vercel-go-poc.md docs/deployment/web-backend.md
+git commit -m "docs: keep go backend off vercel functions"
+```
+
+Expected: commit only if Step 1 or Step 2 found stale documentation.
 
 ## Phase 11: Final Verification
 
@@ -2186,7 +2163,7 @@ Expected: commit succeeds.
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
 | Full Vue-to-React rewrite is large | Slow migration, regressions | Migrate by route slices, keep CSS/API stable, commit frequently |
-| Go backend does not fit Vercel well | Backend deploy delay | Run Vercel Go POC early; fall back to container/server platform |
+| Go backend does not fit Vercel well | Backend deploy delay | POC is archived; use `cmd/server` plus Docker/container hosting |
 | SQLite assumptions leak into web production | Data loss or broken deploy | Enforce hosted DB for web production; keep SQLite desktop-only |
 | CORS misconfiguration blocks web app | Login/API failures | Add router CORS tests and document env vars |
 | Auth behavior changes during store migration | Security regression | Preserve API interceptors and protected route tests/manual checks |
@@ -2202,4 +2179,3 @@ Expected: commit succeeds.
 - Backend deployment target is selected and documented.
 - Hosted web mode uses PostgreSQL/MySQL, not SQLite.
 - Login, dashboard, projects, payments, calendar, analytics, and settings pass smoke tests in both web and desktop modes.
-

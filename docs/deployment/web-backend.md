@@ -56,7 +56,7 @@ curl http://127.0.0.1:3457/api/health
 
 - Selected host: container/server platform for the Go API, such as Fly.io, Railway, Render, Cloud Run, or any Docker-capable VPS/PaaS.
 - Reason: Orange's backend is a Gin service with shared startup, migrations, seed data, JWT setup, and database pooling. That model is simpler and safer as a long-running Go API than as many serverless function invocations. The Vercel Go POC remains useful for a narrow health endpoint but has not yet passed full local/preview validation.
-- Deployment artifact: `Dockerfile` builds `./cmd/server` into the `orange-api` container.
+- Deployment artifact: `Dockerfile` builds `./cmd/server` into the `orange-api` container using Go 1.26.
 - Deployment command:
 
 ```bash

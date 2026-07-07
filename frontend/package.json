@@ -8,8 +8,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build:dev": "vue-tsc --build && vite build --minify false --mode development",
-    "build": "vue-tsc --build && vite build --mode production && node scripts/cleanup-remixicon-assets.mjs",
+    "build:dev": "tsc --build && vite build --minify false --mode development",
+    "build": "tsc --build && vite build --mode production && node scripts/cleanup-remixicon-assets.mjs",
     "preview": "vite preview",
     "lint": "eslint . --fix --cache",
     "format": "prettier --write src/"
@@ -23,29 +23,30 @@
     "axios": "^1.13.2",
     "chart.js": "^4.5.1",
     "dayjs": "^1.11.19",
-    "pinia": "^3.0.4",
     "postcss": "^8.5.6",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.1",
     "remixicon": "^4.7.0",
     "tailwindcss": "^4.1.18",
-    "vue": "^3.5.26",
-    "vue-router": "^4.6.4"
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@tailwindcss/vite": "^4.1.18",
     "@tsconfig/node24": "^24.0.3",
     "@types/node": "^24.10.4",
-    "@vitejs/plugin-vue": "^6.0.3",
-    "@vue/eslint-config-prettier": "^10.2.0",
-    "@vue/eslint-config-typescript": "^14.6.0",
-    "@vue/tsconfig": "^0.8.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.2.0",
     "eslint": "^9.39.2",
-    "eslint-plugin-vue": "~10.6.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
     "jiti": "^2.6.1",
     "npm-run-all2": "^8.0.4",
     "prettier": "3.7.4",
     "typescript": "~5.9.3",
-    "vite": "^7.3.0",
-    "vite-plugin-vue-devtools": "^8.0.5",
-    "vue-tsc": "^3.2.1"
+    "typescript-eslint": "^8.62.0",
+    "vite": "^7.3.0"
   }
 }

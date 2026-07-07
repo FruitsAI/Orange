@@ -1,18 +1,16 @@
 import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
+import react from '@vitejs/plugin-react'
 import wails from '@wailsio/runtime/plugins/vite'
 import tailwindcss from '@tailwindcss/vite'
-import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
-    vue(),
+    react(),
     wails('./bindings'),
     tailwindcss(),
-    ...(mode === 'development' ? [vueDevTools()] : []),
   ],
   resolve: {
     alias: {
@@ -20,6 +18,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   esbuild: {
-    drop: mode === 'production' ? ['console', 'debugger'] : [],
+    drop: mode === 'production' ? (['console', 'debugger'] as const) : [],
   },
 }))

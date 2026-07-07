@@ -658,6 +658,65 @@ input:focus, textarea:focus, select:focus {
   font-size: 14px;
 }
 
+.dashboard-stats-grid {
+  margin-bottom: var(--spacing-lg);
+}
+
+.dashboard-charts-row {
+  grid-template-columns: 2fr 1fr;
+  align-items: stretch;
+  margin-bottom: var(--spacing-lg);
+}
+
+.dashboard-projects-row {
+  grid-template-columns: 2fr 1fr;
+  align-items: stretch;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.table-scroll-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.project-table {
+  min-width: 500px;
+}
+
+.project-table th,
+.project-table td {
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-charts-row,
+  .dashboard-projects-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-charts-row,
+  .dashboard-projects-row {
+    gap: var(--spacing-md);
+  }
+
+  .project-table th,
+  .project-table td {
+    padding: var(--spacing-sm) var(--spacing-sm);
+    font-size: 13px;
+  }
+}
+
 /* 快捷操作按钮 */
 .quick-action {
   display: flex;

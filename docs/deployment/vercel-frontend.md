@@ -38,8 +38,8 @@ The earlier `/api/health` Go function POC is archived in `docs/deployment/exampl
 - Backend URL: Pending hosted Go API deployment and `VITE_API_BASE_URL` configuration.
 - Smoke test:
   - Remote Vercel build: Passed.
-  - `/login` direct load: Blocked by Vercel Deployment Protection; curl follows to `https://vercel.com/login?...`.
-  - `/dashboard` refresh fallback: Blocked by Vercel Deployment Protection; curl follows to `https://vercel.com/login?...`.
+  - `/login` direct load: Passed through authenticated `vercel curl`; unauthenticated curl is redirected to Vercel login by Deployment Protection.
+  - `/dashboard` refresh fallback: Passed through authenticated `vercel curl`; unauthenticated curl is redirected to Vercel login by Deployment Protection.
   - Login against API: Pending backend URL/env.
 
-To complete public route smoke tests, disable Deployment Protection for this project/environment or test through an authenticated Vercel session.
+For public unauthenticated route smoke tests, disable Deployment Protection for this project/environment.

@@ -84,7 +84,8 @@ docker build -t orange-api:local .
 
 Current local verification status:
 
-- `docker build -t orange-api:local .`: Blocked locally because Docker daemon is not running (`dial unix /Users/willxue/.docker/run/docker.sock: connect: no such file or directory`).
+- `docker build -t orange-api:local .`: Passed after Docker Desktop was started.
+- Container health check passed with `docker run ... orange-api:local` and `curl http://127.0.0.1:3459/api/health`.
 - Source-level API verification passed with `go run ./cmd/server` and `curl http://127.0.0.1:3457/api/health`.
 
 For local container smoke testing only, SQLite can be enabled explicitly:

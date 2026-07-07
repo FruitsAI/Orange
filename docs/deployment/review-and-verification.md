@@ -33,12 +33,12 @@ Date: 2026-07-07
 - `npx --yes vercel build --cwd frontend --yes`: Passed.
 - `go run ./cmd/server` with temporary SQLite DB plus `curl /api/health`: Passed.
 - `go run ./cmd/server` plus admin login and `/api/v1/dashboard/stats`: Passed.
-- `docker build -t orange-api:local .`: Blocked because local Docker daemon is not running.
-- Vercel route smoke for `/login` and `/dashboard`: Blocked by Vercel Deployment Protection redirecting to Vercel login.
+- `docker build -t orange-api:local .`: Passed after Docker Desktop was started.
+- Container health check with `orange-api:local` and `curl http://127.0.0.1:3459/api/health`: Passed.
+- Vercel route smoke for `/login` and `/dashboard`: Passed through authenticated `vercel curl`; unauthenticated curl redirects to Vercel login because Deployment Protection is enabled.
 
 ## Residual Risks
 
 - React settings and business pages are functional but not a full pixel/feature parity audit against the deleted Vue screens.
 - The main frontend bundle is larger than Vite's 500 KB warning threshold; this is not a build failure but should be revisited with route-level code splitting.
 - Production web login cannot be fully verified until a hosted Go API URL is deployed and configured as `VITE_API_BASE_URL`.
-- Docker image build still needs to be verified on a machine with Docker daemon running.

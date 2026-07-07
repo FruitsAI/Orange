@@ -8,6 +8,8 @@
 - [ ] `ALLOWED_ORIGINS` includes the Vercel production domain.
 - [ ] `FRONTEND_URL` points to the Vercel production domain.
 - [ ] `VITE_API_BASE_URL` points to the production API.
+- [ ] Docker image build and container health check verified in an environment with Docker daemon running.
+- [ ] Vercel Deployment Protection disabled for public smoke tests, or authenticated smoke-test access prepared.
 - [ ] Desktop build verified.
 - [ ] Web preview verified.
 - [ ] Backup and rollback plan documented.

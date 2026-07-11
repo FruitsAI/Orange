@@ -1,0 +1,215 @@
+/**
+ * Ember Orbit design tokens.
+ *
+ * Semantic tokens are the public API. Legacy aliases keep the existing screens
+ * usable while they migrate to the new vocabulary.
+ */
+:root {
+  color-scheme: light dark;
+
+  /* Type */
+  --font-display: 'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif;
+  --font-text: 'Inter', 'SF Pro Text', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  /* Space */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Rounding */
+  --radius-control: 12px;
+  --radius-card: 18px;
+  --radius-panel: 24px;
+  --radius-window: 30px;
+  --radius-pill: 9999px;
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-instant: 100ms;
+  --motion-fast: 180ms;
+  --motion-normal: 260ms;
+  --motion-slow: 420ms;
+
+  /* Layout */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 88px;
+  --header-height: 64px;
+
+  /* Legacy spacing aliases */
+  --spacing-xs: var(--space-2);
+  --spacing-sm: var(--space-3);
+  --spacing-md: var(--space-5);
+  --spacing-lg: var(--space-8);
+  --spacing-xl: var(--space-12);
+  --spacing-2xl: var(--space-16);
+
+  /* Legacy radius aliases */
+  --radius-xs: 8px;
+  --radius-sm: var(--radius-control);
+  --radius-md: var(--radius-card);
+  --radius-lg: var(--radius-panel);
+  --radius-xl: var(--radius-window);
+  --radius-2xl: 40px;
+  --radius-full: var(--radius-pill);
+
+  /* Legacy transition aliases */
+  --transition-instant: var(--motion-instant) var(--ease-standard);
+  --transition-fast: var(--motion-fast) var(--ease-standard);
+  --transition-normal: var(--motion-normal) var(--ease-standard);
+  --transition-slow: var(--motion-slow) var(--ease-standard);
+  --transition-spring: var(--motion-normal) var(--ease-spring);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Night Orbit */
+  --color-bg: #080706;
+  --color-bg-rgb: 8, 7, 6;
+  --color-surface: #151210;
+  --color-surface-raised: rgba(34, 29, 25, 0.82);
+  --color-surface-glass: rgba(28, 24, 21, 0.68);
+  --color-surface-hover: rgba(255, 255, 255, 0.06);
+  --color-text: #fffaf3;
+  --color-text-rgb: 255, 250, 243;
+  --color-text-muted: rgba(255, 247, 237, 0.72);
+  --color-text-subtle: rgba(255, 247, 237, 0.46);
+  --color-text-disabled: rgba(255, 247, 237, 0.28);
+  --color-border: rgba(255, 244, 229, 0.1);
+  --color-border-strong: rgba(255, 244, 229, 0.16);
+  --color-accent: #ff9f0a;
+  --color-accent-hover: #ffb340;
+  --color-accent-strong: #e77f00;
+  --color-accent-rgb: 255, 159, 10;
+  --color-secondary: #8d7cff;
+  --color-success: #43d17a;
+  --color-warning: #ffd166;
+  --color-danger: #ff6259;
+  --color-info: #65c7ff;
+  --color-teal: #43c7bd;
+  --shadow-panel: 0 24px 70px rgba(0, 0, 0, 0.42);
+  --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.24);
+  --gradient-glow: linear-gradient(135deg, #ff8a00 0%, #ffc247 52%, #ff6b00 100%);
+  --gradient-text: linear-gradient(135deg, #ffc15c 0%, #ff7a18 58%, #ff5c45 100%);
+
+  /* Liquid glass material */
+  --glass-blur: 44px;
+  --glass-saturation: 165%;
+  --glass-brightness: 1.12;
+  --glass-contrast: 1.08;
+  --glass-specular: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.06) 24%,
+    transparent 52%,
+    rgba(255, 159, 10, 0.035) 100%
+  );
+  --glass-shadow-outer: var(--shadow-panel);
+  --glass-shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 0 20px rgba(0, 0, 0, 0.38);
+  --glass-border: 1px solid rgba(255, 244, 229, 0.13);
+  --glass-border-subtle: 1px solid rgba(255, 244, 229, 0.07);
+
+  /* Legacy color aliases */
+  --bg-base: var(--color-bg);
+  --bg-base-rgb: var(--color-bg-rgb);
+  --bg-elevated: var(--color-surface-glass);
+  --bg-content: var(--color-surface-raised);
+  --bg-sidebar: var(--color-surface-glass);
+  --bg-hover: var(--color-surface-hover);
+  --bg-card: var(--color-surface);
+  --text-primary: var(--color-text);
+  --text-primary-rgb: var(--color-text-rgb);
+  --text-secondary: var(--color-text-muted);
+  --text-tertiary: var(--color-text-subtle);
+  --text-quaternary: var(--color-text-disabled);
+  --text-placeholder: var(--color-text-subtle);
+  --border-color: var(--color-border);
+  --separator-color: var(--color-border-strong);
+  --color-primary: var(--color-accent);
+  --color-primary-light: var(--color-accent-hover);
+  --color-primary-dark: var(--color-accent-strong);
+  --color-primary-rgb: var(--color-accent-rgb);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* Day Ember */
+  --color-bg: #f7f2e9;
+  --color-bg-rgb: 247, 242, 233;
+  --color-surface: #fffdf9;
+  --color-surface-raised: rgba(255, 253, 249, 0.94);
+  --color-surface-glass: rgba(255, 252, 246, 0.76);
+  --color-surface-hover: rgba(91, 67, 43, 0.055);
+  --color-text: #241b15;
+  --color-text-rgb: 36, 27, 21;
+  --color-text-muted: rgba(51, 39, 31, 0.7);
+  --color-text-subtle: rgba(70, 53, 41, 0.48);
+  --color-text-disabled: rgba(70, 53, 41, 0.28);
+  --color-border: rgba(83, 61, 41, 0.11);
+  --color-border-strong: rgba(83, 61, 41, 0.17);
+  --color-accent: #f47b16;
+  --color-accent-hover: #ff922b;
+  --color-accent-strong: #d85d08;
+  --color-accent-rgb: 244, 123, 22;
+  --color-secondary: #7166d9;
+  --color-success: #238653;
+  --color-warning: #c47b00;
+  --color-danger: #d7473e;
+  --color-info: #287eb8;
+  --color-teal: #278f89;
+  --shadow-panel: 0 24px 60px rgba(76, 51, 28, 0.12), 0 2px 8px rgba(76, 51, 28, 0.06);
+  --shadow-soft: 0 12px 30px rgba(76, 51, 28, 0.09);
+  --gradient-glow: linear-gradient(135deg, #f57616 0%, #ffad32 52%, #ed5e0d 100%);
+  --gradient-text: linear-gradient(135deg, #d85d08 0%, #f47b16 58%, #df4d3b 100%);
+
+  /* Ceramic glass material */
+  --glass-blur: 36px;
+  --glass-saturation: 145%;
+  --glass-brightness: 1.04;
+  --glass-contrast: 1;
+  --glass-specular: linear-gradient(
+    125deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.46) 18%,
+    rgba(255, 255, 255, 0.1) 34%,
+    transparent 62%,
+    rgba(255, 244, 225, 0.3) 100%
+  );
+  --glass-shadow-outer: var(--shadow-panel);
+  --glass-shadow-inner:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72), inset 0 0 18px rgba(255, 255, 255, 0.24);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.76);
+  --glass-border-subtle: 1px solid rgba(255, 255, 255, 0.42);
+
+  /* Legacy color aliases */
+  --bg-base: var(--color-bg);
+  --bg-base-rgb: var(--color-bg-rgb);
+  --bg-elevated: var(--color-surface-glass);
+  --bg-content: var(--color-surface-raised);
+  --bg-sidebar: var(--color-surface-glass);
+  --bg-hover: var(--color-surface-hover);
+  --bg-card: var(--color-surface);
+  --text-primary: var(--color-text);
+  --text-primary-rgb: var(--color-text-rgb);
+  --text-secondary: var(--color-text-muted);
+  --text-tertiary: var(--color-text-subtle);
+  --text-quaternary: var(--color-text-disabled);
+  --text-placeholder: var(--color-text-subtle);
+  --border-color: var(--color-border);
+  --separator-color: var(--color-border-strong);
+  --color-primary: var(--color-accent);
+  --color-primary-light: var(--color-accent-hover);
+  --color-primary-dark: var(--color-accent-strong);
+  --color-primary-rgb: var(--color-accent-rgb);
+}

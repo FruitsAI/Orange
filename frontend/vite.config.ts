@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => ({
     drop: mode === 'production' ? (['console', 'debugger'] as const) : [],
   },
   test: {
+    css: true,
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',

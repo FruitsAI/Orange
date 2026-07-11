@@ -1,3 +1,6 @@
+import './styles/tokens.css'
+import './styles/foundations.css'
+import './styles/motion.css'
 import './assets/liquid-glass.css'
 import './assets/main.css'
 import 'remixicon/fonts/remixicon.css'
@@ -27,4 +30,3 @@ ReactDOM.createRoot(document.getElementById('app')!).render(
     <RouterProvider router={router} />
   </React.StrictMode>,
 )
-

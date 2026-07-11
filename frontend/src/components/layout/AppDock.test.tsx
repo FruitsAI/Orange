@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 import { render, screen, within } from '@/test/render'
 import '@/styles/layout.css'
+import layoutCss from '@/styles/layout.css?raw'
 import AppDock from './AppDock'
 import AppLayout from './AppLayout'
 import AppTopbar from './AppTopbar'
@@ -90,7 +91,9 @@ describe('AppDock', () => {
     ).not.toBeInTheDocument()
   })
 
-  test('defines responsive, safe-area-aware and keyboard-visible dock styles', () => {
+  test('defines the responsive CSS contract for the dock', () => {
+    // This audits declarations, not rendered geometry. Task 12 must verify 320/375/768px
+    // Wails windows, keyboard Tab order, and open-menu viewport boundaries at runtime.
     const rules = Array.from(document.styleSheets).flatMap((sheet) => getCssRules(sheet.cssRules))
     const findStyleRule = (selector: string) =>
       rules.find(
@@ -120,5 +123,49 @@ describe('AppDock', () => {
     expect(findResponsiveStyle('.app-view-content')?.style.paddingBottom).toContain(
       'env(safe-area-inset-bottom)',
     )
+  })
+
+  test('defines the responsive CSS contract for a 320px compact topbar', () => {
+    // jsdom does not perform media-query layout; runtime geometry remains a Task 12 check.
+    const rules = Array.from(document.styleSheets).flatMap((sheet) => getCssRules(sheet.cssRules))
+    const compactRule = rules.find(
+      (rule): rule is CSSMediaRule =>
+        rule instanceof CSSMediaRule && rule.conditionText.includes('max-width: 480px'),
+    )
+    const compactStyles = compactRule ? Array.from(compactRule.cssRules) : []
+    const findCompactStyle = (selector: string) =>
+      compactStyles.find(
+        (rule): rule is CSSStyleRule =>
+          rule instanceof CSSStyleRule && rule.selectorText === selector,
+      )
+    const notificationListRule = rules.find(
+      (rule): rule is CSSStyleRule =>
+        rule instanceof CSSStyleRule && rule.selectorText === '.app-topbar__notification-list',
+    )
+    const compactCssStart = layoutCss.indexOf('@media (max-width: 480px)')
+    const compactCssEnd = layoutCss.indexOf(
+      '@media (prefers-reduced-motion: reduce)',
+      compactCssStart,
+    )
+    const compactCss = layoutCss.slice(compactCssStart, compactCssEnd)
+
+    expect(findCompactStyle('.app-topbar__command')?.style.display).toBe('none')
+    expect(findCompactStyle('.app-topbar')?.style.getPropertyValue('padding-inline')).toBe('6px')
+    expect(
+      findCompactStyle('.app-topbar')?.style.getPropertyValue(
+        '--app-topbar-notification-trailing-offset',
+      ),
+    ).toBe('80px')
+    expect(findCompactStyle('.app-topbar__utilities')?.style.gap).toBe('3px')
+    expect(findCompactStyle('.app-topbar__icon-button')?.style.width).toBe('34px')
+    expect(findCompactStyle('.app-topbar__user-button')?.style.width).toBe('34px')
+    expect(
+      findCompactStyle('.app-topbar__notification-wrapper .app-topbar__notification-menu')?.style
+        .right,
+    ).toContain('--app-topbar-notification-trailing-offset')
+    expect(compactCss).toContain('width: min(340px, calc(100vw - 28px));')
+    expect(notificationListRule?.style.maxHeight).toBe('320px')
+    expect(notificationListRule?.style.height).toBe('')
+    expect(notificationListRule?.style.minHeight).toBe('')
   })
 })

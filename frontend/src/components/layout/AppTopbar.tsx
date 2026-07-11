@@ -168,7 +168,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
           />
         </button>
 
-        <div className="app-topbar__menu-wrapper">
+        <div className="app-topbar__menu-wrapper app-topbar__notification-wrapper">
           <button
             aria-expanded={showNotifications}
             aria-label="查看通知"

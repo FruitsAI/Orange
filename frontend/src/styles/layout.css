@@ -583,6 +583,38 @@
   }
 }
 
+@media (max-width: 480px) {
+  .app-topbar {
+    --app-topbar-notification-trailing-offset: 80px;
+    padding-inline: 6px;
+  }
+
+  .app-topbar__utilities {
+    gap: 3px;
+  }
+
+  .app-topbar__command {
+    display: none;
+  }
+
+  .app-topbar__icon-button {
+    height: 34px;
+    width: 34px;
+  }
+
+  .app-topbar__user-button {
+    height: 34px;
+    padding-inline: 3px;
+    width: 34px;
+  }
+
+  .app-topbar__notification-wrapper .app-topbar__notification-menu {
+    /* 34px settings + 34px user + two 3px gaps + 6px end padding */
+    right: calc(0px - var(--app-topbar-notification-trailing-offset));
+    width: min(340px, calc(100vw - 28px));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-topbar,
   .app-topbar__nav-link,

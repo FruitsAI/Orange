@@ -74,6 +74,14 @@ describe('AppTopbar', () => {
     expect(screen.getByRole('button', { name: '打开用户菜单' })).toBeInTheDocument()
   })
 
+  test('provides a dedicated notification anchor for compact-window positioning', () => {
+    render(<AppTopbar />, { initialEntries: ['/dashboard'] })
+
+    expect(screen.getByRole('button', { name: '查看通知' }).parentElement).toHaveClass(
+      'app-topbar__notification-wrapper',
+    )
+  })
+
   test('maximises draggable topbar gaps but not interactive controls', () => {
     const { container } = render(<AppTopbar />, { initialEntries: ['/dashboard'] })
 

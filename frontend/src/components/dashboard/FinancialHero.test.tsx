@@ -1,19 +1,20 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { render } from '@/test/render'
 import FinancialHero, { type FinancialHeroProps } from './FinancialHero'
 
 const baseProps: FinancialHeroProps = {
-  actualAmount: 8_000,
   cta: { label: '处理待收款', to: '/projects/42' },
-  expectedAmount: 12_345,
+  expectedAmountText: '人民币 12,345 元',
   nextPayment: {
-    amount: 3_200,
-    daysLeft: 3,
-    projectName: '星轨品牌升级',
+    detailText: '星轨品牌升级 · 人民币 3,200 元',
+    dueLabel: '下一笔 3 天后到期',
   },
-  overdueAmount: 1_500,
+  overdueAmountText: '人民币 1,500 元',
   periodLabel: '近30天',
+  supportingText: '同期已回款 人民币 8,000 元',
 }
 
 describe('FinancialHero', () => {
@@ -22,24 +23,28 @@ describe('FinancialHero', () => {
 
     expect(screen.getByRole('region', { name: '财务概览' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1, name: '近30天预计回款' })).toBeInTheDocument()
-    expect(screen.getByText('¥12,345.00')).toBeInTheDocument()
+    expect(screen.getByText('人民币 12,345 元')).toBeInTheDocument()
   })
 
   it('shows overdue risk and the next payment countdown', () => {
     render(<FinancialHero {...baseProps} />)
 
     expect(screen.getByText('逾期风险')).toBeInTheDocument()
-    expect(screen.getByText('¥1,500.00')).toBeInTheDocument()
+    expect(screen.getByText('人民币 1,500 元')).toBeInTheDocument()
     expect(screen.getByText('下一笔 3 天后到期')).toBeInTheDocument()
-    expect(screen.getByText('星轨品牌升级 · ¥3,200.00')).toBeInTheDocument()
+    expect(screen.getByText('星轨品牌升级 · 人民币 3,200 元')).toBeInTheDocument()
   })
 
-  it('uses an explicit today label for a payment due today', () => {
+  it('renders supplied payment copy without deriving or formatting it', () => {
     render(
-      <FinancialHero {...baseProps} nextPayment={{ ...baseProps.nextPayment!, daysLeft: 0 }} />,
+      <FinancialHero
+        {...baseProps}
+        nextPayment={{ detailText: '今日项目', dueLabel: '今日到期' }}
+      />,
     )
 
-    expect(screen.getByText('下一笔今日到期')).toBeInTheDocument()
+    expect(screen.getByText('今日到期')).toBeInTheDocument()
+    expect(screen.getByText('今日项目')).toBeInTheDocument()
   })
 
   it('shows a safe empty state when there is no upcoming payment', () => {
@@ -67,14 +72,22 @@ describe('FinancialHero', () => {
     render(
       <FinancialHero
         {...baseProps}
-        actualAmount={null}
-        expectedAmount={null}
-        overdueAmount={null}
+        expectedAmountText="--"
+        overdueAmountText={null}
+        supportingText="预计回款暂不可用"
       />,
     )
 
     expect(screen.getByText('--')).toBeInTheDocument()
     expect(screen.getByText('预计回款暂不可用')).toBeInTheDocument()
     expect(screen.getByText('逾期风险暂不可用')).toBeInTheDocument()
+  })
+
+  it('has no decorative orbit element and imports no business formatter', () => {
+    const { container } = render(<FinancialHero {...baseProps} />)
+    const source = readFileSync(resolve('src/components/dashboard/FinancialHero.tsx'), 'utf8')
+
+    expect(container.querySelector('.financial-hero__orbit')).not.toBeInTheDocument()
+    expect(source).not.toContain('formatCurrency')
   })
 })

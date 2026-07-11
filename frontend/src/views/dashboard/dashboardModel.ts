@@ -39,6 +39,10 @@ export function findNearestUpcomingPayment(payments: PaymentDisplayItem[] | null
   }, null)
 }
 
+export function getPaymentDueLabel(daysLeft: number) {
+  return daysLeft === 0 ? '下一笔今日到期' : `下一笔 ${daysLeft} 天后到期`
+}
+
 function toCalendarDay(value: string | Date) {
   if (typeof value === 'string') {
     const localDate = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)

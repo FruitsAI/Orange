@@ -7,7 +7,11 @@ import UpcomingPayments from '@/components/dashboard/UpcomingPayments'
 import { formatCurrency } from '@/utils/format'
 import DashboardError from './dashboard/DashboardError'
 import DashboardSkeleton, { DashboardSectionSkeleton } from './dashboard/DashboardSkeleton'
-import { findNearestUpcomingPayment, sumIncomeValues } from './dashboard/dashboardModel'
+import {
+  findNearestUpcomingPayment,
+  getPaymentDueLabel,
+  sumIncomeValues,
+} from './dashboard/dashboardModel'
 import { useDashboardData } from './dashboard/useDashboardData'
 
 function toTrend(value: number): SummaryMetricProps['trend'] {
@@ -56,24 +60,29 @@ export default function DashboardView() {
   return (
     <div className="dashboard-view ember-dashboard">
       <FinancialHero
-        actualAmount={trend.data ? sumIncomeValues(trend.data.actual_values) : null}
         cta={
           nearestPayment
             ? { label: '处理待收款', to: `/projects/${nearestPayment.project_id}` }
             : { label: '查看项目', to: '/projects' }
         }
-        expectedAmount={trend.data ? sumIncomeValues(trend.data.expected_values) : null}
+        expectedAmountText={
+          trend.data ? formatCurrency(sumIncomeValues(trend.data.expected_values)) : '--'
+        }
         nextPayment={
           nearestPayment
             ? {
-                amount: nearestPayment.amount,
-                daysLeft: nearestPayment.days_left,
-                projectName: nearestPayment.project_name,
+                detailText: `${nearestPayment.project_name} · ${formatCurrency(nearestPayment.amount)}`,
+                dueLabel: getPaymentDueLabel(nearestPayment.days_left),
               }
             : null
         }
-        overdueAmount={stats.data?.overdue_amount ?? null}
+        overdueAmountText={stats.data ? formatCurrency(stats.data.overdue_amount) : null}
         periodLabel={periodLabel}
+        supportingText={
+          trend.data
+            ? `同期已回款 ${formatCurrency(sumIncomeValues(trend.data.actual_values))}`
+            : '预计回款暂不可用'
+        }
       />
 
       <div aria-busy={stats.refreshing} className="ember-dashboard__metrics">

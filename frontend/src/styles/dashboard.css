@@ -40,7 +40,7 @@
   pointer-events: none;
 }
 
-.financial-hero__orbit {
+.financial-hero::after {
   position: absolute;
   z-index: -1;
   width: min(58vw, 720px);
@@ -53,6 +53,7 @@
     0 0 0 42px rgba(var(--color-accent-rgb), 0.045),
     0 0 0 112px rgba(var(--color-accent-rgb), 0.025);
   opacity: 0.85;
+  content: '';
   pointer-events: none;
   transform: translateY(-50%) rotate(-16deg);
 }
@@ -294,7 +295,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .financial-hero__orbit {
+  .financial-hero::after {
     transform: translateY(-50%);
   }
 

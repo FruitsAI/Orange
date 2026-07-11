@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { IncomeTrend } from '@/api/dashboard'
 import type { PaymentDisplayItem } from './dashboardModel'
-import { findNearestUpcomingPayment, sumIncomeValues } from './dashboardModel'
+import { findNearestUpcomingPayment, getPaymentDueLabel, sumIncomeValues } from './dashboardModel'
 
 const payment = (id: number, daysLeft: number): PaymentDisplayItem => ({
   amount: id * 100,
@@ -34,5 +34,10 @@ describe('dashboard hero model', () => {
   it('returns null when every payment is overdue or the resource is unavailable', () => {
     expect(findNearestUpcomingPayment([payment(1, -8), payment(2, -1)])).toBeNull()
     expect(findNearestUpcomingPayment(null)).toBeNull()
+  })
+
+  it('formats upcoming payment timing as safe presentation copy', () => {
+    expect(getPaymentDueLabel(3)).toBe('下一笔 3 天后到期')
+    expect(getPaymentDueLabel(0)).toBe('下一笔今日到期')
   })
 })

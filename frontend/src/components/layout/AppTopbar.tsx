@@ -24,7 +24,8 @@ interface AppTopbarProps {
   scrolled?: boolean
 }
 
-function AppTopbarContent({ scrolled = false }: AppTopbarProps) {
+export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
+  const location = useLocation()
   const navigate = useNavigate()
   const effectiveTheme = useThemeStore((state) => state.effectiveTheme)
   const toggleTheme = useThemeStore((state) => state.toggleTheme)
@@ -42,6 +43,12 @@ function AppTopbarContent({ scrolled = false }: AppTopbarProps) {
     setShowNotifications(false)
     setShowUserMenu(false)
   }, [])
+
+  useEffect(() => {
+    // Route changes are an external navigation event that invalidates open anchored menus.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    closeMenus()
+  }, [closeMenus, location.pathname, location.search])
 
   const refreshNotifications = useCallback(async () => {
     if (!isAuthenticated) return
@@ -95,8 +102,14 @@ function AppTopbarContent({ scrolled = false }: AppTopbarProps) {
   const handleTopbarDoubleClick = (event: MouseEvent<HTMLElement>) => {
     const target = event.target
     if (!(target instanceof Element)) return
-    if (target.closest('a, button, input, [role="menu"], [role="menuitem"]')) return
-    if (target !== event.currentTarget && !target.closest('[data-wails-drag-region="true"]')) return
+    if (
+      target.closest(
+        'a, button, input, select, textarea, [role="menu"], [role="menuitem"], [role="dialog"]',
+      )
+    )
+      return
+    if (window.getComputedStyle(target).getPropertyValue('--wails-draggable').trim() !== 'drag')
+      return
 
     try {
       void Window.ToggleMaximise().catch(() => {})
@@ -304,9 +317,4 @@ function AppTopbarContent({ scrolled = false }: AppTopbarProps) {
       />
     </header>
   )
-}
-
-export default function AppTopbar(props: AppTopbarProps) {
-  const location = useLocation()
-  return <AppTopbarContent key={`${location.pathname}${location.search}`} {...props} />
 }

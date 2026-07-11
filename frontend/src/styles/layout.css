@@ -80,6 +80,7 @@
 }
 
 .app-topbar__nav {
+  --wails-draggable: drag;
   align-items: center;
   background: color-mix(in srgb, var(--text-primary) 5%, transparent);
   border: 1px solid color-mix(in srgb, var(--text-primary) 5%, transparent);
@@ -122,6 +123,7 @@
 }
 
 .app-topbar__utilities {
+  --wails-draggable: drag;
   align-items: center;
   display: flex;
   gap: 6px;

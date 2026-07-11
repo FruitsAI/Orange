@@ -5,6 +5,7 @@ import { notificationApi } from '@/api/notification'
 import { useAuthStore } from '@/stores/auth'
 import { fireEvent, render, screen, waitFor } from '@/test/render'
 import AppTopbar from './AppTopbar'
+import '@/styles/layout.css'
 
 const { toggleMaximise } = vi.hoisted(() => ({
   toggleMaximise: vi.fn().mockResolvedValue(undefined),
@@ -73,14 +74,17 @@ describe('AppTopbar', () => {
     expect(screen.getByRole('button', { name: '打开用户菜单' })).toBeInTheDocument()
   })
 
-  test('maximises only when the draggable topbar surface is double-clicked', () => {
-    render(<AppTopbar />, { initialEntries: ['/dashboard'] })
+  test('maximises draggable topbar gaps but not interactive controls', () => {
+    const { container } = render(<AppTopbar />, { initialEntries: ['/dashboard'] })
 
     fireEvent.doubleClick(screen.getByRole('banner'))
-    expect(toggleMaximise).toHaveBeenCalledTimes(1)
+    fireEvent.doubleClick(screen.getByRole('navigation', { name: '主导航' }))
+    fireEvent.doubleClick(container.querySelector('.app-topbar__utilities')!)
+    expect(toggleMaximise).toHaveBeenCalledTimes(3)
 
     fireEvent.doubleClick(screen.getByRole('button', { name: '切换主题' }))
-    expect(toggleMaximise).toHaveBeenCalledTimes(1)
+    fireEvent.doubleClick(screen.getByRole('link', { name: '项目管理' }))
+    expect(toggleMaximise).toHaveBeenCalledTimes(3)
   })
 
   test('closes the user menu after its navigation action', async () => {
@@ -106,6 +110,12 @@ describe('AppTopbar', () => {
     }
 
     const user = userEvent.setup()
+    useAuthStore.setState({
+      isAuthenticated: true,
+      isLoggedIn: true,
+      token: 'test-token',
+      user: { id: 1, username: 'tester', name: '测试用户' } as never,
+    })
     render(
       <>
         <AppTopbar />
@@ -114,11 +124,17 @@ describe('AppTopbar', () => {
       { initialEntries: ['/dashboard'] },
     )
 
+    await waitFor(() => expect(notificationApi.list).toHaveBeenCalledTimes(1))
     await user.click(screen.getByRole('button', { name: '查看通知' }))
     expect(screen.getByRole('menu', { name: '' })).toBeInTheDocument()
+    await waitFor(() => expect(notificationApi.list).toHaveBeenCalledTimes(2))
     await user.click(screen.getByRole('button', { name: '改变位置' }))
 
-    expect(screen.queryByRole('button', { name: '关闭通知菜单' })).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: '关闭通知菜单' })).not.toBeInTheDocument(),
+    )
+    expect(notificationApi.list).toHaveBeenCalledTimes(2)
+    expect(notificationApi.getUnreadCount).toHaveBeenCalledTimes(2)
   })
 
   test('portals the full-window menu overlay outside the draggable topbar', async () => {

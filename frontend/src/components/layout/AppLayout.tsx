@@ -2,50 +2,24 @@ import { useEffect, useRef } from 'react'
 import { Outlet } from 'react-router-dom'
 import AppHeader from '@/components/layout/AppHeader'
 import AppSidebar from '@/components/layout/AppSidebar'
+import { useAmbientLight } from '@/hooks/useAmbientLight'
 import { useLayoutStore } from '@/stores/layout'
 
 export default function AppLayout() {
-  const appBackgroundRef = useRef<HTMLDivElement | null>(null)
+  const appBackgroundRef = useAmbientLight<HTMLDivElement>()
   const mainContentRef = useRef<HTMLElement | null>(null)
   const sidebarCollapsed = useLayoutStore((state) => state.sidebarCollapsed)
 
   useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
-      if (appBackgroundRef.current) {
-        appBackgroundRef.current.style.setProperty(
-          '--light-x',
-          `${(event.clientX / window.innerWidth) * 100}%`,
-        )
-        appBackgroundRef.current.style.setProperty(
-          '--light-y',
-          `${(event.clientY / window.innerHeight) * 100}%`,
-        )
-      }
-
-      document.querySelectorAll('.glass-card, .liquid-glass').forEach((card) => {
-        const element = card as HTMLElement
-        const rect = element.getBoundingClientRect()
-        const x = ((event.clientX - rect.left) / rect.width) * 100
-        const y = ((event.clientY - rect.top) / rect.height) * 100
-
-        if (x >= -20 && x <= 120 && y >= -20 && y <= 120) {
-          element.style.setProperty('--specular-x', `${x}%`)
-          element.style.setProperty('--specular-y', `${y}%`)
-        }
-      })
-    }
-
     const handleScroll = (event: Event) => {
       const target = event.target as HTMLElement
       document.querySelector('.sidebar')?.classList.toggle('scrolled', target.scrollTop > 50)
     }
 
-    document.addEventListener('mousemove', handleMouseMove)
     const mainContent = mainContentRef.current
     mainContent?.addEventListener('scroll', handleScroll)
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
       mainContent?.removeEventListener('scroll', handleScroll)
     }
   }, [])

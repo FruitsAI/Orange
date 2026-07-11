@@ -6,13 +6,7 @@ import { notificationApi, type Notification } from '@/api/notification'
 import NotificationDetailModal from '@/components/notification/NotificationDetailModal'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
-
-const primaryNavigation = [
-  { label: '工作台', path: '/dashboard' },
-  { label: '项目管理', path: '/projects' },
-  { label: '收款日历', path: '/calendar' },
-  { label: '数据分析', path: '/analytics' },
-]
+import { primaryNavigationItems } from './primaryNavigation'
 
 const getNotificationTypeName = (type: number) => {
   if (type === 2) return '活动'
@@ -135,7 +129,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
       </NavLink>
 
       <nav aria-label="主导航" className="app-topbar__nav">
-        {primaryNavigation.map((item) => (
+        {primaryNavigationItems.map((item) => (
           <NavLink
             className="app-topbar__nav-link"
             key={item.path}

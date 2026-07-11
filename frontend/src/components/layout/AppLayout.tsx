@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Outlet } from 'react-router-dom'
+import AppDock from '@/components/layout/AppDock'
 import AppTopbar from '@/components/layout/AppTopbar'
 import { useAmbientLight } from '@/hooks/useAmbientLight'
 
@@ -47,6 +48,7 @@ export default function AppLayout() {
           <Outlet />
         </div>
       </main>
+      <AppDock />
     </div>
   )
 }

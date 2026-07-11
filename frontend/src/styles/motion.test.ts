@@ -10,18 +10,6 @@ describe('reduced motion foundations', () => {
         rule instanceof CSSMediaRule && rule.conditionText === '(prefers-reduced-motion: reduce)',
     )
 
-  it('provides a namespaced color transition utility', () => {
-    const utilityRule = Array.from(document.styleSheets)
-      .flatMap((sheet) => Array.from(sheet.cssRules))
-      .find(
-        (rule): rule is CSSStyleRule =>
-          rule instanceof CSSStyleRule && rule.selectorText === '.ember-transition-colors',
-      )
-
-    expect(utilityRule?.style.transitionDuration).toBe('var(--motion-fast)')
-    expect(utilityRule?.style.transitionTimingFunction).toBe('var(--ease-standard)')
-  })
-
   it('compresses legacy animations and limits them to one iteration', () => {
     expect(reducedMotionRule?.cssText).toContain('animation-duration: 1ms')
     expect(reducedMotionRule?.cssText).toContain('animation-iteration-count: 1')

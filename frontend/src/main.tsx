@@ -19,6 +19,9 @@ import { RouterProvider } from 'react-router-dom'
 import { setAuthLogout } from '@/api'
 import { router } from '@/router/routes'
 import { useAuthStore } from '@/stores/auth'
+import { applyThemeBeforeRender } from '@/stores/theme'
+
+applyThemeBeforeRender()
 
 setAuthLogout(async () => {
   await useAuthStore.getState().logout()

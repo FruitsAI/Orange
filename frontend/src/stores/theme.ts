@@ -73,3 +73,8 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     get().setTheme(get().effectiveTheme === 'dark' ? 'light' : 'dark')
   },
 }))
+
+/** Applies the persisted/system theme synchronously before React's first render. */
+export const applyThemeBeforeRender = () => {
+  useThemeStore.getState().applyTheme()
+}

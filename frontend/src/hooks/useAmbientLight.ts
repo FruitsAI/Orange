@@ -6,14 +6,16 @@ export function useAmbientLight<T extends HTMLElement>(): RefObject<T | null> {
   const elementRef = useRef<T | null>(null)
 
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     let frameId: number | null = null
     let pointerX = 0
     let pointerY = 0
+    let pointerListening = false
+    let enabled = false
 
     const updateLight = () => {
       frameId = null
+      if (!enabled) return
       const element = elementRef.current
       if (!element) return
 
@@ -29,11 +31,41 @@ export function useAmbientLight<T extends HTMLElement>(): RefObject<T | null> {
       if (frameId === null) frameId = window.requestAnimationFrame(updateLight)
     }
 
-    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+    const start = () => {
+      if (pointerListening) return
+      enabled = true
+      pointerListening = true
+      window.addEventListener('pointermove', handlePointerMove, { passive: true })
+    }
+
+    const stop = () => {
+      enabled = false
+      if (pointerListening) {
+        pointerListening = false
+        window.removeEventListener('pointermove', handlePointerMove)
+      }
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId)
+        frameId = null
+      }
+    }
+
+    const handleMotionPreference = (event: MediaQueryListEvent) => {
+      if (event.matches) stop()
+      else start()
+    }
+
+    if (mediaQuery.matches) stop()
+    else start()
+
+    if (mediaQuery.addEventListener) mediaQuery.addEventListener('change', handleMotionPreference)
+    else mediaQuery.addListener(handleMotionPreference)
 
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove)
-      if (frameId !== null) window.cancelAnimationFrame(frameId)
+      stop()
+      if (mediaQuery.removeEventListener)
+        mediaQuery.removeEventListener('change', handleMotionPreference)
+      else mediaQuery.removeListener(handleMotionPreference)
     }
   }, [])
 

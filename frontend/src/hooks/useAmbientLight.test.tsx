@@ -10,12 +10,29 @@ describe('useAmbientLight', () => {
   const originalInnerHeight = window.innerHeight
 
   let frameCallback: FrameRequestCallback | undefined
+  let mediaMatches = false
+  let mediaChangeListener: ((event: MediaQueryListEvent) => void) | undefined
+  let removeMediaListener: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     frameCallback = undefined
+    mediaMatches = false
+    mediaChangeListener = undefined
+    removeMediaListener = vi.fn()
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 100 })
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 100 })
-    window.matchMedia = vi.fn().mockReturnValue({ matches: false })
+    window.matchMedia = vi.fn().mockImplementation(
+      () =>
+        ({
+          get matches() {
+            return mediaMatches
+          },
+          addEventListener: vi.fn((_type, listener) => {
+            mediaChangeListener = listener as (event: MediaQueryListEvent) => void
+          }),
+          removeEventListener: removeMediaListener,
+        }) as unknown as MediaQueryList,
+    )
     window.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
       frameCallback = callback
       return 17
@@ -71,10 +88,11 @@ describe('useAmbientLight', () => {
 
     expect(removeEventListener.mock.calls.filter(([type]) => type === 'pointermove')).toHaveLength(1)
     expect(window.cancelAnimationFrame).toHaveBeenCalledWith(17)
+    expect(removeMediaListener).toHaveBeenCalledWith('change', expect.any(Function))
   })
 
   it('does not register or update when reduced motion is preferred', () => {
-    window.matchMedia = vi.fn().mockReturnValue({ matches: true })
+    mediaMatches = true
     const addEventListener = vi.spyOn(window, 'addEventListener')
     const { result } = renderHook(() => useAmbientLight<HTMLDivElement>())
     const background = document.createElement('div')
@@ -85,5 +103,39 @@ describe('useAmbientLight', () => {
     expect(addEventListener.mock.calls.filter(([type]) => type === 'pointermove')).toHaveLength(0)
     expect(window.requestAnimationFrame).not.toHaveBeenCalled()
     expect(background.style.getPropertyValue('--light-x')).toBe('')
+  })
+
+  it('stops updates and cancels a pending frame when reduced motion turns on', () => {
+    const removeEventListener = vi.spyOn(window, 'removeEventListener')
+    const { result } = renderHook(() => useAmbientLight<HTMLDivElement>())
+    const background = document.createElement('div')
+    result.current.current = background
+
+    act(() => window.dispatchEvent(new PointerEvent('pointermove', { clientX: 80, clientY: 75 })))
+    mediaMatches = true
+    act(() => mediaChangeListener?.({ matches: true } as MediaQueryListEvent))
+
+    expect(removeEventListener.mock.calls.filter(([type]) => type === 'pointermove')).toHaveLength(1)
+    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(17)
+
+    act(() => frameCallback?.(0))
+    expect(background.style.getPropertyValue('--light-x')).toBe('')
+  })
+
+  it('resumes updates when reduced motion turns off', () => {
+    mediaMatches = true
+    const addEventListener = vi.spyOn(window, 'addEventListener')
+    const { result } = renderHook(() => useAmbientLight<HTMLDivElement>())
+    const background = document.createElement('div')
+    result.current.current = background
+
+    mediaMatches = false
+    act(() => mediaChangeListener?.({ matches: false } as MediaQueryListEvent))
+    act(() => window.dispatchEvent(new PointerEvent('pointermove', { clientX: 30, clientY: 40 })))
+    act(() => frameCallback?.(0))
+
+    expect(addEventListener.mock.calls.filter(([type]) => type === 'pointermove')).toHaveLength(1)
+    expect(background.style.getPropertyValue('--light-x')).toBe('30%')
+    expect(background.style.getPropertyValue('--light-y')).toBe('40%')
   })
 })

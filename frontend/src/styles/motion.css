@@ -89,7 +89,7 @@
     opacity: 0 !important;
   }
 
-  /* Pointer listeners remain until the app shell refactor in task 3. */
+  /* The ambient-light hook also pauses pointer tracking while this preference is active. */
   .app-background {
     --light-x: 50% !important;
     --light-y: 50% !important;

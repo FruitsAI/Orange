@@ -1,28 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import AppHeader from '@/components/layout/AppHeader'
-import AppSidebar from '@/components/layout/AppSidebar'
+import AppTopbar from '@/components/layout/AppTopbar'
 import { useAmbientLight } from '@/hooks/useAmbientLight'
-import { useLayoutStore } from '@/stores/layout'
 
 export default function AppLayout() {
   const appBackgroundRef = useAmbientLight<HTMLDivElement>()
   const mainContentRef = useRef<HTMLElement | null>(null)
-  const sidebarCollapsed = useLayoutStore((state) => state.sidebarCollapsed)
-
-  useEffect(() => {
-    const handleScroll = (event: Event) => {
-      const target = event.target as HTMLElement
-      document.querySelector('.sidebar')?.classList.toggle('scrolled', target.scrollTop > 50)
-    }
-
-    const mainContent = mainContentRef.current
-    mainContent?.addEventListener('scroll', handleScroll)
-
-    return () => {
-      mainContent?.removeEventListener('scroll', handleScroll)
-    }
-  }, [])
+  const [scrolled, setScrolled] = useState(false)
 
   return (
     <div className="app-container">
@@ -49,14 +33,17 @@ export default function AppLayout() {
       </svg>
 
       <div className="app-background" ref={appBackgroundRef} />
-      <AppSidebar />
+      <AppTopbar scrolled={scrolled} />
       <main
-        className={`main-content ${sidebarCollapsed ? 'ml-[76px]' : ''}`}
+        className="main-content app-main"
         id="mainContent"
+        onScroll={(event) => {
+          const nextScrolled = event.currentTarget.scrollTop > 24
+          setScrolled((current) => (current === nextScrolled ? current : nextScrolled))
+        }}
         ref={mainContentRef}
       >
-        <AppHeader />
-        <div className="view-content animate-fade-in">
+        <div className="view-content app-view-content animate-fade-in">
           <Outlet />
         </div>
       </main>

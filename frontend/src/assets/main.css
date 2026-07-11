@@ -1316,7 +1316,6 @@ select:focus {
   opacity: 0;
 }
 
-/* components/layout/AppSidebar.tsx */
 .sidebar-logo-text {
   margin-left: 12px;
   font-family: var(--font-display);

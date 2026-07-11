@@ -3,6 +3,7 @@ import './styles/foundations.css'
 import './styles/motion.css'
 import './assets/liquid-glass.css'
 import './assets/main.css'
+import './styles/layout.css'
 import 'remixicon/fonts/remixicon.css'
 
 import '@fontsource/inter/400.css'

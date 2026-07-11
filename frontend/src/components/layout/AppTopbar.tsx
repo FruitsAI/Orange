@@ -1,0 +1,243 @@
+import { useCallback, useEffect, useState } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { notificationApi, type Notification } from '@/api/notification'
+import NotificationDetailModal from '@/components/notification/NotificationDetailModal'
+import { useAuthStore } from '@/stores/auth'
+import { useThemeStore } from '@/stores/theme'
+
+const primaryNavigation = [
+  { label: '工作台', path: '/dashboard' },
+  { label: '项目管理', path: '/projects' },
+  { label: '收款日历', path: '/calendar' },
+  { label: '数据分析', path: '/analytics' },
+]
+
+const getNotificationTypeName = (type: number) => {
+  if (type === 2) return '活动'
+  if (type === 3) return '私信'
+  return '系统'
+}
+
+interface AppTopbarProps {
+  scrolled?: boolean
+}
+
+export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
+  const navigate = useNavigate()
+  const effectiveTheme = useThemeStore((state) => state.effectiveTheme)
+  const toggleTheme = useThemeStore((state) => state.toggleTheme)
+  const user = useAuthStore((state) => state.user)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const logout = useAuthStore((state) => state.logout)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [recentNotifications, setRecentNotifications] = useState<Notification[]>([])
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
+
+  const userInitial = (user?.name || user?.username || 'U').charAt(0).toUpperCase()
+
+  const refreshNotifications = useCallback(async () => {
+    if (!isAuthenticated) return
+
+    try {
+      const [countRes, listRes] = await Promise.all([
+        notificationApi.getUnreadCount(),
+        notificationApi.list(1, 5),
+      ])
+      setUnreadCount(countRes.data.data.count)
+      setRecentNotifications(listRes.data.data.list)
+    } catch {
+      // Notification polling should never break primary navigation.
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    const initialRefresh = window.setTimeout(refreshNotifications, 0)
+    const interval = window.setInterval(refreshNotifications, 30000)
+    return () => {
+      window.clearTimeout(initialRefresh)
+      window.clearInterval(interval)
+    }
+  }, [isAuthenticated, refreshNotifications])
+
+  const handleNotificationClick = async (item: Notification) => {
+    setShowNotifications(false)
+    setSelectedNotification(item)
+    if (item.is_read) return
+
+    try {
+      await notificationApi.markAsRead(item.id)
+      setUnreadCount((count) => Math.max(0, count - 1))
+      setRecentNotifications((items) =>
+        items.map((notification) =>
+          notification.id === item.id ? { ...notification, is_read: true } : notification,
+        ),
+      )
+    } catch {
+      // Keep showing the detail even if the read marker fails.
+    }
+  }
+
+  const handleLogout = async () => {
+    setShowUserMenu(false)
+    await logout()
+    await navigate('/login')
+  }
+
+  return (
+    <header className="app-topbar" data-scrolled={scrolled || undefined}>
+      <NavLink aria-label="Orange 工作台" className="app-topbar__brand" to="/dashboard">
+        <img alt="Orange Logo" src="/orange.png" />
+        <span>Orange</span>
+      </NavLink>
+
+      <nav aria-label="主导航" className="app-topbar__nav">
+        {primaryNavigation.map((item) => (
+          <NavLink className="app-topbar__nav-link" key={item.path} to={item.path}>
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="app-topbar__utilities">
+        <button aria-label="打开命令入口" className="app-topbar__command" type="button">
+          <i aria-hidden="true" className="ri-search-line" />
+          <span>⌘ K</span>
+        </button>
+
+        <button
+          aria-label="切换主题"
+          className="app-topbar__icon-button"
+          onClick={toggleTheme}
+          type="button"
+        >
+          <i
+            aria-hidden="true"
+            className={effectiveTheme === 'dark' ? 'ri-moon-line' : 'ri-sun-line'}
+          />
+        </button>
+
+        <div className="app-topbar__menu-wrapper">
+          <button
+            aria-expanded={showNotifications}
+            aria-label="查看通知"
+            className="app-topbar__icon-button"
+            onClick={() => {
+              setShowNotifications((value) => !value)
+              setShowUserMenu(false)
+              refreshNotifications()
+            }}
+            type="button"
+          >
+            <i aria-hidden="true" className="ri-notification-3-line" />
+            {unreadCount > 0 ? <span className="app-topbar__notification-dot" /> : null}
+          </button>
+
+          {showNotifications ? (
+            <>
+              <div className="app-topbar__dropdown app-topbar__notification-menu" role="menu">
+                <div className="app-topbar__dropdown-header">
+                  <span>最近通知</span>
+                  <button
+                    onClick={() => {
+                      setShowNotifications(false)
+                      navigate('/settings?tab=notification')
+                    }}
+                    type="button"
+                  >
+                    查看全部
+                  </button>
+                </div>
+                <div className="app-topbar__notification-list">
+                  {recentNotifications.length === 0 ? (
+                    <div className="app-topbar__empty">暂无通知</div>
+                  ) : (
+                    recentNotifications.map((item) => (
+                      <button
+                        className="app-topbar__notification-item"
+                        key={item.id}
+                        onClick={() => handleNotificationClick(item)}
+                        role="menuitem"
+                        type="button"
+                      >
+                        <span className="app-topbar__notification-title">
+                          {!item.is_read ? <span className="app-topbar__unread-dot" /> : null}
+                          <span className={`notification-type-badge type-${item.type}`}>
+                            {getNotificationTypeName(item.type)}
+                          </span>
+                          <span className={item.is_read ? 'read-title' : 'unread-title'}>{item.title}</span>
+                        </span>
+                        <span className="app-topbar__notification-time">
+                          {new Date(item.create_time).toLocaleDateString()}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+              <button
+                aria-label="关闭通知菜单"
+                className="app-topbar__overlay"
+                onClick={() => setShowNotifications(false)}
+                type="button"
+              />
+            </>
+          ) : null}
+        </div>
+
+        <NavLink aria-label="系统设置" className="app-topbar__icon-button" to="/settings">
+          <i aria-hidden="true" className="ri-settings-4-line" />
+        </NavLink>
+
+        <div className="app-topbar__menu-wrapper">
+          <button
+            aria-expanded={showUserMenu}
+            aria-label="打开用户菜单"
+            className="app-topbar__user-button"
+            onClick={() => {
+              setShowUserMenu((value) => !value)
+              setShowNotifications(false)
+            }}
+            type="button"
+          >
+            <span aria-hidden="true" className="app-topbar__avatar">
+              {userInitial}
+            </span>
+            <span className="app-topbar__user-name">{user?.name || user?.username || '用户'}</span>
+            <i aria-hidden="true" className="ri-arrow-down-s-line" />
+          </button>
+
+          {showUserMenu ? (
+            <>
+              <div className="app-topbar__dropdown app-topbar__user-menu" role="menu">
+                <button onClick={() => navigate('/settings')} role="menuitem" type="button">
+                  <i aria-hidden="true" className="ri-user-line" />
+                  <span>个人信息</span>
+                </button>
+                <div className="app-topbar__dropdown-divider" />
+                <button className="is-danger" onClick={handleLogout} role="menuitem" type="button">
+                  <i aria-hidden="true" className="ri-logout-box-r-line" />
+                  <span>退出登录</span>
+                </button>
+              </div>
+              <button
+                aria-label="关闭用户菜单"
+                className="app-topbar__overlay"
+                onClick={() => setShowUserMenu(false)}
+                type="button"
+              />
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      <NotificationDetailModal
+        notification={selectedNotification}
+        onClose={() => setSelectedNotification(null)}
+        open={Boolean(selectedNotification)}
+      />
+    </header>
+  )
+}

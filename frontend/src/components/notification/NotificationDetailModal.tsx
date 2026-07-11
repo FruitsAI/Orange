@@ -1,3 +1,5 @@
+import { useId } from 'react'
+import { createPortal } from 'react-dom'
 import type { Notification } from '@/api/notification'
 
 interface NotificationDetailModalProps {
@@ -17,19 +19,24 @@ export default function NotificationDetailModal({
   notification,
   onClose,
 }: NotificationDetailModalProps) {
-  if (!open) return null
+  const titleId = useId()
 
-  return (
-    <div className="modal-overlay open" onClick={onClose} role="presentation">
+  if (!open || typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className="app-topbar-portal modal-overlay open" onClick={onClose} role="presentation">
       <div
+        aria-labelledby={titleId}
         aria-modal="true"
         className="modal open"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
         <div className="modal-header">
-          <h3 className="modal-title">通知详情</h3>
-          <button className="modal-close" onClick={onClose} type="button">
+          <h3 className="modal-title" id={titleId}>
+            通知详情
+          </h3>
+          <button aria-label="关闭通知详情" className="modal-close" onClick={onClose} type="button">
             <i className="ri-close-line" />
           </button>
         </div>
@@ -54,6 +61,7 @@ export default function NotificationDetailModal({
           </div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

@@ -29,8 +29,8 @@
   top: var(--app-topbar-inset);
   transition:
     background-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
+    border-color 180ms ease,
+    box-shadow 180ms ease;
   z-index: 1000;
   -webkit-backdrop-filter: blur(24px) saturate(150%);
   backdrop-filter: blur(24px) saturate(150%);
@@ -38,10 +38,10 @@
 
 .app-topbar[data-scrolled='true'] {
   background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
+  border-color: color-mix(in srgb, var(--text-primary) 14%, transparent);
   box-shadow:
     0 14px 36px rgba(35, 24, 15, 0.14),
     inset 0 1px rgba(255, 255, 255, 0.45);
-  transform: translateY(-2px);
 }
 
 [data-theme='dark'] .app-topbar {
@@ -388,11 +388,27 @@
 }
 
 .app-topbar__overlay {
+  --wails-draggable: no-drag;
   background: transparent;
   border: 0;
   inset: 0;
   position: fixed;
-  z-index: 1001;
+  z-index: 999;
+}
+
+.app-topbar-portal {
+  --wails-draggable: no-drag;
+}
+
+.app-topbar-portal.modal-overlay {
+  z-index: 1200;
+}
+
+.app-topbar-portal a,
+.app-topbar-portal button,
+.app-topbar-portal input,
+.app-topbar-portal [role='dialog'] {
+  --wails-draggable: no-drag;
 }
 
 .app-main {

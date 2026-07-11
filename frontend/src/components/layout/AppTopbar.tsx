@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { notificationApi, type Notification } from '@/api/notification'
 import NotificationDetailModal from '@/components/notification/NotificationDetailModal'
@@ -177,12 +178,17 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
                   )}
                 </div>
               </div>
-              <button
-                aria-label="关闭通知菜单"
-                className="app-topbar__overlay"
-                onClick={() => setShowNotifications(false)}
-                type="button"
-              />
+              {typeof document !== 'undefined'
+                ? createPortal(
+                    <button
+                      aria-label="关闭通知菜单"
+                      className="app-topbar__overlay"
+                      onClick={() => setShowNotifications(false)}
+                      type="button"
+                    />,
+                    document.body,
+                  )
+                : null}
             </>
           ) : null}
         </div>
@@ -222,12 +228,17 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
                   <span>退出登录</span>
                 </button>
               </div>
-              <button
-                aria-label="关闭用户菜单"
-                className="app-topbar__overlay"
-                onClick={() => setShowUserMenu(false)}
-                type="button"
-              />
+              {typeof document !== 'undefined'
+                ? createPortal(
+                    <button
+                      aria-label="关闭用户菜单"
+                      className="app-topbar__overlay"
+                      onClick={() => setShowUserMenu(false)}
+                      type="button"
+                    />,
+                    document.body,
+                  )
+                : null}
             </>
           ) : null}
         </div>

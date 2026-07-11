@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Window } from '@wailsio/runtime'
 import { notificationApi, type Notification } from '@/api/notification'
 import NotificationDetailModal from '@/components/notification/NotificationDetailModal'
 import { useAuthStore } from '@/stores/auth'
@@ -23,7 +24,7 @@ interface AppTopbarProps {
   scrolled?: boolean
 }
 
-export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
+function AppTopbarContent({ scrolled = false }: AppTopbarProps) {
   const navigate = useNavigate()
   const effectiveTheme = useThemeStore((state) => state.effectiveTheme)
   const toggleTheme = useThemeStore((state) => state.toggleTheme)
@@ -37,6 +38,10 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
 
   const userInitial = (user?.name || user?.username || 'U').charAt(0).toUpperCase()
+  const closeMenus = useCallback(() => {
+    setShowNotifications(false)
+    setShowUserMenu(false)
+  }, [])
 
   const refreshNotifications = useCallback(async () => {
     if (!isAuthenticated) return
@@ -82,28 +87,61 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   }
 
   const handleLogout = async () => {
-    setShowUserMenu(false)
+    closeMenus()
     await logout()
     await navigate('/login')
   }
 
+  const handleTopbarDoubleClick = (event: MouseEvent<HTMLElement>) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+    if (target.closest('a, button, input, [role="menu"], [role="menuitem"]')) return
+    if (target !== event.currentTarget && !target.closest('[data-wails-drag-region="true"]')) return
+
+    try {
+      void Window.ToggleMaximise().catch(() => {})
+    } catch {
+      // The browser preview has no native Wails window transport.
+    }
+  }
+
   return (
-    <header className="app-topbar" data-scrolled={scrolled || undefined}>
-      <NavLink aria-label="Orange 工作台" className="app-topbar__brand" to="/dashboard">
+    <header
+      className="app-topbar"
+      data-scrolled={scrolled || undefined}
+      onDoubleClick={handleTopbarDoubleClick}
+    >
+      <NavLink
+        aria-label="Orange 工作台"
+        className="app-topbar__brand"
+        onClick={closeMenus}
+        to="/dashboard"
+      >
         <img alt="Orange Logo" src="/orange.png" />
         <span>Orange</span>
       </NavLink>
 
       <nav aria-label="主导航" className="app-topbar__nav">
         {primaryNavigation.map((item) => (
-          <NavLink className="app-topbar__nav-link" key={item.path} to={item.path}>
+          <NavLink
+            className="app-topbar__nav-link"
+            key={item.path}
+            onClick={closeMenus}
+            to={item.path}
+          >
             {item.label}
           </NavLink>
         ))}
       </nav>
 
       <div className="app-topbar__utilities">
-        <button aria-label="打开命令入口" className="app-topbar__command" type="button">
+        <button
+          aria-label="命令入口即将推出"
+          className="app-topbar__command"
+          disabled
+          title="命令入口即将推出"
+          type="button"
+        >
           <i aria-hidden="true" className="ri-search-line" />
           <span>⌘ K</span>
         </button>
@@ -111,7 +149,10 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
         <button
           aria-label="切换主题"
           className="app-topbar__icon-button"
-          onClick={toggleTheme}
+          onClick={() => {
+            closeMenus()
+            toggleTheme()
+          }}
           type="button"
         >
           <i
@@ -143,7 +184,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
                   <span>最近通知</span>
                   <button
                     onClick={() => {
-                      setShowNotifications(false)
+                      closeMenus()
                       navigate('/settings?tab=notification')
                     }}
                     type="button"
@@ -193,7 +234,12 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
           ) : null}
         </div>
 
-        <NavLink aria-label="系统设置" className="app-topbar__icon-button" to="/settings">
+        <NavLink
+          aria-label="系统设置"
+          className="app-topbar__icon-button"
+          onClick={closeMenus}
+          to="/settings"
+        >
           <i aria-hidden="true" className="ri-settings-4-line" />
         </NavLink>
 
@@ -218,7 +264,14 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
           {showUserMenu ? (
             <>
               <div className="app-topbar__dropdown app-topbar__user-menu" role="menu">
-                <button onClick={() => navigate('/settings')} role="menuitem" type="button">
+                <button
+                  onClick={() => {
+                    closeMenus()
+                    navigate('/settings')
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
                   <i aria-hidden="true" className="ri-user-line" />
                   <span>个人信息</span>
                 </button>
@@ -251,4 +304,9 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
       />
     </header>
   )
+}
+
+export default function AppTopbar(props: AppTopbarProps) {
+  const location = useLocation()
+  return <AppTopbarContent key={`${location.pathname}${location.search}`} {...props} />
 }

@@ -78,6 +78,21 @@ func newExternalAPIServer(addr string, handler http.Handler) *http.Server {
 	}
 }
 
+func mainWindowOptions() application.WebviewWindowOptions {
+	return application.WebviewWindowOptions{
+		Title:  "Orange",
+		Width:  1280,
+		Height: 800,
+		Mac: application.MacWindow{
+			InvisibleTitleBarHeight: 0,
+			Backdrop:                application.MacBackdropTranslucent,
+			TitleBar:                application.MacTitleBarHiddenInset,
+		},
+		BackgroundColour: application.NewRGB(27, 38, 54),
+		URL:              "/",
+	}
+}
+
 func main() {
 	runtime, cleanup, err := app.Bootstrap(app.RuntimeModeDesktop)
 	if err != nil {
@@ -131,18 +146,7 @@ func main() {
 	// - Mac: macOS 窗口特定样式 (隐藏标题栏、半透明背景模糊等)
 	// - BackgroundColour: 窗口背景色 (深色模式适配)
 	// - URL: 默认加载的页面路径
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  "Orange",
-		Width:  1280,
-		Height: 800,
-		Mac: application.MacWindow{
-			InvisibleTitleBarHeight: 50,
-			Backdrop:                application.MacBackdropTranslucent,
-			TitleBar:                application.MacTitleBarHiddenInset,
-		},
-		BackgroundColour: application.NewRGB(27, 38, 54),
-		URL:              "/",
-	})
+	app.Window.NewWithOptions(mainWindowOptions())
 
 	// 9. 启动应用程序
 	// Run() 会阻塞当前 goroutine 直到应用退出

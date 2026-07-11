@@ -165,7 +165,7 @@ git push origin feature/your-feature-name
    - 文件名使用小写单词，可用下划线分隔
    - 按功能模块组织代码结构
 
-### 前端代码规范（Vue 3 + TypeScript）
+### 前端代码规范（React + TypeScript）
 
 1. **TypeScript 类型定义**
    ```typescript
@@ -181,27 +181,21 @@ git push origin feature/your-feature-name
    ```
 
 2. **组件命名**
-   ```vue
-   <!-- 使用 PascalCase -->
-   <template>
-     <UserCard :user="currentUser" />
-   </template>
-   
-   <script setup lang="ts">
-   // 组件名使用 PascalCase
-   import UserCard from '@/components/UserCard.vue'
-   </script>
+   ```tsx
+   // 使用 PascalCase 命名组件和文件
+   import UserCard from '@/components/UserCard'
+
+   export default function UserProfile({ currentUser }: Props) {
+     return <UserCard user={currentUser} />
+   }
    ```
 
-3. **Composition API**
-   ```vue
-   <script setup lang="ts">
-   import { ref, computed } from 'vue'
-   
-   // 使用 Composition API
-   const count = ref(0)
-   const doubled = computed(() => count.value * 2)
-   </script>
+3. **React Hooks**
+   ```tsx
+   import { useMemo, useState } from 'react'
+
+   const [count, setCount] = useState(0)
+   const doubled = useMemo(() => count * 2, [count])
    ```
 
 ---

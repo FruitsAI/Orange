@@ -46,16 +46,21 @@ export default function UpcomingPayments({ payments }: UpcomingPaymentsProps) {
           payments.map((item) => {
             const color = statusColorMap[item.status] || statusColorMap.pending
             return (
-              <button
-                className="flex items-center justify-between p-md cursor-pointer hover:opacity-80 transition-opacity text-left"
+              <div
+                className="flex items-center justify-between p-md cursor-pointer hover:opacity-80 transition-opacity"
                 key={item.id}
                 onClick={() => navigate(`/projects/${item.project_id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ')
+                    navigate(`/projects/${item.project_id}`)
+                }}
+                role="button"
                 style={{
                   background: statusBgMap[item.status] || statusBgMap.pending,
                   borderLeft: `3px solid ${color}`,
                   borderRadius: 'var(--radius-md)',
                 }}
-                type="button"
+                tabIndex={0}
               >
                 <div>
                   <div className="font-semibold">{item.project_name}</div>
@@ -65,7 +70,7 @@ export default function UpcomingPayments({ payments }: UpcomingPaymentsProps) {
                   </div>
                 </div>
                 <div className="text-xl font-bold">¥{item.amount.toLocaleString()}</div>
-              </button>
+              </div>
             )
           })
         )}

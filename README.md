@@ -14,8 +14,8 @@
     <a href="https://go.dev" target="_blank">
       <img src="https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat-square&logo=go" alt="Go" />
     </a>
-    <a href="https://vuejs.org" target="_blank">
-      <img src="https://img.shields.io/badge/Vue.js-3.5+-4FC08D?style=flat-square&logo=vue.js" alt="Vue" />
+    <a href="https://react.dev" target="_blank">
+      <img src="https://img.shields.io/badge/React-19+-61DAFB?style=flat-square&logo=react" alt="React" />
     </a>
     <a href="https://tailwindcss.com" target="_blank">
       <img src="https://img.shields.io/badge/Tailwind-4.0+-38B2AC?style=flat-square&logo=tailwind-css" alt="Tailwind CSS" />
@@ -35,14 +35,14 @@
 
 ## 📖 简介
 
-**Orange** 是一个基于 [Wails v3](https://wails.io) 构建的现代化桌面应用程序，展示了如何使用 Go (后端) 和 Vue 3 (前端) 打造高性能、原生体验的跨平台应用。
+**Orange** 是一个基于 [Wails v3](https://wails.io) 构建的现代化桌面应用程序，展示了如何使用 Go (后端) 和 React (前端) 打造高性能、原生体验的跨平台应用。
 
 该项目集成了一套完整的业务管理功能，包括用户权限管理、项目合同追踪、财务款项管理以及系统字典配置，旨在为企业级桌面应用开发提供最佳实践参考。
 
 ## ✨ 特性
 
 - **跨平台支持**: 基于 Wails v3，完美运行于 macOS, Windows 和 Linux。
-- **现代化 UI**: 采用 Vue 3 + Tailwind CSS 4.0，配合 Glassmorphism 风格设计，界面精致流畅。
+- **现代化 UI**: 采用 React 19 + Tailwind CSS 4.0，配合 Liquid Glass 风格设计，界面精致流畅。
 - **高性能后端**: Go 语言驱动，集成 Gin Web 框架、GORM ORM 库及 SQLite 数据库。
 - **安全可靠**: 
   - JWT 身份认证（支持即时撤销，禁用账号后最迟 60 秒内失效）
@@ -84,14 +84,14 @@
     </td>
   </tr>
   <tr>
-    <td align="center"><b>Frontend (Vue)</b></td>
+    <td align="center"><b>Frontend (React)</b></td>
     <td>
       <ul>
-        <li><b>Framework</b>: Vue 3 (Composition API)</li>
+        <li><b>Framework</b>: React 19 + TypeScript</li>
         <li><b>Build Tool</b>: Vite 7</li>
         <li><b>Styling</b>: Tailwind CSS 4</li>
-        <li><b>State Management</b>: Pinia</li>
-        <li><b>Routing</b>: Vue Router 4</li>
+        <li><b>State Management</b>: Zustand</li>
+        <li><b>Routing</b>: React Router</li>
         <li><b>Icons</b>: Remix Icon</li>
         <li><b>Charts</b>: Chart.js</li>
       </ul>
@@ -271,11 +271,12 @@ GITHUB_REPO=FruitsAI/Orange
 Orange/
 ├── build/              # Wails 构建相关配置与资源 (AppIcon 等)
 ├── cmd/                # Go 应用程序入口
-├── frontend/           # Vue 3 前端源代码
+├── frontend/           # React 前端源代码
 │   ├── src/
 │   │   ├── components/ # 可复用组件
 │   │   ├── views/      # 页面视图
-│   │   ├── stores/     # Pinia 状态存储
+│   │   ├── stores/     # Zustand 状态存储
+│   │   ├── router/     # React Router 路由
 │   │   └── ...
 ├── internal/           # Go 后端业务逻辑 (私有包)
 │   ├── config/         # 配置加载

@@ -23,10 +23,10 @@
 
 | 类别 | 技术                       |
 | ---- | -------------------------- |
-| 框架 | Vue 3 + TypeScript         |
+| 框架 | React 19 + TypeScript      |
 | 构建 | Vite 7                     |
-| 路由 | Vue Router 4               |
-| 状态 | Pinia 3                    |
+| 路由 | React Router               |
+| 状态 | Zustand                    |
 | 图表 | Chart.js 4                 |
 | 图标 | Remix Icon                 |
 | 样式 | Vanilla CSS (Liquid Glass) |
@@ -45,15 +45,15 @@ src/
 │   ├── layout/        # 布局组件 (AppHeader, AppSidebar)
 │   └── icons/         # 图标组件
 ├── views/           # 页面视图
-│   ├── DashboardView.vue   # 工作台
-│   ├── ProjectsView.vue    # 项目管理
-│   ├── CalendarView.vue    # 收款日历
-│   ├── AnalyticsView.vue   # 数据分析
-│   ├── SettingsView.vue    # 系统设置
-│   └── LoginView.vue       # 登录页
-├── stores/          # Pinia 状态管理
-├── router/          # 路由配置
-└── main.ts          # 应用入口
+│   ├── DashboardView.tsx   # 工作台
+│   ├── ProjectsView.tsx    # 项目管理
+│   ├── CalendarView.tsx    # 收款日历
+│   ├── AnalyticsView.tsx   # 数据分析
+│   ├── SettingsView.tsx    # 系统设置
+│   └── LoginView.tsx       # 登录页
+├── stores/          # Zustand 状态管理
+├── router/          # React Router 路由配置
+└── main.tsx         # 应用入口
 ```
 
 ## 🚀 快速开始

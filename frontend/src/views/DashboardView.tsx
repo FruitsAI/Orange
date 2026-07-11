@@ -35,7 +35,7 @@ const toPaymentDisplay = (payment: Payment): PaymentDisplayItem => {
     id: payment.id,
     project_id: payment.project_id,
     project_name: payment.project?.name || '未知项目',
-    status: days < 7 ? 'danger' : days < 14 ? 'warning' : 'success',
+    status: days < 0 ? 'danger' : days < 3 ? 'danger' : days < 7 ? 'warning' : 'success',
   }
 }
 
@@ -47,7 +47,7 @@ export default function DashboardView() {
   const [recentProjects, setRecentProjects] = useState<Project[]>([])
   const [upcomingPayments, setUpcomingPayments] = useState<PaymentDisplayItem[]>([])
   const [activePeriod, setActivePeriod] = useState<Period>('month')
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
 
   const statsDisplay = useMemo(
     () => [
@@ -91,28 +91,31 @@ export default function DashboardView() {
     [statsData],
   )
 
-  const fetchDashboardData = useCallback(async (period: Period) => {
-    setLoading(true)
-    try {
-      const [statsRes, trendRes, projectRes, paymentRes] = await Promise.all([
-        dashboardApi.getStats(),
-        dashboardApi.getIncomeTrend(period),
-        dashboardApi.getRecentProjects(),
-        dashboardApi.getUpcomingPayments(),
-      ])
+  const fetchDashboardData = useCallback(
+    async (period: Period) => {
+      setLoading(true)
+      try {
+        const [statsRes, trendRes, projectRes, paymentRes] = await Promise.all([
+          dashboardApi.getStats(),
+          dashboardApi.getIncomeTrend(period),
+          dashboardApi.getRecentProjects(),
+          dashboardApi.getUpcomingPayments(),
+        ])
 
-      setStatsData(statsRes.data.data)
-      setIncomeLabels(trendRes.data.data.labels)
-      setIncomeValues(trendRes.data.data.actual_values)
-      setRecentProjects(projectRes.data.data)
-      setUpcomingPayments(paymentRes.data.data.map(toPaymentDisplay).slice(0, 3))
-    } catch (error) {
-      console.error('Failed to fetch dashboard data', error)
-      toastError('获取仪表盘数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [toastError])
+        setStatsData(statsRes.data.data)
+        setIncomeLabels(trendRes.data.data.labels)
+        setIncomeValues(trendRes.data.data.actual_values)
+        setRecentProjects(projectRes.data.data)
+        setUpcomingPayments(paymentRes.data.data.map(toPaymentDisplay).slice(0, 3))
+      } catch (error) {
+        console.error('Failed to fetch dashboard data', error)
+        toastError('获取仪表盘数据失败')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [toastError],
+  )
 
   const handlePeriodChange = async (period: Period) => {
     setActivePeriod(period)
@@ -132,13 +135,11 @@ export default function DashboardView() {
 
   return (
     <div className="dashboard-view">
-      <div className="grid grid-cols-4 dashboard-stats-grid">
+      <div className="grid grid-cols-4" style={{ marginBottom: 'var(--spacing-lg)' }}>
         {statsDisplay.map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
       </div>
-
-      {loading ? <div className="text-secondary mb-lg">正在加载仪表盘数据...</div> : null}
 
       <div className="grid dashboard-charts-row">
         <IncomeChart

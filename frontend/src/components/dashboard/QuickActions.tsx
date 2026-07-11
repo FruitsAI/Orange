@@ -42,12 +42,24 @@ export default function QuickActions() {
       </div>
       <div className="quick-actions-grid">
         {actions.map((action) => (
-          <button className="quick-action cursor-pointer" key={action.name} onClick={() => navigate(action.path)} type="button">
-            <div className="quick-action-icon" style={{ background: action.bg, color: action.color }}>
+          <div
+            className="quick-action cursor-pointer"
+            key={action.name}
+            onClick={() => navigate(action.path)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') navigate(action.path)
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            <div
+              className="quick-action-icon"
+              style={{ background: action.bg, color: action.color }}
+            >
               <i className={action.icon} />
             </div>
             <span className="text-sm font-medium">{action.name}</span>
-          </button>
+          </div>
         ))}
       </div>
     </GlassCard>

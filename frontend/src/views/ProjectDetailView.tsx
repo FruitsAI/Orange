@@ -1,16 +1,47 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { paymentApi, projectApi, type Payment, type Project } from '@/api/project'
 import GlassCard from '@/components/common/GlassCard'
 import StatusBadge from '@/components/common/StatusBadge'
 import { useToastStore } from '@/composables/useToast'
+import { formatCurrency, formatDate } from '@/utils/format'
+
+const getStatusLabel = (status: string) => {
+  const map: Record<string, string> = {
+    active: '进行中',
+    archived: '已归档',
+    completed: '已完成',
+    notstarted: '未开始',
+    overdue: '已逾期',
+    pending: '即将交付',
+  }
+  return map[status] || status
+}
+
+const getPaymentStatusLabel = (status: string) => {
+  const map: Record<string, string> = {
+    confirmed: '已收款',
+    overdue: '已逾期',
+    paid: '已收款',
+    pending: '待收款',
+  }
+  return map[status] || status
+}
+
+const getPaymentStatusClass = (status: string) => {
+  if (status === 'paid' || status === 'confirmed') return 'status-success'
+  if (status === 'overdue') return 'status-warning'
+  return 'status-gray'
+}
 
 export default function ProjectDetailView() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const toast = useToastStore()
+  const toastError = useToastStore((state) => state.error)
+  const toastSuccess = useToastStore((state) => state.success)
   const [project, setProject] = useState<Project | null>(null)
   const [payments, setPayments] = useState<Payment[]>([])
+  const [activeTab, setActiveTab] = useState(0)
 
   const loadProject = useCallback(async () => {
     if (!id) return
@@ -22,9 +53,9 @@ export default function ProjectDetailView() {
       setProject(projectRes.data.data)
       setPayments(paymentsRes.data.data)
     } catch {
-      toast.error('获取项目详情失败')
+      toastError('获取项目详情失败')
     }
-  }, [id, toast])
+  }, [id, toastError])
 
   useEffect(() => {
     const timer = window.setTimeout(loadProject, 0)
@@ -34,10 +65,10 @@ export default function ProjectDetailView() {
   const confirmPayment = async (paymentId: number) => {
     try {
       await paymentApi.confirm(paymentId, { actual_date: new Date().toISOString().slice(0, 10) })
-      toast.success('收款已确认')
+      toastSuccess('收款已确认')
       await loadProject()
     } catch {
-      toast.error('确认收款失败')
+      toastError('确认收款失败')
     }
   }
 
@@ -45,102 +76,223 @@ export default function ProjectDetailView() {
     return <GlassCard>正在加载项目详情...</GlassCard>
   }
 
-  const progress = project.total_amount
-    ? Math.round(((project.received_amount || 0) / project.total_amount) * 100)
-    : 0
+  const paidAmount = project.received_amount || 0
+  const progress = project.total_amount ? Math.round((paidAmount / project.total_amount) * 100) : 0
+  const progressOffset = 314 - (314 * progress) / 100
 
   return (
-    <div className="page-stack">
-      <div className="page-toolbar">
-        <button className="btn btn-ghost" onClick={() => navigate('/projects')} type="button">
-          <i className="ri-arrow-left-line" /> 返回
-        </button>
-        <div className="flex gap-sm">
-          <Link className="btn btn-ghost" to={`/projects/edit/${project.id}`}>
-            编辑
-          </Link>
-          <Link className="btn btn-primary" to={`/projects/${project.id}/payment/create`}>
-            添加收款
-          </Link>
+    <div className="project-detail-view pb-12">
+      <div className="header-section">
+        <div className="flex items-center gap-4">
+          <button
+            className="btn btn-ghost btn-icon"
+            onClick={() => navigate('/projects')}
+            type="button"
+          >
+            <i className="ri-arrow-left-line text-2xl text-primary" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-3">{project.name}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-secondary text-sm">客户: {project.company}</p>
+              <StatusBadge label={getStatusLabel(project.status)} status={project.status} />
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            className="btn btn-ghost btn-icon"
+            onClick={() => navigate(`/projects/edit/${project.id}`)}
+            title="编辑项目"
+            type="button"
+          >
+            <i className="ri-edit-line" />
+          </button>
+          <button className="btn btn-ghost btn-icon" title="导出" type="button">
+            <i className="ri-download-2-line" />
+          </button>
         </div>
       </div>
 
-      <GlassCard>
-        <div className="detail-header">
-          <div>
-            <h2>{project.name}</h2>
-            <p className="text-secondary">{project.company}</p>
-          </div>
-          <StatusBadge status={project.status} />
+      <div className="detail-layout">
+        <div className="tabs-container">
+          <button
+            className={`tab-btn ${activeTab === 0 ? 'active' : ''}`}
+            onClick={() => setActiveTab(0)}
+            type="button"
+          >
+            项目概览
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 1 ? 'active' : ''}`}
+            onClick={() => setActiveTab(1)}
+            type="button"
+          >
+            收款计划
+          </button>
         </div>
-        <div className="detail-grid">
-          <div>
-            <span className="text-secondary">合同编号</span>
-            <strong>{project.contract_number || '-'}</strong>
-          </div>
-          <div>
-            <span className="text-secondary">合同金额</span>
-            <strong>¥{project.total_amount.toLocaleString()}</strong>
-          </div>
-          <div>
-            <span className="text-secondary">已收款</span>
-            <strong>¥{project.received_amount.toLocaleString()}</strong>
-          </div>
-          <div>
-            <span className="text-secondary">收款进度</span>
-            <strong>{progress}%</strong>
-          </div>
-        </div>
-        {project.description ? <p className="text-secondary mt-lg">{project.description}</p> : null}
-      </GlassCard>
 
-      <GlassCard>
-        <div className="glass-card-header">
-          <h3 className="glass-card-title">收款计划</h3>
-        </div>
-        <div className="table-scroll-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>阶段</th>
-                <th>金额</th>
-                <th>计划日期</th>
-                <th>状态</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
+        {activeTab === 0 ? (
+          <div className="content-animate">
+            <GlassCard className="card-spacing">
+              <div className="progress-card-content">
+                <div className="circle-container">
+                  <svg className="progress-ring" height="120" viewBox="0 0 120 120" width="120">
+                    <circle
+                      className="progress-ring-track"
+                      cx="60"
+                      cy="60"
+                      fill="transparent"
+                      r="50"
+                      strokeWidth="10"
+                    />
+                    <circle
+                      className="progress-ring-circle"
+                      cx="60"
+                      cy="60"
+                      fill="transparent"
+                      r="50"
+                      strokeWidth="10"
+                      style={{ strokeDashoffset: progressOffset }}
+                    />
+                  </svg>
+                  <div className="circle-text">
+                    <span className="percent">{progress}%</span>
+                    <span className="label">总进度</span>
+                  </div>
+                </div>
+
+                <div className="progress-info">
+                  <h3 className="card-title">项目整体进度</h3>
+                  <p className="description-text">
+                    {progress >= 100
+                      ? '项目已全部完成，等待最终交付确认。'
+                      : '当前项目正如期进行中，已完成关键里程碑。'}
+                  </p>
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <div className="label">开始日期</div>
+                      <div className="value">{formatDate(project.start_date)}</div>
+                    </div>
+                    <div className="info-item">
+                      <div className="label">预计完成</div>
+                      <div className="value">{formatDate(project.end_date)}</div>
+                    </div>
+                    <div className="info-item">
+                      <div className="label">合同编号</div>
+                      <div className="value font-mono">{project.contract_number || '-'}</div>
+                    </div>
+                    <div className="info-item">
+                      <div className="label">签约日期</div>
+                      <div className="value">{formatDate(project.contract_date)}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+
+            <GlassCard className="card-spacing">
+              <h3 className="card-header">收款概况</h3>
+              <div className="financial-grid">
+                <div className="finance-card bg-gray">
+                  <span className="label">合同总额</span>
+                  <span className="amount">{formatCurrency(project.total_amount)}</span>
+                </div>
+                <div className="finance-card bg-green">
+                  <span className="label success">已收款</span>
+                  <span className="amount text-success">{formatCurrency(paidAmount)}</span>
+                </div>
+                <div className="finance-card bg-orange">
+                  <span className="label warning">待收款</span>
+                  <span className="amount text-warning">
+                    {formatCurrency(project.total_amount - paidAmount)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="payment-progress">
+                <div className="progress-header">
+                  <span className="text-secondary">收款进度</span>
+                  <span className="font-medium">{progress}%</span>
+                </div>
+                <div className="progress-bar-bg">
+                  <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+            </GlassCard>
+
+            <GlassCard>
+              <h3 className="card-header mb-2">项目描述</h3>
+              <p className="description-text leading-relaxed">
+                {project.description || '暂无项目描述'}
+              </p>
+            </GlassCard>
+          </div>
+        ) : (
+          <div className="content-animate">
+            <div className="payments-header-card">
+              <div>
+                <h3 className="font-bold text-lg">收款记录</h3>
+                <p className="text-xs text-secondary mt-0.5">共 {payments.length} 笔收款计划</p>
+              </div>
+
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={() => navigate(`/projects/${project.id}/payment/create`)}
+                type="button"
+              >
+                <i className="ri-add-line mr-1" />
+                添加收款
+              </button>
+            </div>
+
+            <div className="payments-list">
               {payments.length === 0 ? (
-                <tr>
-                  <td className="text-center text-secondary py-4" colSpan={5}>
-                    暂无收款计划
-                  </td>
-                </tr>
+                <GlassCard className="payment-item">
+                  <div className="text-secondary">暂无收款计划</div>
+                </GlassCard>
               ) : (
                 payments.map((payment) => (
-                  <tr key={payment.id}>
-                    <td>{payment.stage}</td>
-                    <td>¥{payment.amount.toLocaleString()}</td>
-                    <td>{payment.plan_date}</td>
-                    <td>
-                      <StatusBadge status={payment.status} />
-                    </td>
-                    <td>
+                  <GlassCard className="payment-item" key={payment.id}>
+                    <div className="payment-left">
+                      <div className="icon-circle">
+                        <i className="ri-secure-payment-line" />
+                      </div>
+                      <div>
+                        <div className="payment-title-row">
+                          <span className="font-bold text-sm">{payment.stage}</span>
+                          <span className={`status-tag ${getPaymentStatusClass(payment.status)}`}>
+                            {getPaymentStatusLabel(payment.status)}
+                          </span>
+                        </div>
+                        <div className="text-xs text-secondary">
+                          {payment.status === 'paid' || payment.status === 'confirmed'
+                            ? '实际收款'
+                            : '预计收款'}
+                          : {formatDate(payment.actual_date || payment.plan_date)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="payment-right">
+                      <div className="amount-text">{formatCurrency(payment.amount)}</div>
                       {payment.status !== 'paid' && payment.status !== 'confirmed' ? (
-                        <button className="btn btn-ghost btn-sm" onClick={() => confirmPayment(payment.id)} type="button">
+                        <button
+                          className="confirm-btn"
+                          onClick={() => void confirmPayment(payment.id)}
+                          type="button"
+                        >
+                          <i className="ri-check-double-line mr-0.5" />
                           确认收款
                         </button>
-                      ) : (
-                        payment.actual_date || '-'
-                      )}
-                    </td>
-                  </tr>
+                      ) : null}
+                    </div>
+                  </GlassCard>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
-      </GlassCard>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

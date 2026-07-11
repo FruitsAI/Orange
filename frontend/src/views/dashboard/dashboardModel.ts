@@ -25,6 +25,20 @@ export function getPeriodLabel(period: DashboardPeriod) {
   return periodLabels[period]
 }
 
+export function sumIncomeValues(values: number[]) {
+  return values.reduce((total, value) => total + value, 0)
+}
+
+export function findNearestUpcomingPayment(payments: PaymentDisplayItem[] | null) {
+  if (!payments) return null
+
+  return payments.reduce<PaymentDisplayItem | null>((nearest, payment) => {
+    if (payment.days_left < 0) return nearest
+    if (!nearest || payment.days_left < nearest.days_left) return payment
+    return nearest
+  }, null)
+}
+
 function toCalendarDay(value: string | Date) {
   if (typeof value === 'string') {
     const localDate = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)

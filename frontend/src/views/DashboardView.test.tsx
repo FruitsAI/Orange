@@ -24,13 +24,6 @@ vi.mock('@/components/dashboard/ProjectList', () => ({
 vi.mock('@/components/dashboard/UpcomingPayments', () => ({
   default: () => <div>待收款列表</div>,
 }))
-vi.mock('@/components/dashboard/StatCard', () => ({
-  default: ({ label, value }: { label: string; value: string }) => (
-    <div>
-      {label} {value}
-    </div>
-  ),
-}))
 
 const stats: DashboardStats = {
   avg_collection_days: 18,
@@ -47,11 +40,23 @@ const stats: DashboardStats = {
 
 const trend: IncomeTrend = {
   actual_values: [100],
-  expected_values: [120],
+  expected_values: [120, 230],
   labels: ['第一周'],
 }
 
-const payment = { id: 1, plan_date: '2026-07-15', project_id: 1 } as Payment
+const payment = {
+  actual_date: '',
+  amount: 300,
+  id: 1,
+  method: '',
+  percentage: 30,
+  plan_date: '2099-07-15',
+  project: { company: '橙子科技', id: 1, name: '星轨项目' },
+  project_id: 1,
+  remark: '',
+  stage: '尾款',
+  status: 'pending',
+} as Payment
 const apiResponse = <T,>(data: T) => ({ data: { data } })
 
 describe('DashboardView resource rendering', () => {
@@ -67,9 +72,35 @@ describe('DashboardView resource rendering', () => {
 
     render(<DashboardView />)
 
-    await waitFor(() => expect(screen.getByText(/总收款金额/)).toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: '近30天预计回款' })).toBeInTheDocument(),
+    )
+    expect(screen.getByText('¥350.00')).toBeInTheDocument()
+    expect(screen.getByText('已结算')).toBeInTheDocument()
+    expect(screen.getByText('¥700.00')).toBeInTheDocument()
+    expect(screen.getByText('待结算')).toBeInTheDocument()
+    expect(screen.getByText('平均回款')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '处理待收款' })).toHaveAttribute('href', '/projects/1')
     expect(screen.getByText('趋势数据 100')).toBeInTheDocument()
     expect(screen.getByLabelText('正在加载近期项目')).toBeInTheDocument()
     expect(screen.queryByLabelText('正在加载仪表盘')).not.toBeInTheDocument()
+  })
+
+  it('keeps the hero usable with explicit fallbacks when dashboard resources fail', async () => {
+    vi.mocked(dashboardApi.getStats).mockRejectedValue(new Error('stats unavailable'))
+    vi.mocked(dashboardApi.getIncomeTrend).mockRejectedValue(new Error('trend unavailable'))
+    vi.mocked(dashboardApi.getRecentProjects).mockResolvedValue(apiResponse([]) as never)
+    vi.mocked(dashboardApi.getUpcomingPayments).mockRejectedValue(new Error('payments unavailable'))
+
+    render(<DashboardView />)
+
+    await waitFor(() => expect(screen.getByText('预计回款暂不可用')).toBeInTheDocument())
+    expect(screen.getByText('逾期风险暂不可用')).toBeInTheDocument()
+    expect(screen.getByText('暂无待收款计划')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '查看项目' })).toHaveAttribute('href', '/projects')
+    expect(screen.getAllByText('--')).toHaveLength(4)
+    expect(screen.getByText('统计数据加载失败')).toBeInTheDocument()
+    expect(screen.getByText('收入趋势加载失败')).toBeInTheDocument()
+    expect(screen.getByText('收款计划加载失败')).toBeInTheDocument()
   })
 })

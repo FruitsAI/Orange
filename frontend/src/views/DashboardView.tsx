@@ -1,100 +1,94 @@
-import { useMemo } from 'react'
-import type { DashboardStats } from '@/api/dashboard'
+import FinancialHero from '@/components/dashboard/FinancialHero'
 import IncomeChart from '@/components/dashboard/IncomeChart'
 import ProjectList from '@/components/dashboard/ProjectList'
 import QuickActions from '@/components/dashboard/QuickActions'
-import StatCard from '@/components/dashboard/StatCard'
+import SummaryMetric, { type SummaryMetricProps } from '@/components/dashboard/SummaryMetric'
 import UpcomingPayments from '@/components/dashboard/UpcomingPayments'
+import { formatCurrency } from '@/utils/format'
 import DashboardError from './dashboard/DashboardError'
-import DashboardSkeleton, {
-  DashboardSectionSkeleton,
-  DashboardStatsSkeleton,
-} from './dashboard/DashboardSkeleton'
+import DashboardSkeleton, { DashboardSectionSkeleton } from './dashboard/DashboardSkeleton'
+import { findNearestUpcomingPayment, sumIncomeValues } from './dashboard/dashboardModel'
 import { useDashboardData } from './dashboard/useDashboardData'
 
-const emptyStats: DashboardStats = {
-  avg_collection_days: 0,
-  avg_collection_days_trend: 0,
-  overdue_amount: 0,
-  overdue_trend: 0,
-  paid_amount: 0,
-  paid_trend: 0,
-  pending_amount: 0,
-  pending_trend: 0,
-  total_amount: 0,
-  total_trend: 0,
+function toTrend(value: number): SummaryMetricProps['trend'] {
+  return {
+    direction: value >= 0 ? 'up' : 'down',
+    label: `较上期 ${Math.abs(value).toFixed(2)}%`,
+  }
 }
 
 export default function DashboardView() {
-  const { activePeriod, initialLoading, payments, projects, retry, setPeriod, stats, trend } =
-    useDashboardData()
-  const statsData = stats.data ?? emptyStats
-
-  const statsDisplay = useMemo(
-    () => [
-      {
-        icon: 'ri-money-dollar-circle-line',
-        iconColorClass: 'stat-card-icon--primary',
-        label: '总收款金额',
-        trend: `${Math.abs(statsData.total_trend).toFixed(2)}%`,
-        trendPrefix: '较上期',
-        trendUp: statsData.total_trend >= 0,
-        value: `¥${statsData.total_amount.toLocaleString()}`,
-      },
-      {
-        icon: 'ri-checkbox-circle-line',
-        iconColorClass: 'stat-card-icon--success',
-        label: '已结算金额',
-        trend: `${Math.abs(statsData.paid_trend).toFixed(2)}%`,
-        trendPrefix: '较上期',
-        trendUp: statsData.paid_trend >= 0,
-        value: `¥${statsData.paid_amount.toLocaleString()}`,
-      },
-      {
-        icon: 'ri-time-line',
-        iconColorClass: 'stat-card-icon--warning',
-        label: '待结算金额',
-        trend: `${Math.abs(statsData.pending_trend).toFixed(2)}%`,
-        trendPrefix: '较上期',
-        trendUp: statsData.pending_trend >= 0,
-        value: `¥${statsData.pending_amount.toLocaleString()}`,
-      },
-      {
-        icon: 'ri-error-warning-line',
-        iconColorClass: 'stat-card-icon--danger',
-        label: '逾期金额',
-        trend: `${Math.abs(statsData.overdue_trend).toFixed(2)}%`,
-        trendPrefix: '较上期',
-        trendUp: statsData.overdue_trend >= 0,
-        value: `¥${statsData.overdue_amount.toLocaleString()}`,
-      },
-    ],
-    [statsData],
-  )
+  const {
+    activePeriod,
+    initialLoading,
+    payments,
+    periodLabel,
+    projects,
+    retry,
+    setPeriod,
+    stats,
+    trend,
+  } = useDashboardData()
+  const nearestPayment = findNearestUpcomingPayment(payments.data)
+  const summaryMetrics: SummaryMetricProps[] = [
+    {
+      icon: 'ri-checkbox-circle-line',
+      label: '已结算',
+      trend: stats.data ? toTrend(stats.data.paid_trend) : undefined,
+      value: stats.data ? formatCurrency(stats.data.paid_amount) : '--',
+    },
+    {
+      icon: 'ri-time-line',
+      label: '待结算',
+      trend: stats.data ? toTrend(stats.data.pending_trend) : undefined,
+      value: stats.data ? formatCurrency(stats.data.pending_amount) : '--',
+    },
+    {
+      icon: 'ri-timer-line',
+      label: '平均回款',
+      trend: stats.data ? toTrend(stats.data.avg_collection_days_trend) : undefined,
+      value: stats.data ? `${stats.data.avg_collection_days} 天` : '--',
+    },
+  ]
 
   if (initialLoading) return <DashboardSkeleton />
 
   return (
-    <div className="dashboard-view">
+    <div className="dashboard-view ember-dashboard">
+      <FinancialHero
+        actualAmount={trend.data ? sumIncomeValues(trend.data.actual_values) : null}
+        cta={
+          nearestPayment
+            ? { label: '处理待收款', to: `/projects/${nearestPayment.project_id}` }
+            : { label: '查看项目', to: '/projects' }
+        }
+        expectedAmount={trend.data ? sumIncomeValues(trend.data.expected_values) : null}
+        nextPayment={
+          nearestPayment
+            ? {
+                amount: nearestPayment.amount,
+                daysLeft: nearestPayment.days_left,
+                projectName: nearestPayment.project_name,
+              }
+            : null
+        }
+        overdueAmount={stats.data?.overdue_amount ?? null}
+        periodLabel={periodLabel}
+      />
+
+      <div aria-busy={stats.refreshing} className="ember-dashboard__metrics">
+        {summaryMetrics.map((metric) => (
+          <SummaryMetric key={metric.label} {...metric} />
+        ))}
+      </div>
+
       {stats.error && (
-        <div style={{ marginBottom: 'var(--spacing-md)' }}>
+        <div className="ember-dashboard__error">
           <DashboardError
             message="统计数据加载失败"
             onRetry={() => retry('stats')}
             resourceLabel="统计数据"
           />
-        </div>
-      )}
-      {stats.loading && !stats.data && <DashboardStatsSkeleton />}
-      {stats.data && (
-        <div
-          aria-busy={stats.refreshing}
-          className="grid grid-cols-4"
-          style={{ marginBottom: 'var(--spacing-lg)' }}
-        >
-          {statsDisplay.map((stat) => (
-            <StatCard key={stat.label} {...stat} />
-          ))}
         </div>
       )}
 

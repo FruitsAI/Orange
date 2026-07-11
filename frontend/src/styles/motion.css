@@ -42,7 +42,7 @@
   animation: ember-ambient-pulse 8s ease-in-out infinite;
 }
 
-.transition-colors {
+.ember-transition-colors {
   transition-duration: var(--motion-fast);
   transition-property: color, background-color, border-color, box-shadow;
   transition-timing-function: var(--ease-standard);
@@ -81,7 +81,6 @@
   .app-background::after,
   .overview-card::after,
   .liquid-glass--animated,
-  .liquid-glass--shine::after,
   .liquid-glass--float,
   .liquid-glass--pulse,
   .login-wrapper .login-background,
@@ -89,6 +88,28 @@
   .login-wrapper .floating-shapes .shape {
     animation: none !important;
     transform: none !important;
+  }
+
+  .liquid-glass--shine::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+
+  /* Pointer listeners remain until the app shell refactor in task 3. */
+  .app-background {
+    --light-x: 50% !important;
+    --light-y: 50% !important;
+    transition: none !important;
+  }
+
+  .app-background::before {
+    opacity: 0 !important;
+  }
+
+  .glass-card,
+  .liquid-glass {
+    --specular-x: 50% !important;
+    --specular-y: 0% !important;
   }
 
   .motion-enter-up,

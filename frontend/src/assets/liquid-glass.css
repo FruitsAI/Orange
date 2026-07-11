@@ -1312,35 +1312,6 @@
 }
 
 /* ===========================
-   滚动条样式
-   =========================== */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* ===========================
    实用工具类
    =========================== */
 .text-primary { color: var(--text-primary); }
@@ -2059,25 +2030,8 @@
 }
 
 /* ============================================
-   选择高亮
-   ============================================ */
-::selection {
-  background: rgba(0, 122, 255, 0.3);
-  color: inherit;
-}
-
-[data-theme="dark"] ::selection {
-  background: rgba(10, 132, 255, 0.4);
-}
-
-/* ============================================
    焦点样式 - 无障碍
    ============================================ */
-:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
 .btn:focus-visible,
 .nav-item:focus-visible {
   outline: 2px solid var(--color-primary);
@@ -2138,4 +2092,3 @@
   color: #ffffff !important;
   background: rgba(255, 255, 255, 0.1) !important;
 }
-

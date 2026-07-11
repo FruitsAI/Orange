@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { paymentApi, projectApi, type Payment, type Project } from '@/api/project'
 import GlassCard from '@/components/common/GlassCard'
 import StatusBadge from '@/components/common/StatusBadge'
@@ -37,11 +37,24 @@ const getPaymentStatusClass = (status: string) => {
 export default function ProjectDetailView() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedTab = searchParams.get('tab')
   const toastError = useToastStore((state) => state.error)
   const toastSuccess = useToastStore((state) => state.success)
   const [project, setProject] = useState<Project | null>(null)
   const [payments, setPayments] = useState<Payment[]>([])
-  const [activeTab, setActiveTab] = useState(0)
+  const activeTab = requestedTab === 'payments' ? 1 : 0
+
+  const selectTab = (tab: number) => {
+    const nextSearchParams = new URLSearchParams(searchParams)
+    if (tab === 1) {
+      nextSearchParams.set('tab', 'payments')
+    } else {
+      nextSearchParams.delete('tab')
+      nextSearchParams.delete('payment')
+    }
+    setSearchParams(nextSearchParams, { replace: true })
+  }
 
   const loadProject = useCallback(async () => {
     if (!id) return
@@ -118,14 +131,14 @@ export default function ProjectDetailView() {
         <div className="tabs-container">
           <button
             className={`tab-btn ${activeTab === 0 ? 'active' : ''}`}
-            onClick={() => setActiveTab(0)}
+            onClick={() => selectTab(0)}
             type="button"
           >
             项目概览
           </button>
           <button
             className={`tab-btn ${activeTab === 1 ? 'active' : ''}`}
-            onClick={() => setActiveTab(1)}
+            onClick={() => selectTab(1)}
             type="button"
           >
             收款计划

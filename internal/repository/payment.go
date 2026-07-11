@@ -90,11 +90,14 @@ func (r *PaymentRepository) ListUpcoming(userID int64, days int, limit int) ([]m
 	var payments []models.Payment
 	endDate := time.Now().AddDate(0, 0, days).Format("2006-01-02")
 
-	if err := r.db.Scopes(UserScope(userID)).Preload("Project").
+	query := r.db.Scopes(UserScope(userID)).Preload("Project").
 		Where("status = ? AND plan_date <= ?", "pending", endDate).
-		Order("plan_date ASC").
-		Limit(limit).
-		Find(&payments).Error; err != nil {
+		Order("plan_date ASC")
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+
+	if err := query.Find(&payments).Error; err != nil {
 		return nil, err
 	}
 	return payments, nil

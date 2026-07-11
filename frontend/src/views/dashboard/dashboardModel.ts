@@ -43,6 +43,27 @@ export function getPaymentDueLabel(daysLeft: number) {
   return daysLeft === 0 ? '下一笔今日到期' : `下一笔 ${daysLeft} 天后到期`
 }
 
+export function toMetricTrend(value: number, positiveIsGood: boolean) {
+  const direction =
+    value === 0 ? ('flat' as const) : value > 0 ? ('up' as const) : ('down' as const)
+  const improved = value === 0 ? null : value > 0 === positiveIsGood
+  const tone =
+    improved === null
+      ? ('neutral' as const)
+      : improved
+        ? ('positive' as const)
+        : ('negative' as const)
+  const directionLabel = value === 0 ? '持平' : value > 0 ? '上升' : '下降'
+  const outcomeLabel = improved === null ? '保持稳定' : improved ? '表现改善' : '表现承压'
+
+  return {
+    accessibleLabel: `较上期${directionLabel} ${Math.abs(value).toFixed(2)}%，${outcomeLabel}`,
+    direction,
+    label: `较上期 ${Math.abs(value).toFixed(2)}%`,
+    tone,
+  }
+}
+
 function toCalendarDay(value: string | Date) {
   if (typeof value === 'string') {
     const localDate = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)

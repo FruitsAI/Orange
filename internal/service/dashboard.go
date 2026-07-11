@@ -309,7 +309,7 @@ func (s *DashboardService) GetRecentProjects(userID int64) ([]models.Project, er
 }
 
 // GetUpcomingPayments 获取即将到期的款项
-// 查询未来7天内到期的待收款项，最多返回5条。
+// 查询未来7天内到期以及已经逾期的待收款项。
 //
 // 参数:
 //   - userID: 用户ID
@@ -318,6 +318,6 @@ func (s *DashboardService) GetRecentProjects(userID int64) ([]models.Project, er
 //   - []models.Payment: 款项列表切片
 //   - error: 错误信息
 func (s *DashboardService) GetUpcomingPayments(userID int64) ([]models.Payment, error) {
-	// 参数说明: ListUpcoming(userID, days=7, limit=5)
-	return s.paymentRepo.ListUpcoming(userID, 7, 5)
+	// 不在仓库层截断，避免大量逾期款项把未来7天内到期的款项挤出结果。
+	return s.paymentRepo.ListUpcoming(userID, 7, 0)
 }

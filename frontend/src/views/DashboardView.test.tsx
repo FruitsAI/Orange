@@ -27,13 +27,13 @@ vi.mock('@/components/dashboard/UpcomingPayments', () => ({
 
 const stats: DashboardStats = {
   avg_collection_days: 18,
-  avg_collection_days_trend: 0,
+  avg_collection_days_trend: 2,
   overdue_amount: 200,
   overdue_trend: 0,
   paid_amount: 700,
-  paid_trend: 0,
+  paid_trend: 3,
   pending_amount: 100,
-  pending_trend: 0,
+  pending_trend: 4,
   total_amount: 1_000,
   total_trend: 0,
 }
@@ -80,7 +80,13 @@ describe('DashboardView resource rendering', () => {
     expect(screen.getByText('¥700.00')).toBeInTheDocument()
     expect(screen.getByText('待结算')).toBeInTheDocument()
     expect(screen.getByText('平均回款')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '处理待收款' })).toHaveAttribute('href', '/projects/1')
+    expect(screen.getByRole('link', { name: '处理待收款' })).toHaveAttribute(
+      'href',
+      '/projects/1?tab=payments&payment=1',
+    )
+    expect(screen.getByLabelText('较上期上升 3.00%，表现改善')).toBeInTheDocument()
+    expect(screen.getByLabelText('较上期上升 4.00%，表现承压')).toBeInTheDocument()
+    expect(screen.getByLabelText('较上期上升 2.00%，表现承压')).toBeInTheDocument()
     expect(screen.getByText('趋势数据 100')).toBeInTheDocument()
     expect(screen.getByLabelText('正在加载近期项目')).toBeInTheDocument()
     expect(screen.queryByLabelText('正在加载仪表盘')).not.toBeInTheDocument()
@@ -96,11 +102,32 @@ describe('DashboardView resource rendering', () => {
 
     await waitFor(() => expect(screen.getByText('预计回款暂不可用')).toBeInTheDocument())
     expect(screen.getByText('逾期风险暂不可用')).toBeInTheDocument()
-    expect(screen.getByText('暂无待收款计划')).toBeInTheDocument()
+    expect(screen.getByText('收款计划暂不可用')).toBeInTheDocument()
+    expect(screen.queryByText('暂无待收款计划')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: '查看项目' })).toHaveAttribute('href', '/projects')
-    expect(screen.getAllByText('--')).toHaveLength(4)
+    expect(screen.getByText('--')).toBeInTheDocument()
+    expect(screen.getAllByText('暂不可用')).toHaveLength(3)
     expect(screen.getByText('统计数据加载失败')).toBeInTheDocument()
     expect(screen.getByText('收入趋势加载失败')).toBeInTheDocument()
     expect(screen.getByText('收款计划加载失败')).toBeInTheDocument()
+  })
+
+  it('shows resource loading states without misreporting empty data', async () => {
+    vi.mocked(dashboardApi.getStats).mockReturnValue(new Promise(() => undefined))
+    vi.mocked(dashboardApi.getIncomeTrend).mockReturnValue(new Promise(() => undefined))
+    vi.mocked(dashboardApi.getRecentProjects).mockResolvedValue(apiResponse([]) as never)
+    vi.mocked(dashboardApi.getUpcomingPayments).mockReturnValue(new Promise(() => undefined))
+
+    render(<DashboardView />)
+
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: '财务概览' })).toHaveAttribute('aria-busy', 'true'),
+    )
+    expect(screen.getByText('预计回款加载中')).toBeInTheDocument()
+    expect(screen.getByText('逾期风险加载中')).toBeInTheDocument()
+    expect(screen.getByText('收款计划加载中')).toBeInTheDocument()
+    expect(screen.getByText('已结算加载中')).toBeInTheDocument()
+    expect(screen.queryByText('暂无待收款计划')).not.toBeInTheDocument()
+    expect(screen.queryByText('--')).not.toBeInTheDocument()
   })
 })

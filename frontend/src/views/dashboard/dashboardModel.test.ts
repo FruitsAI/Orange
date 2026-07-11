@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { IncomeTrend } from '@/api/dashboard'
 import type { PaymentDisplayItem } from './dashboardModel'
-import { findNearestUpcomingPayment, getPaymentDueLabel, sumIncomeValues } from './dashboardModel'
+import {
+  findNearestUpcomingPayment,
+  getPaymentDueLabel,
+  sumIncomeValues,
+  toMetricTrend,
+} from './dashboardModel'
 
 const payment = (id: number, daysLeft: number): PaymentDisplayItem => ({
   amount: id * 100,
@@ -39,5 +44,14 @@ describe('dashboard hero model', () => {
   it('formats upcoming payment timing as safe presentation copy', () => {
     expect(getPaymentDueLabel(3)).toBe('下一笔 3 天后到期')
     expect(getPaymentDueLabel(0)).toBe('下一笔今日到期')
+  })
+
+  it('separates numeric trend direction from business polarity', () => {
+    expect(toMetricTrend(3, true)).toMatchObject({ direction: 'up', tone: 'positive' })
+    expect(toMetricTrend(4, false)).toMatchObject({ direction: 'up', tone: 'negative' })
+    expect(toMetricTrend(-2, false)).toMatchObject({ direction: 'down', tone: 'positive' })
+    expect(toMetricTrend(0, true)).toMatchObject({ direction: 'flat', tone: 'neutral' })
+    expect(toMetricTrend(0, true).accessibleLabel).toBe('较上期持平 0.00%，保持稳定')
+    expect(toMetricTrend(4, false).accessibleLabel).toBe('较上期上升 4.00%，表现承压')
   })
 })

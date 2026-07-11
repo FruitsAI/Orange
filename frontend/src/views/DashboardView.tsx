@@ -1,4 +1,4 @@
-import FinancialHero from '@/components/dashboard/FinancialHero'
+import FinancialHero, { type FinancialHeroProps } from '@/components/dashboard/FinancialHero'
 import IncomeChart from '@/components/dashboard/IncomeChart'
 import ProjectList from '@/components/dashboard/ProjectList'
 import QuickActions from '@/components/dashboard/QuickActions'
@@ -11,15 +11,9 @@ import {
   findNearestUpcomingPayment,
   getPaymentDueLabel,
   sumIncomeValues,
+  toMetricTrend,
 } from './dashboard/dashboardModel'
 import { useDashboardData } from './dashboard/useDashboardData'
-
-function toTrend(value: number): SummaryMetricProps['trend'] {
-  return {
-    direction: value >= 0 ? 'up' : 'down',
-    label: `较上期 ${Math.abs(value).toFixed(2)}%`,
-  }
-}
 
 export default function DashboardView() {
   const {
@@ -34,58 +28,93 @@ export default function DashboardView() {
     trend,
   } = useDashboardData()
   const nearestPayment = findNearestUpcomingPayment(payments.data)
-  const summaryMetrics: SummaryMetricProps[] = [
-    {
-      icon: 'ri-checkbox-circle-line',
-      label: '已结算',
-      trend: stats.data ? toTrend(stats.data.paid_trend) : undefined,
-      value: stats.data ? formatCurrency(stats.data.paid_amount) : '--',
-    },
-    {
-      icon: 'ri-time-line',
-      label: '待结算',
-      trend: stats.data ? toTrend(stats.data.pending_trend) : undefined,
-      value: stats.data ? formatCurrency(stats.data.pending_amount) : '--',
-    },
-    {
-      icon: 'ri-timer-line',
-      label: '平均回款',
-      trend: stats.data ? toTrend(stats.data.avg_collection_days_trend) : undefined,
-      value: stats.data ? `${stats.data.avg_collection_days} 天` : '--',
-    },
-  ]
+  const expected: FinancialHeroProps['expected'] = trend.data
+    ? {
+        amountText: formatCurrency(sumIncomeValues(trend.data.expected_values)),
+        status: 'data',
+        supportingText: `同期已回款 ${formatCurrency(sumIncomeValues(trend.data.actual_values))}`,
+      }
+    : trend.loading
+      ? { status: 'loading' }
+      : { status: 'error' }
+  const overdue: FinancialHeroProps['overdue'] = stats.data
+    ? { amountText: formatCurrency(stats.data.overdue_amount), status: 'data' }
+    : stats.loading
+      ? { status: 'loading' }
+      : { status: 'error' }
+  const payment: FinancialHeroProps['payment'] = nearestPayment
+    ? {
+        detailText: `${nearestPayment.project_name} · ${formatCurrency(nearestPayment.amount)}`,
+        dueLabel: getPaymentDueLabel(nearestPayment.days_left),
+        status: 'data',
+      }
+    : payments.data
+      ? { status: 'empty' }
+      : payments.loading
+        ? { status: 'loading' }
+        : { status: 'error' }
+  const summaryMetrics: SummaryMetricProps[] = stats.data
+    ? [
+        {
+          icon: 'ri-checkbox-circle-line',
+          label: '已结算',
+          status: 'data',
+          trend: toMetricTrend(stats.data.paid_trend, true),
+          value: formatCurrency(stats.data.paid_amount),
+        },
+        {
+          icon: 'ri-time-line',
+          label: '待结算',
+          status: 'data',
+          trend: toMetricTrend(stats.data.pending_trend, false),
+          value: formatCurrency(stats.data.pending_amount),
+        },
+        {
+          icon: 'ri-timer-line',
+          label: '平均回款',
+          status: 'data',
+          trend: toMetricTrend(stats.data.avg_collection_days_trend, false),
+          value: `${stats.data.avg_collection_days} 天`,
+        },
+      ]
+    : [
+        {
+          icon: 'ri-checkbox-circle-line',
+          label: '已结算',
+          status: stats.loading ? 'loading' : 'error',
+        },
+        { icon: 'ri-time-line', label: '待结算', status: stats.loading ? 'loading' : 'error' },
+        { icon: 'ri-timer-line', label: '平均回款', status: stats.loading ? 'loading' : 'error' },
+      ]
 
   if (initialLoading) return <DashboardSkeleton />
 
   return (
     <div className="dashboard-view ember-dashboard">
       <FinancialHero
+        busy={
+          stats.loading ||
+          stats.refreshing ||
+          trend.loading ||
+          trend.refreshing ||
+          payments.loading ||
+          payments.refreshing
+        }
         cta={
           nearestPayment
-            ? { label: '处理待收款', to: `/projects/${nearestPayment.project_id}` }
+            ? {
+                label: '处理待收款',
+                to: `/projects/${nearestPayment.project_id}?tab=payments&payment=${nearestPayment.id}`,
+              }
             : { label: '查看项目', to: '/projects' }
         }
-        expectedAmountText={
-          trend.data ? formatCurrency(sumIncomeValues(trend.data.expected_values)) : '--'
-        }
-        nextPayment={
-          nearestPayment
-            ? {
-                detailText: `${nearestPayment.project_name} · ${formatCurrency(nearestPayment.amount)}`,
-                dueLabel: getPaymentDueLabel(nearestPayment.days_left),
-              }
-            : null
-        }
-        overdueAmountText={stats.data ? formatCurrency(stats.data.overdue_amount) : null}
+        expected={expected}
+        overdue={overdue}
+        payment={payment}
         periodLabel={periodLabel}
-        supportingText={
-          trend.data
-            ? `同期已回款 ${formatCurrency(sumIncomeValues(trend.data.actual_values))}`
-            : '预计回款暂不可用'
-        }
       />
 
-      <div aria-busy={stats.refreshing} className="ember-dashboard__metrics">
+      <div aria-busy={stats.loading || stats.refreshing} className="ember-dashboard__metrics">
         {summaryMetrics.map((metric) => (
           <SummaryMetric key={metric.label} {...metric} />
         ))}

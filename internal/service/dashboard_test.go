@@ -256,6 +256,72 @@ func TestDashboardService_GetUpcomingPayments(t *testing.T) {
 	})
 }
 
+func TestDashboardService_GetUpcomingPaymentsIncludesFuturePaymentAfterOverdueItems(t *testing.T) {
+	setupDashboardTestDB(t)
+	svc := NewDashboardService()
+	db := database.GetDB()
+
+	const userID int64 = 2002
+	db.Where("user_id = ?", userID).Delete(&models.Payment{})
+	db.Where("user_id = ?", userID).Delete(&models.Project{})
+	db.Delete(&models.User{}, userID)
+
+	user := &models.User{
+		ID:       userID,
+		Username: "upcoming-regression",
+		Password: "hashed",
+		Email:    "upcoming-regression@test.com",
+		Role:     constants.RoleUser,
+	}
+	require.NoError(t, db.Create(user).Error)
+
+	now := time.Now()
+	project := &models.Project{
+		UserID:         userID,
+		Name:           "Upcoming Regression Project",
+		Company:        "Test Company",
+		ContractNumber: "UPCOMING-REGRESSION-001",
+		TotalAmount:    70000,
+		Status:         constants.ProjectStatusOngoing,
+		StartDate:      now.AddDate(0, -1, 0),
+		EndDate:        now.AddDate(0, 1, 0),
+	}
+	require.NoError(t, db.Create(project).Error)
+
+	payments := make([]models.Payment, 0, 7)
+	for i := 0; i < 6; i++ {
+		payments = append(payments, models.Payment{
+			UserID:    userID,
+			ProjectID: project.ID,
+			Stage:     "逾期款项",
+			Amount:    10000,
+			Status:    constants.PaymentStatusPending,
+			PlanDate:  now.AddDate(0, 0, -10+i),
+		})
+	}
+	payments = append(payments, models.Payment{
+		UserID:    userID,
+		ProjectID: project.ID,
+		Stage:     "未来三天到期",
+		Amount:    10000,
+		Status:    constants.PaymentStatusPending,
+		PlanDate:  now.AddDate(0, 0, 3),
+	})
+	require.NoError(t, db.Create(&payments).Error)
+
+	result, err := svc.GetUpcomingPayments(userID)
+	require.NoError(t, err)
+
+	foundFuturePayment := false
+	for _, payment := range result {
+		if payment.Stage == "未来三天到期" {
+			foundFuturePayment = true
+			break
+		}
+	}
+	assert.True(t, foundFuturePayment, "7天内的未来待收款不应被逾期款项挤出结果")
+}
+
 // TestDashboardService_DataIsolation 测试数据隔离
 func TestDashboardService_DataIsolation(t *testing.T) {
 	setupDashboardTestDB(t)

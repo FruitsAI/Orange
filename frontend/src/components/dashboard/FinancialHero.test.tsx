@@ -6,15 +6,20 @@ import { render } from '@/test/render'
 import FinancialHero, { type FinancialHeroProps } from './FinancialHero'
 
 const baseProps: FinancialHeroProps = {
+  busy: false,
   cta: { label: '处理待收款', to: '/projects/42' },
-  expectedAmountText: '人民币 12,345 元',
-  nextPayment: {
+  expected: {
+    amountText: '人民币 12,345 元',
+    status: 'data',
+    supportingText: '同期已回款 人民币 8,000 元',
+  },
+  overdue: { amountText: '人民币 1,500 元', status: 'data' },
+  payment: {
     detailText: '星轨品牌升级 · 人民币 3,200 元',
     dueLabel: '下一笔 3 天后到期',
+    status: 'data',
   },
-  overdueAmountText: '人民币 1,500 元',
   periodLabel: '近30天',
-  supportingText: '同期已回款 人民币 8,000 元',
 }
 
 describe('FinancialHero', () => {
@@ -39,7 +44,7 @@ describe('FinancialHero', () => {
     render(
       <FinancialHero
         {...baseProps}
-        nextPayment={{ detailText: '今日项目', dueLabel: '今日到期' }}
+        payment={{ detailText: '今日项目', dueLabel: '今日到期', status: 'data' }}
       />,
     )
 
@@ -52,7 +57,7 @@ describe('FinancialHero', () => {
       <FinancialHero
         {...baseProps}
         cta={{ label: '查看项目', to: '/projects' }}
-        nextPayment={null}
+        payment={{ status: 'empty' }}
       />,
     )
 
@@ -72,15 +77,35 @@ describe('FinancialHero', () => {
     render(
       <FinancialHero
         {...baseProps}
-        expectedAmountText="--"
-        overdueAmountText={null}
-        supportingText="预计回款暂不可用"
+        expected={{ status: 'error' }}
+        overdue={{ status: 'error' }}
+        payment={{ status: 'error' }}
       />,
     )
 
     expect(screen.getByText('--')).toBeInTheDocument()
     expect(screen.getByText('预计回款暂不可用')).toBeInTheDocument()
     expect(screen.getByText('逾期风险暂不可用')).toBeInTheDocument()
+    expect(screen.getByText('收款计划暂不可用')).toBeInTheDocument()
+    expect(screen.queryByText('暂无待收款计划')).not.toBeInTheDocument()
+  })
+
+  it('marks initial resource work busy and distinguishes loading from empty', () => {
+    render(
+      <FinancialHero
+        {...baseProps}
+        busy
+        expected={{ status: 'loading' }}
+        overdue={{ status: 'loading' }}
+        payment={{ status: 'loading' }}
+      />,
+    )
+
+    expect(screen.getByRole('region', { name: '财务概览' })).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByText('预计回款加载中')).toBeInTheDocument()
+    expect(screen.getByText('逾期风险加载中')).toBeInTheDocument()
+    expect(screen.getByText('收款计划加载中')).toBeInTheDocument()
+    expect(screen.queryByText('暂无待收款计划')).not.toBeInTheDocument()
   })
 
   it('has no decorative orbit element and imports no business formatter', () => {

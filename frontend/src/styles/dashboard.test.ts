@@ -17,4 +17,17 @@ describe('dashboard visual contract', () => {
     expect(dashboardCss).toContain('@media (max-width: 720px)')
     expect(dashboardCss).toContain('@media (prefers-reduced-motion: reduce)')
   })
+
+  it('gives Day Ember an explicit high-contrast orange hero treatment', () => {
+    expect(dashboardCss).toMatch(
+      /\[data-theme='light'\] \.financial-hero\s*\{[\s\S]*--hero-text:\s*#fff[\s\S]*linear-gradient/,
+    )
+    expect(dashboardCss).toMatch(/\.financial-hero__amount\s*\{[\s\S]*color:\s*var\(--hero-text\)/)
+    expect(dashboardCss).toMatch(
+      /\.financial-hero__supporting-copy\s*\{[\s\S]*color:\s*var\(--hero-text-muted\)/,
+    )
+    expect(dashboardCss).toMatch(
+      /\.summary-metric__label\s*\{[\s\S]*color:\s*var\(--color-text-muted\)/,
+    )
+  })
 })

@@ -6,7 +6,10 @@ import QuickActions from '@/components/dashboard/QuickActions'
 import StatCard from '@/components/dashboard/StatCard'
 import UpcomingPayments from '@/components/dashboard/UpcomingPayments'
 import DashboardError from './dashboard/DashboardError'
-import DashboardSkeleton from './dashboard/DashboardSkeleton'
+import DashboardSkeleton, {
+  DashboardSectionSkeleton,
+  DashboardStatsSkeleton,
+} from './dashboard/DashboardSkeleton'
 import { useDashboardData } from './dashboard/useDashboardData'
 
 const emptyStats: DashboardStats = {
@@ -82,6 +85,7 @@ export default function DashboardView() {
           />
         </div>
       )}
+      {stats.loading && !stats.data && <DashboardStatsSkeleton />}
       {stats.data && (
         <div
           aria-busy={stats.refreshing}
@@ -102,6 +106,9 @@ export default function DashboardView() {
               onRetry={() => retry('trend')}
               resourceLabel="收入趋势"
             />
+          )}
+          {trend.loading && !trend.data && (
+            <DashboardSectionSkeleton height={360} label="收入趋势" />
           )}
           {trend.data && (
             <IncomeChart
@@ -124,6 +131,9 @@ export default function DashboardView() {
               resourceLabel="近期项目"
             />
           )}
+          {projects.loading && !projects.data && (
+            <DashboardSectionSkeleton height={280} label="近期项目" />
+          )}
           {projects.data && <ProjectList projects={projects.data} />}
         </div>
         <div aria-busy={payments.refreshing} className="flex flex-col gap-md">
@@ -133,6 +143,9 @@ export default function DashboardView() {
               onRetry={() => retry('payments')}
               resourceLabel="收款计划"
             />
+          )}
+          {payments.loading && !payments.data && (
+            <DashboardSectionSkeleton height={280} label="收款计划" />
           )}
           {payments.data && <UpcomingPayments payments={payments.data.slice(0, 3)} />}
         </div>

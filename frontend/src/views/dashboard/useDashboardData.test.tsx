@@ -109,7 +109,7 @@ describe('useDashboardData', () => {
     const { result, unmount } = renderHook(() => useDashboardData())
 
     expect(dashboardApi.getStats).toHaveBeenCalledTimes(1)
-    expect(dashboardApi.getIncomeTrend).toHaveBeenCalledWith('month')
+    expect(dashboardApi.getIncomeTrend).toHaveBeenCalledWith('month', expect.any(AbortSignal))
     expect(dashboardApi.getRecentProjects).toHaveBeenCalledTimes(1)
     expect(dashboardApi.getUpcomingPayments).toHaveBeenCalledTimes(1)
     expect(result.current.stats.loading).toBe(true)
@@ -175,7 +175,9 @@ describe('useDashboardData', () => {
     const { result } = renderHook(() => useDashboardData())
     await waitFor(() => expect(result.current.initialLoading).toBe(false))
 
-    act(() => result.current.retry())
+    act(() => {
+      void result.current.retry()
+    })
 
     expect(result.current.initialLoading).toBe(false)
     expect(result.current.stats.data).toEqual(stats)
@@ -202,8 +204,12 @@ describe('useDashboardData', () => {
     vi.mocked(dashboardApi.getRecentProjects).mockReturnValueOnce(projectsRefresh.promise)
     vi.mocked(dashboardApi.getUpcomingPayments).mockReturnValueOnce(paymentsRefresh.promise)
 
-    act(() => result.current.retry('all'))
+    let retryResult: ReturnType<typeof result.current.retry>
+    act(() => {
+      retryResult = result.current.retry('all')
+    })
 
+    expect(retryResult!).toBeInstanceOf(Promise)
     expect(result.current.stats.data).toEqual(stats)
     expect(result.current.stats.loading).toBe(false)
     expect(result.current.stats.refreshing).toBe(true)
@@ -215,6 +221,25 @@ describe('useDashboardData', () => {
     expect(result.current.payments.refreshing).toBe(true)
   })
 
+  it('does not restore the global initial state when retrying after every resource failed', async () => {
+    vi.mocked(dashboardApi.getStats).mockRejectedValueOnce(new Error('stats failed'))
+    vi.mocked(dashboardApi.getIncomeTrend).mockRejectedValueOnce(new Error('trend failed'))
+    vi.mocked(dashboardApi.getRecentProjects).mockRejectedValueOnce(new Error('projects failed'))
+    vi.mocked(dashboardApi.getUpcomingPayments).mockRejectedValueOnce(new Error('payments failed'))
+    const { result } = renderHook(() => useDashboardData())
+    await waitFor(() => expect(result.current.initialLoading).toBe(false))
+    vi.mocked(dashboardApi.getStats).mockReturnValueOnce(deferred<never>().promise)
+    vi.mocked(dashboardApi.getIncomeTrend).mockReturnValueOnce(deferred<never>().promise)
+    vi.mocked(dashboardApi.getRecentProjects).mockReturnValueOnce(deferred<never>().promise)
+    vi.mocked(dashboardApi.getUpcomingPayments).mockReturnValueOnce(deferred<never>().promise)
+
+    act(() => {
+      void result.current.retry('all')
+    })
+
+    expect(result.current.initialLoading).toBe(false)
+  })
+
   it('requests only the trend endpoint when the active period changes', async () => {
     mockSuccessfulDashboard()
     vi.mocked(dashboardApi.getIncomeTrend)
@@ -223,12 +248,12 @@ describe('useDashboardData', () => {
     const { result } = renderHook(() => useDashboardData())
     await waitFor(() => expect(result.current.initialLoading).toBe(false))
 
-    act(() => result.current.setPeriod('week'))
+    await act(async () => result.current.setPeriod('week'))
     await waitFor(() => expect(result.current.trend.data).toEqual(weekTrend))
 
     expect(result.current.activePeriod).toBe('week')
     expect(result.current.periodLabel).toBe('近7天')
-    expect(dashboardApi.getIncomeTrend).toHaveBeenNthCalledWith(2, 'week')
+    expect(dashboardApi.getIncomeTrend).toHaveBeenNthCalledWith(2, 'week', expect.any(AbortSignal))
     expect(dashboardApi.getStats).toHaveBeenCalledTimes(1)
     expect(dashboardApi.getRecentProjects).toHaveBeenCalledTimes(1)
     expect(dashboardApi.getUpcomingPayments).toHaveBeenCalledTimes(1)
@@ -245,7 +270,11 @@ describe('useDashboardData', () => {
     vi.mocked(dashboardApi.getUpcomingPayments).mockResolvedValue(apiResponse([payment]) as never)
     const { result } = renderHook(() => useDashboardData())
 
-    act(() => result.current.setPeriod('week'))
+    let periodRequest: ReturnType<typeof result.current.setPeriod>
+    act(() => {
+      periodRequest = result.current.setPeriod('week')
+    })
+    expect(periodRequest!).toBeInstanceOf(Promise)
     await act(async () => weekRequest.resolve(apiResponse(weekTrend)))
     expect(result.current.trend.data).toEqual(weekTrend)
 
@@ -261,11 +290,46 @@ describe('useDashboardData', () => {
     vi.mocked(dashboardApi.getRecentProjects).mockReturnValue(deferred<never>().promise)
     vi.mocked(dashboardApi.getUpcomingPayments).mockReturnValue(deferred<never>().promise)
     const { unmount } = renderHook(() => useDashboardData())
+    const signal = vi.mocked(dashboardApi.getStats).mock.calls[0]?.[1]
 
     unmount()
+    expect(signal).toBeInstanceOf(AbortSignal)
+    expect(signal?.aborted).toBe(true)
     await act(async () => statsRequest.resolve(apiResponse(stats)))
 
     expect(dashboardApi.getStats).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the successful data period when a newer period fails', async () => {
+    mockSuccessfulDashboard()
+    vi.mocked(dashboardApi.getIncomeTrend)
+      .mockResolvedValueOnce(apiResponse(monthTrend) as never)
+      .mockRejectedValueOnce(new Error('week unavailable'))
+    const { result } = renderHook(() => useDashboardData())
+    await waitFor(() => expect(result.current.initialLoading).toBe(false))
+
+    await act(async () => result.current.setPeriod('week'))
+
+    expect(result.current.activePeriod).toBe('month')
+    expect(result.current.periodLabel).toBe('近30天')
+    expect(result.current.trend.data).toEqual(monthTrend)
+    expect(result.current.trend.error).toEqual(new Error('week unavailable'))
+  })
+
+  it('aborts StrictMode probe requests and keeps the live request active until unmount', () => {
+    vi.mocked(dashboardApi.getStats).mockReturnValue(deferred<never>().promise)
+    vi.mocked(dashboardApi.getIncomeTrend).mockReturnValue(deferred<never>().promise)
+    vi.mocked(dashboardApi.getRecentProjects).mockReturnValue(deferred<never>().promise)
+    vi.mocked(dashboardApi.getUpcomingPayments).mockReturnValue(deferred<never>().promise)
+    const { unmount } = renderHook(() => useDashboardData(), { reactStrictMode: true })
+    const statsSignals = vi.mocked(dashboardApi.getStats).mock.calls.map(([, signal]) => signal)
+
+    expect(statsSignals).toHaveLength(2)
+    expect(statsSignals[0]?.aborted).toBe(true)
+    expect(statsSignals[1]?.aborted).toBe(false)
+
+    unmount()
+    expect(statsSignals[1]?.aborted).toBe(true)
   })
 })
 
@@ -280,6 +344,39 @@ describe('dashboard model', () => {
 
   it('describes the month API period accurately as the last 30 days', () => {
     expect(getPeriodLabel('month')).toBe('近30天')
+  })
+
+  it('counts calendar days across a daylight-saving boundary', () => {
+    const originalTimezone = process.env.TZ
+    process.env.TZ = 'America/New_York'
+    try {
+      const beforeDstBoundary = new Date(2026, 2, 7, 23, 30)
+      const dueDate = new Date(2026, 2, 9)
+      const legacyElapsedDays = Math.ceil(
+        (dueDate.getTime() - beforeDstBoundary.getTime()) / 86_400_000,
+      )
+      const display = toPaymentDisplay(
+        { ...payment, plan_date: '2026-03-09' },
+        beforeDstBoundary,
+      )
+
+      expect(legacyElapsedDays).toBe(1)
+      expect(display.days_left).toBe(2)
+    } finally {
+      if (originalTimezone === undefined) delete process.env.TZ
+      else process.env.TZ = originalTimezone
+    }
+  })
+
+  it('falls back safely when the payment date is invalid', () => {
+    const display = toPaymentDisplay(
+      { ...payment, plan_date: 'not-a-date' },
+      new Date(2026, 6, 12, 12),
+    )
+
+    expect(Number.isNaN(display.days_left)).toBe(false)
+    expect(display.days_left).toBe(0)
+    expect(display.status).toBe('danger')
   })
 })
 

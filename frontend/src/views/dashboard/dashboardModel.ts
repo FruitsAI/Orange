@@ -25,22 +25,34 @@ export function getPeriodLabel(period: DashboardPeriod) {
   return periodLabels[period]
 }
 
-function toLocalDay(value: string | Date) {
+function toCalendarDay(value: string | Date) {
   if (typeof value === 'string') {
     const localDate = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
     if (localDate) {
-      return new Date(Number(localDate[1]), Number(localDate[2]) - 1, Number(localDate[3]))
+      const year = Number(localDate[1])
+      const month = Number(localDate[2]) - 1
+      const day = Number(localDate[3])
+      const parsed = new Date(year, month, day)
+      if (
+        parsed.getFullYear() === year &&
+        parsed.getMonth() === month &&
+        parsed.getDate() === day
+      ) {
+        return Date.UTC(year, month, day) / 86_400_000
+      }
+      return null
     }
   }
 
   const date = value instanceof Date ? value : new Date(value)
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  if (Number.isNaN(date.getTime())) return null
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000
 }
 
 export function toPaymentDisplay(payment: Payment, now = new Date()): PaymentDisplayItem {
-  const dueDay = toLocalDay(payment.plan_date)
-  const today = toLocalDay(now)
-  const daysLeft = Math.round((dueDay.getTime() - today.getTime()) / 86_400_000)
+  const today = toCalendarDay(now) ?? 0
+  const dueDay = toCalendarDay(payment.plan_date) ?? today
+  const daysLeft = dueDay - today
 
   return {
     amount: payment.amount,

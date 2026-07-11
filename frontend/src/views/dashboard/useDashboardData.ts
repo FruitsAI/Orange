@@ -34,10 +34,11 @@ export function useDashboardData() {
   const [projects, setProjects] = useState(() => initialResource<Project[]>())
   const [payments, setPayments] = useState(() => initialResource<PaymentDisplayItem[]>())
   const [activePeriod, setActivePeriod] = useState<DashboardPeriod>('month')
-  const [initialLoading, setInitialLoading] = useState(true)
+  const [hasAnySettled, setHasAnySettled] = useState(false)
   const activePeriodRef = useRef<DashboardPeriod>('month')
-  const initialLoadIdRef = useRef(0)
+  const requestedTrendPeriodRef = useRef<DashboardPeriod>('month')
   const mountedRef = useRef(false)
+  const controllers = useRef<Partial<Record<DashboardResource, AbortController>>>({})
   const requestIds = useRef<Record<DashboardResource, number>>({
     payments: 0,
     projects: 0,
@@ -49,6 +50,9 @@ export function useDashboardData() {
     resource: DashboardResource,
     setResource: React.Dispatch<React.SetStateAction<DashboardResourceState<T>>>,
   ) => {
+    controllers.current[resource]?.abort()
+    const controller = new AbortController()
+    controllers.current[resource] = controller
     const requestId = ++requestIds.current[resource]
     setResource((current) => ({
       ...current,
@@ -56,7 +60,7 @@ export function useDashboardData() {
       loading: current.data === null,
       refreshing: current.data !== null,
     }))
-    return requestId
+    return { requestId, signal: controller.signal }
   }, [])
 
   const canCommit = useCallback(
@@ -66,13 +70,15 @@ export function useDashboardData() {
   )
 
   const loadStats = useCallback(async () => {
-    const requestId = beginRequest('stats', setStats)
+    const { requestId, signal } = beginRequest('stats', setStats)
     try {
-      const response = await dashboardApi.getStats()
+      const response = await dashboardApi.getStats(undefined, signal)
       if (!canCommit('stats', requestId)) return
+      setHasAnySettled(true)
       setStats({ data: response.data.data, error: null, loading: false, refreshing: false })
     } catch (error) {
-      if (!canCommit('stats', requestId)) return
+      if (signal.aborted || !canCommit('stats', requestId)) return
+      setHasAnySettled(true)
       setStats((current) => ({
         ...current,
         error: toError(error),
@@ -84,13 +90,18 @@ export function useDashboardData() {
 
   const loadTrend = useCallback(
     async (period: DashboardPeriod) => {
-      const requestId = beginRequest('trend', setTrend)
+      requestedTrendPeriodRef.current = period
+      const { requestId, signal } = beginRequest('trend', setTrend)
       try {
-        const response = await dashboardApi.getIncomeTrend(period)
+        const response = await dashboardApi.getIncomeTrend(period, signal)
         if (!canCommit('trend', requestId)) return
+        setHasAnySettled(true)
+        activePeriodRef.current = period
+        setActivePeriod(period)
         setTrend({ data: response.data.data, error: null, loading: false, refreshing: false })
       } catch (error) {
-        if (!canCommit('trend', requestId)) return
+        if (signal.aborted || !canCommit('trend', requestId)) return
+        setHasAnySettled(true)
         setTrend((current) => ({
           ...current,
           error: toError(error),
@@ -103,13 +114,15 @@ export function useDashboardData() {
   )
 
   const loadProjects = useCallback(async () => {
-    const requestId = beginRequest('projects', setProjects)
+    const { requestId, signal } = beginRequest('projects', setProjects)
     try {
-      const response = await dashboardApi.getRecentProjects()
+      const response = await dashboardApi.getRecentProjects(signal)
       if (!canCommit('projects', requestId)) return
+      setHasAnySettled(true)
       setProjects({ data: response.data.data, error: null, loading: false, refreshing: false })
     } catch (error) {
-      if (!canCommit('projects', requestId)) return
+      if (signal.aborted || !canCommit('projects', requestId)) return
+      setHasAnySettled(true)
       setProjects((current) => ({
         ...current,
         error: toError(error),
@@ -120,10 +133,11 @@ export function useDashboardData() {
   }, [beginRequest, canCommit])
 
   const loadPayments = useCallback(async () => {
-    const requestId = beginRequest('payments', setPayments)
+    const { requestId, signal } = beginRequest('payments', setPayments)
     try {
-      const response = await dashboardApi.getUpcomingPayments()
+      const response = await dashboardApi.getUpcomingPayments(signal)
       if (!canCommit('payments', requestId)) return
+      setHasAnySettled(true)
       setPayments({
         data: response.data.data.map((payment) => toPaymentDisplay(payment)),
         error: null,
@@ -131,7 +145,8 @@ export function useDashboardData() {
         refreshing: false,
       })
     } catch (error) {
-      if (!canCommit('payments', requestId)) return
+      if (signal.aborted || !canCommit('payments', requestId)) return
+      setHasAnySettled(true)
       setPayments((current) => ({
         ...current,
         error: toError(error),
@@ -143,23 +158,16 @@ export function useDashboardData() {
 
   useEffect(() => {
     const ids = requestIds.current
-    const initialLoadId = ++initialLoadIdRef.current
+    const activeControllers = controllers.current
     mountedRef.current = true
-    const initialRequests = [
-      loadStats(),
-      loadTrend(activePeriodRef.current),
-      loadProjects(),
-      loadPayments(),
-    ]
-    void Promise.allSettled(initialRequests).then(() => {
-      if (mountedRef.current && initialLoadIdRef.current === initialLoadId) {
-        setInitialLoading(false)
-      }
-    })
+    void loadStats()
+    void loadTrend(activePeriodRef.current)
+    void loadProjects()
+    void loadPayments()
 
     return () => {
       mountedRef.current = false
-      initialLoadIdRef.current += 1
+      Object.values(activeControllers).forEach((controller) => controller?.abort())
       ids.stats += 1
       ids.trend += 1
       ids.projects += 1
@@ -169,28 +177,36 @@ export function useDashboardData() {
 
   const setPeriod = useCallback(
     (period: DashboardPeriod) => {
-      if (period === activePeriodRef.current) return
-      activePeriodRef.current = period
-      setActivePeriod(period)
-      void loadTrend(period)
+      if (
+        period === activePeriodRef.current &&
+        requestedTrendPeriodRef.current === activePeriodRef.current
+      ) {
+        return Promise.resolve()
+      }
+      return loadTrend(period)
     },
     [loadTrend],
   )
 
   const retry = useCallback(
     (target?: RetryTarget) => {
+      const requests: Promise<void>[] = []
       if (target === 'all') {
-        void loadStats()
-        void loadTrend(activePeriodRef.current)
-        void loadProjects()
-        void loadPayments()
-        return
+        requests.push(
+          loadStats(),
+          loadTrend(requestedTrendPeriodRef.current),
+          loadProjects(),
+          loadPayments(),
+        )
+      } else {
+        if (target === 'stats' || (!target && stats.error)) requests.push(loadStats())
+        if (target === 'trend' || (!target && trend.error)) {
+          requests.push(loadTrend(requestedTrendPeriodRef.current))
+        }
+        if (target === 'projects' || (!target && projects.error)) requests.push(loadProjects())
+        if (target === 'payments' || (!target && payments.error)) requests.push(loadPayments())
       }
-
-      if (target === 'stats' || (!target && stats.error)) void loadStats()
-      if (target === 'trend' || (!target && trend.error)) void loadTrend(activePeriodRef.current)
-      if (target === 'projects' || (!target && projects.error)) void loadProjects()
-      if (target === 'payments' || (!target && payments.error)) void loadPayments()
+      return Promise.allSettled(requests)
     },
     [
       loadPayments,
@@ -203,6 +219,12 @@ export function useDashboardData() {
       trend.error,
     ],
   )
+
+  const initialLoading =
+    !hasAnySettled &&
+    [stats, trend, projects, payments].every(
+      (resource) => resource.loading && resource.data === null && resource.error === null,
+    )
 
   return useMemo(
     () => ({

@@ -1,15 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import GlassCard from '@/components/common/GlassCard'
+import type { PaymentDisplayItem } from '@/views/dashboard/dashboardModel'
 
-export interface PaymentDisplayItem {
-  id: number
-  project_id: number
-  project_name: string
-  client_name: string
-  days_left: number
-  amount: number
-  status: string
-}
+export type { PaymentDisplayItem } from '@/views/dashboard/dashboardModel'
 
 interface UpcomingPaymentsProps {
   payments: PaymentDisplayItem[]
@@ -66,7 +59,11 @@ export default function UpcomingPayments({ payments }: UpcomingPaymentsProps) {
                   <div className="font-semibold">{item.project_name}</div>
                   <div className="text-sm text-secondary mt-sm">{item.client_name}</div>
                   <div className="text-sm mt-sm" style={{ color }}>
-                    {item.days_left}天后到期
+                    {item.days_left < 0
+                      ? `已逾期${Math.abs(item.days_left)}天`
+                      : item.days_left === 0
+                        ? '今天到期'
+                        : `${item.days_left}天后到期`}
                   </div>
                 </div>
                 <div className="text-xl font-bold">¥{item.amount.toLocaleString()}</div>

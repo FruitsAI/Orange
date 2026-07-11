@@ -749,12 +749,19 @@ Run: `task dev`
 
 Verify at minimum:
 
-- macOS desktop window at 1440×900, 1280×800, and a narrow window near 800px.
-- Topbar drag, double-click, navigation, dropdowns, and keyboard focus.
+- Real macOS/Wails windows at 1440×900, 1280×800, and widths of 800px, 768px, 375px,
+  and 320px.
+- At every tested width, confirm the topbar brand and visible utilities do not collide or clip.
+- Verify Topbar drag, double-click, navigation, dropdowns, and the complete keyboard Tab order.
+- At 768px and below, confirm the hidden topbar navigation is absent from both the Tab order and
+  accessibility tree, while the visible Dock links remain discoverable in the expected order.
+- At 375px and 320px, open the notification menu and confirm its left and right edges remain within
+  the viewport with at least the intended inset.
 - Dashboard loading, success, empty, refresh, and failure states.
 - Light, dark, and auto themes, including a live operating-system theme change.
 - Reduced-motion behavior with the OS setting enabled.
-- No horizontal overflow or content hidden under the bottom dock.
+- No horizontal overflow; scroll each view to its end and confirm the Dock does not cover content,
+  including safe-area bottom spacing.
 
 **Step 3: Profile pointer and animation behavior**
 

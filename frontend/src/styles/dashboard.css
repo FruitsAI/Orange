@@ -31,13 +31,13 @@
 }
 
 [data-theme='light'] .financial-hero {
-  --hero-risk: #fff3c4;
+  --hero-risk: #fff;
   --hero-foreground: #fff;
   --hero-foreground-muted: #fff;
 
   border-color: rgba(255, 255, 255, 0.34);
   background:
-    radial-gradient(circle at 78% 20%, rgba(255, 224, 178, 0.3), transparent 36%),
+    radial-gradient(circle at 92% 18%, rgba(72, 20, 0, 0.24), transparent 30%),
     linear-gradient(135deg, #a83800 0%, #bd4900 54%, #8f2f00 100%);
   box-shadow: 0 28px 70px rgba(105, 38, 0, 0.26);
 }

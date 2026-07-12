@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes, useNavigate } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { projectApi, type Payment, type Project } from '@/api/project'
+import { paymentApi, projectApi, type Payment, type Project } from '@/api/project'
 import { render } from '@/test/render'
 import ProjectDetailView from './ProjectDetailView'
 
@@ -139,6 +139,22 @@ describe('ProjectDetailView payment deep links', () => {
     )
     expect(screen.getByTestId('payment-7')).not.toHaveClass('payment-item--highlighted')
     expect(projectApi.getPayments).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not steal focus again when payments refresh for the same deep link', async () => {
+    const user = userEvent.setup()
+    vi.mocked(paymentApi.confirm).mockResolvedValue(apiResponse(payment) as never)
+    renderProjectDetail('/projects/42?tab=payments&payment=7')
+
+    const target = await screen.findByTestId('payment-7')
+    await waitFor(() => expect(target.scrollIntoView).toHaveBeenCalledTimes(1))
+    await user.click(screen.getAllByRole('button', { name: '确认收款' })[0])
+    await waitFor(() => expect(projectApi.getPayments).toHaveBeenCalledTimes(2))
+
+    expect(target.scrollIntoView).toHaveBeenCalledTimes(1)
+    expect(
+      vi.mocked(target.focus).mock.contexts.filter((context) => context === target),
+    ).toHaveLength(1)
   })
 
   it('does not throw when the requested payment is absent or scrolling APIs are unavailable', async () => {

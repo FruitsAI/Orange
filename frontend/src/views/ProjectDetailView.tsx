@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { paymentApi, projectApi, type Payment, type Project } from '@/api/project'
 import GlassCard from '@/components/common/GlassCard'
@@ -44,6 +44,7 @@ export default function ProjectDetailView() {
   const toastSuccess = useToastStore((state) => state.success)
   const [project, setProject] = useState<Project | null>(null)
   const [payments, setPayments] = useState<Payment[]>([])
+  const positionedPaymentRef = useRef<string | null>(null)
   const activeTab = requestedTab === 'payments' ? 1 : 0
 
   const selectTab = (tab: number) => {
@@ -79,13 +80,16 @@ export default function ProjectDetailView() {
   useEffect(() => {
     if (activeTab !== 1 || !requestedPayment || payments.length === 0) return
 
+    const positionKey = `${id}:${requestedPayment}`
+    if (positionedPaymentRef.current === positionKey) return
+
     const target = document.getElementById(`payment-${requestedPayment}`)
     if (!target) return
 
-    target.classList.add('payment-item--highlighted')
+    positionedPaymentRef.current = positionKey
     target.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
     target.focus?.({ preventScroll: true })
-  }, [activeTab, payments, requestedPayment])
+  }, [activeTab, id, payments, requestedPayment])
 
   const confirmPayment = async (paymentId: number) => {
     try {

@@ -19,6 +19,23 @@ function contrastRatio(foreground: string, background: string) {
   return (lighter + 0.05) / (darker + 0.05)
 }
 
+function composite(foreground: string, background: string, alpha: number) {
+  const channels = (hex: string) =>
+    hex
+      .replace('#', '')
+      .match(/.{2}/g)!
+      .map((channel) => Number.parseInt(channel, 16))
+  const foregroundChannels = channels(foreground)
+  const backgroundChannels = channels(background)
+  return `#${foregroundChannels
+    .map((channel, index) =>
+      Math.round(channel * alpha + backgroundChannels[index] * (1 - alpha))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`
+}
+
 describe('dashboard visual contract', () => {
   it('uses semantic design tokens and keeps its pseudo-element orbit non-interactive', () => {
     expect(dashboardCss).toContain('var(--color-surface)')
@@ -41,9 +58,23 @@ describe('dashboard visual contract', () => {
 
     expect(lightHero).toContain('--hero-foreground: #fff')
     expect(lightHero).toContain('--hero-foreground-muted: #fff')
+    expect(lightHero).toContain('--hero-risk: #fff')
     expect(mainGradientColors).toHaveLength(3)
     mainGradientColors.forEach((background) => {
       expect(contrastRatio('#ffffff', background)).toBeGreaterThanOrEqual(4.5)
+    })
+    const radial = lightHero?.match(
+      /radial-gradient\(circle at 92% 18%, rgba\((\d+), (\d+), (\d+), ([\d.]+)\)/,
+    )
+    expect(radial).not.toBeNull()
+    const radialColor = `#${radial!
+      .slice(1, 4)
+      .map((channel) => Number(channel).toString(16).padStart(2, '0'))
+      .join('')}`
+    mainGradientColors.forEach((background) => {
+      expect(
+        contrastRatio('#ffffff', composite(radialColor, background, Number(radial![4]))),
+      ).toBeGreaterThanOrEqual(4.5)
     })
     expect(dashboardCss).toMatch(
       /\.financial-hero__amount\s*\{[\s\S]*color:\s*var\(--hero-foreground\)/,

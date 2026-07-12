@@ -4,6 +4,21 @@ import { describe, expect, it } from 'vitest'
 
 const dashboardCss = readFileSync(resolve('src/styles/dashboard.css'), 'utf8')
 
+function relativeLuminance(hex: string) {
+  const channels = hex
+    .replace('#', '')
+    .match(/.{2}/g)!
+    .map((channel) => Number.parseInt(channel, 16) / 255)
+    .map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4))
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const lighter = Math.max(relativeLuminance(foreground), relativeLuminance(background))
+  const darker = Math.min(relativeLuminance(foreground), relativeLuminance(background))
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
 describe('dashboard visual contract', () => {
   it('uses semantic design tokens and keeps its pseudo-element orbit non-interactive', () => {
     expect(dashboardCss).toContain('var(--color-surface)')
@@ -19,12 +34,22 @@ describe('dashboard visual contract', () => {
   })
 
   it('gives Day Ember an explicit high-contrast orange hero treatment', () => {
+    const lightHero = dashboardCss.match(
+      /\[data-theme='light'\] \.financial-hero\s*\{([^}]+)\}/,
+    )?.[1]
+    const mainGradientColors = lightHero?.match(/#[0-9a-f]{6}/gi)?.slice(-3) ?? []
+
+    expect(lightHero).toContain('--hero-foreground: #fff')
+    expect(lightHero).toContain('--hero-foreground-muted: #fff')
+    expect(mainGradientColors).toHaveLength(3)
+    mainGradientColors.forEach((background) => {
+      expect(contrastRatio('#ffffff', background)).toBeGreaterThanOrEqual(4.5)
+    })
     expect(dashboardCss).toMatch(
-      /\[data-theme='light'\] \.financial-hero\s*\{[\s\S]*--hero-text:\s*#fff[\s\S]*linear-gradient/,
+      /\.financial-hero__amount\s*\{[\s\S]*color:\s*var\(--hero-foreground\)/,
     )
-    expect(dashboardCss).toMatch(/\.financial-hero__amount\s*\{[\s\S]*color:\s*var\(--hero-text\)/)
     expect(dashboardCss).toMatch(
-      /\.financial-hero__supporting-copy\s*\{[\s\S]*color:\s*var\(--hero-text-muted\)/,
+      /\.financial-hero__supporting-copy\s*\{[\s\S]*color:\s*var\(--hero-foreground-muted\)/,
     )
     expect(dashboardCss).toMatch(
       /\.summary-metric__label\s*\{[\s\S]*color:\s*var\(--color-text-muted\)/,

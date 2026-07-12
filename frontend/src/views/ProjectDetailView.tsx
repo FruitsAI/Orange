@@ -39,6 +39,7 @@ export default function ProjectDetailView() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedTab = searchParams.get('tab')
+  const requestedPayment = searchParams.get('payment')
   const toastError = useToastStore((state) => state.error)
   const toastSuccess = useToastStore((state) => state.success)
   const [project, setProject] = useState<Project | null>(null)
@@ -74,6 +75,17 @@ export default function ProjectDetailView() {
     const timer = window.setTimeout(loadProject, 0)
     return () => window.clearTimeout(timer)
   }, [loadProject])
+
+  useEffect(() => {
+    if (activeTab !== 1 || !requestedPayment || payments.length === 0) return
+
+    const target = document.getElementById(`payment-${requestedPayment}`)
+    if (!target) return
+
+    target.classList.add('payment-item--highlighted')
+    target.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
+    target.focus?.({ preventScroll: true })
+  }, [activeTab, payments, requestedPayment])
 
   const confirmPayment = async (paymentId: number) => {
     try {
@@ -266,7 +278,14 @@ export default function ProjectDetailView() {
                 </GlassCard>
               ) : (
                 payments.map((payment) => (
-                  <GlassCard className="payment-item" key={payment.id}>
+                  <GlassCard
+                    className={`payment-item ${String(payment.id) === requestedPayment ? 'payment-item--highlighted' : ''}`}
+                    data-payment-id={payment.id}
+                    data-testid={`payment-${payment.id}`}
+                    id={`payment-${payment.id}`}
+                    key={payment.id}
+                    tabIndex={-1}
+                  >
                     <div className="payment-left">
                       <div className="icon-circle">
                         <i className="ri-secure-payment-line" />

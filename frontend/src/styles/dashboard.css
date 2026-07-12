@@ -6,8 +6,8 @@
 
 .financial-hero {
   --hero-risk: var(--color-danger);
-  --hero-text: var(--color-text);
-  --hero-text-muted: var(--color-text-muted);
+  --hero-foreground: var(--color-text);
+  --hero-foreground-muted: var(--color-text-muted);
 
   position: relative;
   isolation: isolate;
@@ -32,8 +32,8 @@
 
 [data-theme='light'] .financial-hero {
   --hero-risk: #fff3c4;
-  --hero-text: #fff;
-  --hero-text-muted: rgba(255, 255, 255, 0.9);
+  --hero-foreground: #fff;
+  --hero-foreground-muted: #fff;
 
   border-color: rgba(255, 255, 255, 0.34);
   background:
@@ -84,7 +84,7 @@
   align-items: center;
   gap: var(--space-2);
   margin-bottom: var(--space-5);
-  color: var(--hero-text-muted);
+  color: var(--hero-foreground-muted);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -100,7 +100,7 @@
 }
 
 .financial-hero__title {
-  color: var(--hero-text-muted);
+  color: var(--hero-foreground-muted);
   font-size: clamp(1rem, 1.8vw, 1.25rem);
   font-weight: 500;
 }
@@ -109,7 +109,7 @@
   max-width: 100%;
   margin-top: var(--space-2);
   overflow-wrap: anywhere;
-  color: var(--hero-text);
+  color: var(--hero-foreground);
   font-family: var(--font-display);
   font-size: clamp(2.8rem, 7vw, 5.75rem);
   font-variant-numeric: tabular-nums;
@@ -125,7 +125,7 @@
 
 .financial-hero__supporting-copy {
   margin-top: var(--space-3);
-  color: var(--hero-text-muted);
+  color: var(--hero-foreground-muted);
   font-size: 0.9rem;
 }
 
@@ -149,12 +149,12 @@
 }
 
 .financial-hero__detail-label {
-  color: var(--hero-text-muted);
+  color: var(--hero-foreground-muted);
   font-size: 0.78rem;
 }
 
 .financial-hero__detail-value {
-  color: var(--hero-text);
+  color: var(--hero-foreground);
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -187,6 +187,13 @@
 .financial-hero__cta:hover {
   box-shadow: 0 16px 36px rgba(var(--color-accent-rgb), 0.32);
   transform: translateY(-2px);
+}
+
+.payment-item--highlighted {
+  border-color: color-mix(in srgb, var(--color-primary) 72%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 28%, transparent),
+    0 18px 44px color-mix(in srgb, var(--color-primary) 16%, transparent);
 }
 
 [data-theme='light'] .financial-hero__cta {

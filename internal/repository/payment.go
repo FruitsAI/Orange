@@ -88,10 +88,12 @@ func (r *PaymentRepository) ListByProject(projectID int64) ([]models.Payment, er
 // ListUpcoming 获取指定天数内即将到期待收款项
 func (r *PaymentRepository) ListUpcoming(userID int64, days int, limit int) ([]models.Payment, error) {
 	var payments []models.Payment
-	endDate := time.Now().AddDate(0, 0, days).Format("2006-01-02")
+	now := time.Now()
+	today := now.Format("2006-01-02")
+	endDate := now.AddDate(0, 0, days).Format("2006-01-02") + " 23:59:59"
 
 	query := r.db.Scopes(UserScope(userID)).Preload("Project").
-		Where("status = ? AND plan_date <= ?", "pending", endDate).
+		Where("status = ? AND plan_date >= ? AND plan_date <= ?", "pending", today, endDate).
 		Order("plan_date ASC")
 	if limit > 0 {
 		query = query.Limit(limit)

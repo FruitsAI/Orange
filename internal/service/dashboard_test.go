@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -241,12 +242,17 @@ func TestDashboardService_GetUpcomingPayments(t *testing.T) {
 	svc := NewDashboardService()
 
 	userID := createTestDataForDashboard(t)
+	db := database.GetDB()
+	require.NoError(t, db.Create(&models.Payment{
+		UserID: userID, ProjectID: 1, Stage: "三天内到期", Amount: 1000,
+		Status: constants.PaymentStatusPending, PlanDate: time.Now().AddDate(0, 0, 3),
+	}).Error)
 
 	t.Run("获取即将到期款项", func(t *testing.T) {
 		payments, err := svc.GetUpcomingPayments(userID)
 		require.NoError(t, err)
 
-		// 应该包含10天后到期的款项
+		// 应该包含今天至未来7天内到期的款项
 		assert.NotEmpty(t, payments)
 
 		// 所有款项应该是待收状态
@@ -314,12 +320,44 @@ func TestDashboardService_GetUpcomingPaymentsIncludesFuturePaymentAfterOverdueIt
 
 	foundFuturePayment := false
 	for _, payment := range result {
+		assert.False(t, payment.PlanDate.Before(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())), "历史逾期待收款不属于 upcoming")
 		if payment.Stage == "未来三天到期" {
 			foundFuturePayment = true
-			break
 		}
 	}
 	assert.True(t, foundFuturePayment, "7天内的未来待收款不应被逾期款项挤出结果")
+	assert.Len(t, result, 1, "upcoming 只应返回今天至未来7天内的待收款")
+}
+
+func TestDashboardService_GetUpcomingPaymentsLimitsToNearestTwenty(t *testing.T) {
+	setupDashboardTestDB(t)
+	svc := NewDashboardService()
+	db := database.GetDB()
+
+	const userID int64 = 2003
+	db.Where("user_id = ?", userID).Delete(&models.Payment{})
+	db.Where("user_id = ?", userID).Delete(&models.Project{})
+	db.Delete(&models.User{}, userID)
+	require.NoError(t, db.Create(&models.User{ID: userID, Username: "upcoming-limit", Password: "hashed", Email: "upcoming-limit@test.com", Role: constants.RoleUser}).Error)
+
+	now := time.Now()
+	project := &models.Project{UserID: userID, Name: "Upcoming Limit Project", Company: "Test Company", ContractNumber: "UPCOMING-LIMIT-001", TotalAmount: 25000, Status: constants.ProjectStatusOngoing, StartDate: now, EndDate: now.AddDate(0, 1, 0)}
+	require.NoError(t, db.Create(project).Error)
+
+	payments := make([]models.Payment, 0, 25)
+	for i := 0; i < 25; i++ {
+		payments = append(payments, models.Payment{UserID: userID, ProjectID: project.ID, Stage: fmt.Sprintf("未来款项-%02d", i), Amount: 1000, Status: constants.PaymentStatusPending, PlanDate: now.Add(time.Duration(i) * time.Hour)})
+	}
+	require.NoError(t, db.Create(&payments).Error)
+
+	result, err := svc.GetUpcomingPayments(userID)
+	require.NoError(t, err)
+	require.Len(t, result, 20)
+	for i := 1; i < len(result); i++ {
+		assert.False(t, result[i].PlanDate.Before(result[i-1].PlanDate), "结果应按 plan_date 升序返回")
+	}
+	assert.Equal(t, "未来款项-00", result[0].Stage)
+	assert.Equal(t, "未来款项-19", result[19].Stage)
 }
 
 // TestDashboardService_DataIsolation 测试数据隔离

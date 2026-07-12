@@ -52,12 +52,14 @@ const payment = {
   status: 'pending',
 } satisfies Payment
 
+const laterPayment = { ...payment, id: 8, stage: '尾款' } satisfies Payment
+
 const apiResponse = <T,>(data: T) => ({ data: { data } })
 
 function OpenPaymentDeepLink() {
   const navigate = useNavigate()
   return (
-    <button onClick={() => navigate('/projects/42?tab=payments&payment=7')} type="button">
+    <button onClick={() => navigate('/projects/42?tab=payments&payment=8')} type="button">
       打开收款深链
     </button>
   )
@@ -84,7 +86,11 @@ describe('ProjectDetailView payment deep links', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(projectApi.get).mockResolvedValue(apiResponse(project) as never)
-    vi.mocked(projectApi.getPayments).mockResolvedValue(apiResponse([payment]) as never)
+    vi.mocked(projectApi.getPayments).mockResolvedValue(
+      apiResponse([payment, laterPayment]) as never,
+    )
+    Element.prototype.scrollIntoView = vi.fn()
+    vi.spyOn(HTMLElement.prototype, 'focus').mockImplementation(() => undefined)
   })
 
   it('opens the payment plan tab from the initial search params', async () => {
@@ -106,5 +112,40 @@ describe('ProjectDetailView payment deep links', () => {
 
     expect(await screen.findByText('收款记录')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '收款计划' })).toHaveClass('active')
+  })
+
+  it('highlights, scrolls to, and focuses the requested payment after loading', async () => {
+    renderProjectDetail('/projects/42?tab=payments&payment=7')
+
+    const target = await screen.findByTestId('payment-7')
+    await waitFor(() => expect(target).toHaveClass('payment-item--highlighted'))
+    expect(target).toHaveAttribute('id', 'payment-7')
+    expect(target).toHaveAttribute('tabindex', '-1')
+    expect(target.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' })
+    expect(target.focus).toHaveBeenCalledWith({ preventScroll: true })
+  })
+
+  it('repositions when the requested payment changes without reloading payments', async () => {
+    const user = userEvent.setup()
+    renderProjectDetail('/projects/42?tab=payments&payment=7')
+
+    await waitFor(() =>
+      expect(screen.getByTestId('payment-7')).toHaveClass('payment-item--highlighted'),
+    )
+    await user.click(screen.getByRole('button', { name: '打开收款深链' }))
+
+    await waitFor(() =>
+      expect(screen.getByTestId('payment-8')).toHaveClass('payment-item--highlighted'),
+    )
+    expect(screen.getByTestId('payment-7')).not.toHaveClass('payment-item--highlighted')
+    expect(projectApi.getPayments).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not throw when the requested payment is absent or scrolling APIs are unavailable', async () => {
+    delete (Element.prototype as Partial<Element>).scrollIntoView
+    renderProjectDetail('/projects/42?tab=payments&payment=999')
+
+    await waitFor(() => expect(screen.getByText('收款记录')).toBeInTheDocument())
+    expect(screen.queryByTestId('payment-999')).not.toBeInTheDocument()
   })
 })

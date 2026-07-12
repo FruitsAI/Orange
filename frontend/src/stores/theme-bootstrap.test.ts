@@ -5,6 +5,7 @@ describe('theme bootstrap', () => {
     vi.resetModules()
     window.localStorage.clear()
     document.documentElement.removeAttribute('data-theme')
+    document.documentElement.classList.remove('theme-transitioning')
   })
 
   afterEach(() => {
@@ -34,5 +35,6 @@ describe('theme bootstrap', () => {
     applyThemeBeforeRender()
 
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+    expect(document.documentElement).not.toHaveClass('theme-transitioning')
   })
 })

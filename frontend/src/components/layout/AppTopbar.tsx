@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Window } from '@wailsio/runtime'
 import { notificationApi, type Notification } from '@/api/notification'
+import ThemeSelector from '@/components/common/ThemeSelector'
 import NotificationDetailModal from '@/components/notification/NotificationDetailModal'
 import { useAuthStore } from '@/stores/auth'
-import { useThemeStore } from '@/stores/theme'
 import { primaryNavigationItems } from './primaryNavigation'
 
 const getNotificationTypeName = (type: number) => {
@@ -21,22 +21,20 @@ interface AppTopbarProps {
 export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const effectiveTheme = useThemeStore((state) => state.effectiveTheme)
-  const toggleTheme = useThemeStore((state) => state.toggleTheme)
   const user = useAuthStore((state) => state.user)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const logout = useAuthStore((state) => state.logout)
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
+  const [activeMenu, setActiveMenu] = useState<'notifications' | 'theme' | 'user' | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
   const [recentNotifications, setRecentNotifications] = useState<Notification[]>([])
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
 
   const userInitial = (user?.name || user?.username || 'U').charAt(0).toUpperCase()
   const closeMenus = useCallback(() => {
-    setShowNotifications(false)
-    setShowUserMenu(false)
+    setActiveMenu(null)
   }, [])
+  const showNotifications = activeMenu === 'notifications'
+  const showUserMenu = activeMenu === 'user'
 
   useEffect(() => {
     // Route changes are an external navigation event that invalidates open anchored menus.
@@ -70,7 +68,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   }, [isAuthenticated, refreshNotifications])
 
   const handleNotificationClick = async (item: Notification) => {
-    setShowNotifications(false)
+    closeMenus()
     setSelectedNotification(item)
     if (item.is_read) return
 
@@ -153,20 +151,11 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
           <span>⌘ K</span>
         </button>
 
-        <button
-          aria-label="切换主题"
-          className="app-topbar__icon-button"
-          onClick={() => {
-            closeMenus()
-            toggleTheme()
-          }}
-          type="button"
-        >
-          <i
-            aria-hidden="true"
-            className={effectiveTheme === 'dark' ? 'ri-moon-line' : 'ri-sun-line'}
-          />
-        </button>
+        <ThemeSelector
+          onBeforeOpen={closeMenus}
+          onOpenChange={(open) => setActiveMenu(open ? 'theme' : null)}
+          open={activeMenu === 'theme'}
+        />
 
         <div className="app-topbar__menu-wrapper app-topbar__notification-wrapper">
           <button
@@ -174,8 +163,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
             aria-label="查看通知"
             className="app-topbar__icon-button"
             onClick={() => {
-              setShowNotifications((value) => !value)
-              setShowUserMenu(false)
+              setActiveMenu(showNotifications ? null : 'notifications')
               refreshNotifications()
             }}
             type="button"
@@ -216,7 +204,9 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
                           <span className={`notification-type-badge type-${item.type}`}>
                             {getNotificationTypeName(item.type)}
                           </span>
-                          <span className={item.is_read ? 'read-title' : 'unread-title'}>{item.title}</span>
+                          <span className={item.is_read ? 'read-title' : 'unread-title'}>
+                            {item.title}
+                          </span>
                         </span>
                         <span className="app-topbar__notification-time">
                           {new Date(item.create_time).toLocaleDateString()}
@@ -231,7 +221,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
                     <button
                       aria-label="关闭通知菜单"
                       className="app-topbar__overlay"
-                      onClick={() => setShowNotifications(false)}
+                      onClick={closeMenus}
                       type="button"
                     />,
                     document.body,
@@ -256,8 +246,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
             aria-label="打开用户菜单"
             className="app-topbar__user-button"
             onClick={() => {
-              setShowUserMenu((value) => !value)
-              setShowNotifications(false)
+              setActiveMenu(showUserMenu ? null : 'user')
             }}
             type="button"
           >
@@ -293,7 +282,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
                     <button
                       aria-label="关闭用户菜单"
                       className="app-topbar__overlay"
-                      onClick={() => setShowUserMenu(false)}
+                      onClick={closeMenus}
                       type="button"
                     />,
                     document.body,

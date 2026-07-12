@@ -94,6 +94,7 @@
   --color-accent-hover: #ffb340;
   --color-accent-strong: #e77f00;
   --color-accent-rgb: 255, 159, 10;
+  --color-ambient-glow: rgba(255, 159, 10, 0.16);
   --color-secondary: #8d7cff;
   --color-success: #43d17a;
   --color-warning: #ffd166;
@@ -166,6 +167,7 @@
   --color-accent-hover: #ff922b;
   --color-accent-strong: #d85d08;
   --color-accent-rgb: 244, 123, 22;
+  --color-ambient-glow: rgba(244, 123, 22, 0.1);
   --color-secondary: #7166d9;
   --color-success: #238653;
   --color-warning: #c47b00;

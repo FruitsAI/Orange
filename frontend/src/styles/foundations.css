@@ -74,3 +74,12 @@ h6 {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-subtle);
 }
+
+:root.theme-transitioning,
+:root.theme-transitioning *,
+:root.theme-transitioning *::before,
+:root.theme-transitioning *::after {
+  transition-property: background-color, color, border-color, box-shadow, opacity !important;
+  transition-duration: 220ms !important;
+  transition-timing-function: var(--ease-standard) !important;
+}

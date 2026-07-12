@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { useNavigate } from 'react-router-dom'
 import { notificationApi } from '@/api/notification'
 import { useAuthStore } from '@/stores/auth'
+import { useThemeStore } from '@/stores/theme'
 import { fireEvent, render, screen, waitFor } from '@/test/render'
 import AppTopbar from './AppTopbar'
 import '@/styles/layout.css'
@@ -34,6 +35,8 @@ describe('AppTopbar', () => {
     } as never)
     vi.mocked(notificationApi.markAsRead).mockResolvedValue({ data: { data: null } } as never)
     useAuthStore.setState({ isAuthenticated: false, isLoggedIn: false, token: null, user: null })
+    window.localStorage.clear()
+    useThemeStore.setState({ effectiveTheme: 'light', theme: 'auto' })
   })
 
   afterEach(() => {
@@ -70,7 +73,7 @@ describe('AppTopbar', () => {
       '命令入口即将推出',
     )
     expect(screen.getByRole('button', { name: '查看通知' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '切换主题' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /主题：跟随系统/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '打开用户菜单' })).toBeInTheDocument()
   })
 
@@ -90,7 +93,7 @@ describe('AppTopbar', () => {
     fireEvent.doubleClick(container.querySelector('.app-topbar__utilities')!)
     expect(toggleMaximise).toHaveBeenCalledTimes(3)
 
-    fireEvent.doubleClick(screen.getByRole('button', { name: '切换主题' }))
+    fireEvent.doubleClick(screen.getByRole('button', { name: /主题：跟随系统/ }))
     fireEvent.doubleClick(screen.getByRole('link', { name: '项目管理' }))
     expect(toggleMaximise).toHaveBeenCalledTimes(3)
   })
@@ -105,6 +108,27 @@ describe('AppTopbar', () => {
 
     expect(screen.queryByRole('menuitem', { name: '个人信息' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '关闭用户菜单' })).not.toBeInTheDocument()
+  })
+
+  test('keeps theme, notification, and user menus mutually exclusive', async () => {
+    const user = userEvent.setup()
+    render(<AppTopbar />, { initialEntries: ['/dashboard'] })
+
+    await user.click(screen.getByRole('button', { name: '打开用户菜单' }))
+    expect(screen.getByRole('menuitem', { name: '个人信息' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /主题：跟随系统/ }))
+    expect(screen.queryByRole('menuitem', { name: '个人信息' })).not.toBeInTheDocument()
+    expect(screen.getByRole('listbox', { name: '主题模式' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '查看通知' }))
+    expect(screen.queryByRole('listbox', { name: '主题模式' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '关闭通知菜单' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /主题：跟随系统/ }))
+    await user.click(screen.getByRole('button', { name: '打开用户菜单' }))
+    expect(screen.queryByRole('listbox', { name: '主题模式' })).not.toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: '个人信息' })).toBeInTheDocument()
   })
 
   test('closes open menus when the current location changes', async () => {

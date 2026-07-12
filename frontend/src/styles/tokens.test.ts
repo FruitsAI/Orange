@@ -26,6 +26,7 @@ describe('Ember Orbit design tokens', () => {
     expect(tokenValue('--color-surface')).toBe('#151210')
     expect(tokenValue('--color-accent')).toBe('#ff9f0a')
     expect(tokenValue('--color-text')).toBe('#fffaf3')
+    expect(tokenValue('--color-ambient-glow')).toBe('rgba(255, 159, 10, 0.16)')
   })
 
   it('provides representative Day Ember tokens', () => {
@@ -35,6 +36,7 @@ describe('Ember Orbit design tokens', () => {
     expect(tokenValue('--color-surface')).toBe('#fffdf9')
     expect(tokenValue('--color-accent')).toBe('#f47b16')
     expect(tokenValue('--color-text')).toBe('#241b15')
+    expect(tokenValue('--color-ambient-glow')).toBe('rgba(244, 123, 22, 0.1)')
   })
 
   it.each([

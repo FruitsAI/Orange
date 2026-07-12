@@ -26,16 +26,10 @@
   background: var(--bg-elevated);
 
   /* 核心玻璃效果：模糊 + 饱和度 + 亮度 + 对比度 */
-  backdrop-filter:
-    blur(var(--glass-blur))
-    saturate(var(--glass-saturation))
-    brightness(var(--glass-brightness))
-    contrast(var(--glass-contrast));
-  -webkit-backdrop-filter:
-    blur(var(--glass-blur))
-    saturate(var(--glass-saturation))
-    brightness(var(--glass-brightness))
-    contrast(var(--glass-contrast));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation))
+    brightness(var(--glass-brightness)) contrast(var(--glass-contrast));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation))
+    brightness(var(--glass-brightness)) contrast(var(--glass-contrast));
 
   /* 边框 - 模拟玻璃边缘的光线折射 */
   border: var(--glass-border);
@@ -76,7 +70,6 @@
   mix-blend-mode: overlay;
 }
 
-
 /* 内部发光边缘 */
 .liquid-glass::after {
   content: '';
@@ -90,7 +83,7 @@
   z-index: 2;
 }
 
-[data-theme="dark"] .liquid-glass::after {
+[data-theme='dark'] .liquid-glass::after {
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 1px 2px rgba(255, 255, 255, 0.05);
@@ -110,7 +103,7 @@
   --glass-blur: 80px;
 }
 
-[data-theme="dark"] .liquid-glass--clear {
+[data-theme='dark'] .liquid-glass--clear {
   background: rgba(58, 58, 60, 0.45);
 }
 
@@ -165,8 +158,8 @@
   background:
     /* Interactive Cursor Glow */
     radial-gradient(
-      circle 800px at var(--light-x, 50%) var(--light-y, 50%), 
-      rgba(255, 159, 10, 0.15) 0%, 
+      circle 800px at var(--light-x, 50%) var(--light-y, 50%),
+      rgba(255, 159, 10, 0.15) 0%,
       transparent 50%
     ),
     /* Top Left - Primary Glow (Fixed Anchor) */
@@ -175,8 +168,7 @@
     radial-gradient(ellipse 100% 80% at 90% 90%, rgba(94, 92, 230, 0.12) 0%, transparent 50%),
     /* Center/Bottom - Teal Hint */
     radial-gradient(ellipse 80% 50% at 50% 110%, rgba(48, 176, 199, 0.08) 0%, transparent 60%),
-    /* Base */
-    var(--bg-base);
+    /* Base */ var(--bg-base);
 
   transition: background 0.1s ease; /* Faster transition for cursor tracking */
   will-change: opacity, filter;
@@ -193,16 +185,22 @@
 }
 
 @keyframes ambientPulse {
-  0% { transform: scale(1); opacity: 0.5; }
-  100% { transform: scale(1.1); opacity: 1; }
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
 }
 
-[data-theme="dark"] .app-background {
+[data-theme='dark'] .app-background {
   background:
     /* Interactive Cursor Glow - Dark Mode */
     radial-gradient(
-      circle 800px at var(--light-x, 50%) var(--light-y, 50%), 
-      rgba(255, 159, 10, 0.18) 0%, 
+      circle 800px at var(--light-x, 50%) var(--light-y, 50%),
+      rgba(255, 159, 10, 0.18) 0%,
       transparent 55%
     ),
     /* Top Left - Stronger Primary */
@@ -210,7 +208,7 @@
     /* Bottom Right - Violet */
     radial-gradient(ellipse 100% 80% at 90% 90%, rgba(94, 92, 230, 0.15) 0%, transparent 55%),
     /* Subconscious Depth */
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.01) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.01) 0%, transparent 60%),
     var(--bg-base);
 }
 
@@ -363,7 +361,7 @@
   transform: scale(1.05); /* 缩放代替位移 */
 }
 
-[data-theme="dark"] .nav-item:hover {
+[data-theme='dark'] .nav-item:hover {
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -379,16 +377,15 @@
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   color: var(--color-primary);
   font-weight: 600;
-  
+
   /* Prismatic Borders & Glow */
   border: 1px solid rgba(var(--color-primary-rgb), 0.3);
   box-shadow:
     0 4px 20px rgba(var(--color-primary-rgb), 0.25),
     inset 0 0 15px rgba(var(--color-primary-rgb), 0.1),
-    /* Subtle Chromatic Aberration */
-    -1px 0 2px rgba(0, 200, 255, 0.2),
+    /* Subtle Chromatic Aberration */ -1px 0 2px rgba(0, 200, 255, 0.2),
     1px 0 2px rgba(255, 0, 100, 0.2);
-    
+
   position: relative;
 }
 
@@ -406,7 +403,7 @@
   opacity: 1;
 }
 
-[data-theme="dark"] .nav-item.active {
+[data-theme='dark'] .nav-item.active {
   background: rgba(var(--color-primary-rgb), 0.2) !important;
   box-shadow:
     0 4px 25px rgba(var(--color-primary-rgb), 0.4),
@@ -414,7 +411,6 @@
     -1px 0 4px rgba(0, 200, 255, 0.3),
     1px 0 4px rgba(255, 0, 100, 0.3);
 }
-
 
 .nav-item-icon {
   width: 22px;
@@ -494,7 +490,7 @@
   transform: scale(0.95);
 }
 
-[data-theme="dark"] .sidebar-toggle:hover {
+[data-theme='dark'] .sidebar-toggle:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -551,13 +547,9 @@
 .glass-card {
   position: relative;
   background: var(--bg-content);
-  backdrop-filter:
-    blur(var(--glass-blur))
-    saturate(var(--glass-saturation))
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation))
     brightness(var(--glass-brightness));
-  -webkit-backdrop-filter:
-    blur(var(--glass-blur))
-    saturate(var(--glass-saturation))
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation))
     brightness(var(--glass-brightness));
   border: var(--glass-border);
   border-radius: var(--radius-lg);
@@ -582,7 +574,7 @@
   inset: 0;
   /* Dynamic Cursor Following Highlight */
   background: radial-gradient(
-    800px circle at var(--specular-x, 50%) var(--specular-y, 0%), 
+    800px circle at var(--specular-x, 50%) var(--specular-y, 0%),
     rgba(255, 255, 255, 0.25),
     transparent 40%
   );
@@ -607,22 +599,26 @@
   left: 10%;
   right: 10%;
   height: 1px;
-  background: linear-gradient(90deg,
+  background: linear-gradient(
+    90deg,
     transparent,
     rgba(255, 255, 255, 0.5) 20%,
     rgba(255, 255, 255, 0.8) 50%,
     rgba(255, 255, 255, 0.5) 80%,
-    transparent);
+    transparent
+  );
   z-index: 2;
 }
 
-[data-theme="dark"] .glass-card::after {
-  background: linear-gradient(90deg,
+[data-theme='dark'] .glass-card::after {
+  background: linear-gradient(
+    90deg,
     transparent,
     rgba(255, 255, 255, 0.15) 20%,
     rgba(255, 255, 255, 0.25) 50%,
     rgba(255, 255, 255, 0.15) 80%,
-    transparent);
+    transparent
+  );
 }
 
 /* 悬停效果 - Prismatic Lift */
@@ -632,12 +628,11 @@
   box-shadow:
     0 15px 40px rgba(0, 0, 0, 0.08),
     0 5px 15px rgba(0, 0, 0, 0.04),
-    /* Spectral Glow Border */
-    0 0 0 1px rgba(255, 255, 255, 0.3),
+    /* Spectral Glow Border */ 0 0 0 1px rgba(255, 255, 255, 0.3),
     0 0 15px rgba(255, 159, 10, 0.15); /* Orange Ambient */
 }
 
-[data-theme="dark"] .glass-card:hover {
+[data-theme='dark'] .glass-card:hover {
   border-color: rgba(255, 255, 255, 0.25);
   box-shadow:
     0 15px 40px rgba(0, 0, 0, 0.4),
@@ -737,9 +732,9 @@
 
 .btn-primary:active {
   transform: scale(0.96);
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(255, 159, 10, 0.2),
-    inset 0 2px 4px rgba(0,0,0,0.1);
+    inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 次要按钮 - Liquid Glass Prism */
@@ -749,9 +744,9 @@
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   color: var(--text-primary);
   border: 1px solid rgba(255, 255, 255, 0.3); /* Subtle border */
-  box-shadow: 
-    0 2px 5px rgba(0,0,0,0.03),
-    inset 0 1px 0 rgba(255,255,255,0.6);
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .btn-secondary:hover {
@@ -759,10 +754,10 @@
   transform: translateY(-1px);
   box-shadow:
     0 4px 8px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255,255,255,0.9);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-[data-theme="dark"] .btn-secondary:hover {
+[data-theme='dark'] .btn-secondary:hover {
   background: rgba(60, 60, 65, 0.85);
 }
 
@@ -779,7 +774,7 @@
   transform: scale(1.02);
 }
 
-[data-theme="dark"] .btn-ghost:hover {
+[data-theme='dark'] .btn-ghost:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -949,7 +944,7 @@
   letter-spacing: 0.5px;
   color: var(--text-tertiary);
   border-bottom: 1px solid var(--separator-color);
-  
+
   /* Sticky Glass Header */
   position: sticky;
   top: 0;
@@ -959,7 +954,7 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
-[data-theme="dark"] .data-table th {
+[data-theme='dark'] .data-table th {
   background: rgba(30, 30, 30, 0.7);
 }
 
@@ -975,7 +970,7 @@
   background: rgba(0, 0, 0, 0.02);
 }
 
-[data-theme="dark"] .data-table tr:hover td {
+[data-theme='dark'] .data-table tr:hover td {
   background: rgba(255, 255, 255, 0.03);
 }
 
@@ -1081,7 +1076,7 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
-[data-theme="dark"] .theme-toggle-btn:hover:not(.active) {
+[data-theme='dark'] .theme-toggle-btn:hover:not(.active) {
   background: rgba(255, 255, 255, 0.1);
 }
 
@@ -1089,8 +1084,12 @@
    动画效果
    =========================== */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideInUp {
@@ -1116,13 +1115,22 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .animate-fade-in {
@@ -1139,7 +1147,12 @@
 
 /* 骨架屏 */
 .skeleton {
-  background: linear-gradient(90deg, var(--separator-color) 25%, rgba(255,255,255,0.5) 50%, var(--separator-color) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--separator-color) 25%,
+    rgba(255, 255, 255, 0.5) 50%,
+    var(--separator-color) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: var(--radius-sm);
@@ -1153,21 +1166,33 @@
   gap: var(--spacing-md);
 }
 
-.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
-.grid-cols-5 { grid-template-columns: repeat(5, 1fr); }
+.grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.grid-cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+.grid-cols-5 {
+  grid-template-columns: repeat(5, 1fr);
+}
 
 /* ===========================
    响应式设计
    =========================== */
 @media (max-width: 1536px) {
-  .grid-cols-5 { grid-template-columns: repeat(4, 1fr); }
+  .grid-cols-5 {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 @media (max-width: 1280px) {
   /* grid-cols-4 保持 4 列直到 1024px */
-  .grid-cols-5 { grid-template-columns: repeat(3, 1fr); }
+  .grid-cols-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
 
   .sidebar {
     width: var(--sidebar-collapsed-width);
@@ -1185,10 +1210,16 @@
 }
 
 @media (max-width: 1024px) {
-  .grid-cols-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
   /* grid-cols-4 在 1024px 以下变为 2 列 */
-  .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
-  .grid-cols-5 { grid-template-columns: repeat(2, 1fr); }
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid-cols-5 {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
   /* 统计卡片响应式 - 缩小尺寸并居中 */
   .stat-card {
@@ -1262,7 +1293,7 @@
   }
 
   /* 暗色模式适配 */
-  [data-theme="dark"] .sidebar {
+  [data-theme='dark'] .sidebar {
     box-shadow:
       0 8px 32px rgba(0, 0, 0, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -1314,43 +1345,105 @@
 /* ===========================
    实用工具类
    =========================== */
-.text-primary { color: var(--text-primary); }
-.text-secondary { color: var(--text-secondary); }
-.text-tertiary { color: var(--text-tertiary); }
+.text-primary {
+  color: var(--text-primary);
+}
+.text-secondary {
+  color: var(--text-secondary);
+}
+.text-tertiary {
+  color: var(--text-tertiary);
+}
 
-.font-medium { font-weight: 500; }
-.font-semibold { font-weight: 600; }
-.font-bold { font-weight: 700; }
+.font-medium {
+  font-weight: 500;
+}
+.font-semibold {
+  font-weight: 600;
+}
+.font-bold {
+  font-weight: 700;
+}
 
-.text-sm { font-size: 13px; }
-.text-base { font-size: 14px; }
-.text-lg { font-size: 16px; }
-.text-xl { font-size: 18px; }
-.text-2xl { font-size: 24px; }
-.text-3xl { font-size: 30px; }
+.text-sm {
+  font-size: 13px;
+}
+.text-base {
+  font-size: 14px;
+}
+.text-lg {
+  font-size: 16px;
+}
+.text-xl {
+  font-size: 18px;
+}
+.text-2xl {
+  font-size: 24px;
+}
+.text-3xl {
+  font-size: 30px;
+}
 
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.justify-center { justify-content: center; }
-.gap-sm { gap: var(--spacing-sm); }
-.gap-md { gap: var(--spacing-md); }
-.gap-lg { gap: var(--spacing-lg); }
+.flex {
+  display: flex;
+}
+.flex-col {
+  flex-direction: column;
+}
+.items-center {
+  align-items: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.justify-center {
+  justify-content: center;
+}
+.gap-sm {
+  gap: var(--spacing-sm);
+}
+.gap-md {
+  gap: var(--spacing-md);
+}
+.gap-lg {
+  gap: var(--spacing-lg);
+}
 
-.mt-sm { margin-top: var(--spacing-sm); }
-.mt-md { margin-top: var(--spacing-md); }
-.mt-lg { margin-top: var(--spacing-lg); }
-.mb-sm { margin-bottom: var(--spacing-sm); }
-.mb-md { margin-bottom: var(--spacing-md); }
-.mb-lg { margin-bottom: var(--spacing-lg); }
+.mt-sm {
+  margin-top: var(--spacing-sm);
+}
+.mt-md {
+  margin-top: var(--spacing-md);
+}
+.mt-lg {
+  margin-top: var(--spacing-lg);
+}
+.mb-sm {
+  margin-bottom: var(--spacing-sm);
+}
+.mb-md {
+  margin-bottom: var(--spacing-md);
+}
+.mb-lg {
+  margin-bottom: var(--spacing-lg);
+}
 
-.p-sm { padding: var(--spacing-sm); }
-.p-md { padding: var(--spacing-md); }
-.p-lg { padding: var(--spacing-lg); }
+.p-sm {
+  padding: var(--spacing-sm);
+}
+.p-md {
+  padding: var(--spacing-md);
+}
+.p-lg {
+  padding: var(--spacing-lg);
+}
 
-.w-full { width: 100%; }
-.h-full { height: 100%; }
+.w-full {
+  width: 100%;
+}
+.h-full {
+  height: 100%;
+}
 
 /* ============================================
    Liquid Glass 高级效果
@@ -1416,12 +1509,7 @@
   left: -50%;
   width: 50%;
   height: 200%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
   transform: rotate(45deg);
   animation: specularShine 4s ease-in-out infinite;
   pointer-events: none;
@@ -1446,7 +1534,8 @@
 
 /* 浮动效果 */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -1460,7 +1549,8 @@
 
 /* 脉冲光晕 */
 @keyframes pulseGlow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       var(--glass-shadow-outer),
       0 0 20px rgba(0, 122, 255, 0.1);
@@ -1501,7 +1591,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-[data-theme="dark"] .dock {
+[data-theme='dark'] .dock {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -1608,7 +1698,7 @@
     transform var(--transition-instant);
 }
 
-[data-theme="dark"] .control-tile {
+[data-theme='dark'] .control-tile {
   background: rgba(255, 255, 255, 0.05);
 }
 
@@ -1616,7 +1706,7 @@
   background: rgba(0, 0, 0, 0.06);
 }
 
-[data-theme="dark"] .control-tile:hover {
+[data-theme='dark'] .control-tile:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -1736,11 +1826,11 @@
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .modal-close {
+[data-theme='dark'] .modal-close {
   background: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .modal-close:hover {
+[data-theme='dark'] .modal-close:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
@@ -1853,7 +1943,7 @@
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .calendar-nav-btn:hover {
+[data-theme='dark'] .calendar-nav-btn:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -1899,7 +1989,7 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
-[data-theme="dark"] .calendar-day:hover {
+[data-theme='dark'] .calendar-day:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -1958,11 +2048,6 @@
   }
 }
 
-/* 主题过渡 */
-.theme-transitioning * {
-  transition-duration: 0.5s !important;
-}
-
 /* 页面标题过渡 */
 .page-title,
 .page-subtitle {
@@ -1992,7 +2077,7 @@
   transition: background 0.3s ease-out;
 }
 
-[data-theme="dark"] .app-background::before {
+[data-theme='dark'] .app-background::before {
   background: radial-gradient(
     ellipse 60% 50% at var(--light-x) var(--light-y),
     rgba(255, 159, 10, 0.15) 0%,
@@ -2019,8 +2104,8 @@
   );
 }
 
-[data-theme="dark"] .glass-card::before,
-[data-theme="dark"] .liquid-glass::before {
+[data-theme='dark'] .glass-card::before,
+[data-theme='dark'] .liquid-glass::before {
   background: radial-gradient(
     ellipse 80% 50% at var(--specular-x) var(--specular-y),
     rgba(255, 255, 255, 0.15) 0%,
@@ -2064,31 +2149,31 @@
 /* ============================================
    Login View Dark Mode Overrides (Hotfix)
    ============================================ */
-[data-theme="dark"] .input-group label {
+[data-theme='dark'] .input-group label {
   color: rgba(255, 255, 255, 0.95) !important;
 }
 
-[data-theme="dark"] .input-wrapper input::placeholder {
+[data-theme='dark'] .input-wrapper input::placeholder {
   color: rgba(255, 255, 255, 0.5) !important;
 }
 
-[data-theme="dark"] .remember-me span {
+[data-theme='dark'] .remember-me span {
   color: rgba(255, 255, 255, 0.95) !important;
 }
 
-[data-theme="dark"] .form-tab:not(.active) {
+[data-theme='dark'] .form-tab:not(.active) {
   color: rgba(255, 255, 255, 0.6) !important;
 }
 
 /* Fix high contrast interactions */
-[data-theme="dark"] .form-tab.active,
-[data-theme="dark"] .social-btn:hover {
+[data-theme='dark'] .form-tab.active,
+[data-theme='dark'] .social-btn:hover {
   background-color: rgba(255, 255, 255, 0.95) !important;
   color: #000000 !important;
   font-weight: 700 !important;
 }
 
-[data-theme="dark"] .input-wrapper input {
+[data-theme='dark'] .input-wrapper input {
   color: #ffffff !important;
   background: rgba(255, 255, 255, 0.1) !important;
 }

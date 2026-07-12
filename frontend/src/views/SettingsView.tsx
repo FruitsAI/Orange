@@ -11,14 +11,8 @@ import UserManagement from '@/components/settings/UserManagement'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToastStore } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
-import { type ThemeMode, useThemeStore } from '@/stores/theme'
+import { THEME_OPTIONS, useThemeStore } from '@/stores/theme'
 import pkg from '../../package.json'
-
-const themes: Array<{ icon: string; label: string; value: ThemeMode }> = [
-  { icon: 'ri-computer-line', label: '跟随系统', value: 'auto' },
-  { icon: 'ri-sun-line', label: '浅色模式', value: 'light' },
-  { icon: 'ri-moon-line', label: '深色模式', value: 'dark' },
-]
 
 const techStack = [
   { key: 'wails', label: 'Wails v3' },
@@ -70,20 +64,17 @@ export default function SettingsView() {
   }, [refreshUser])
 
   useEffect(() => {
-    const timer = window.setTimeout(
-      () => {
-        const nextProfile = {
-          department: user?.department || '',
-          email: user?.email || '',
-          name: user?.name || '',
-          phone: user?.phone || '',
-          position: user?.position || '',
-        }
-        setProfile(nextProfile)
-        setOriginalProfile(nextProfile)
-      },
-      0,
-    )
+    const timer = window.setTimeout(() => {
+      const nextProfile = {
+        department: user?.department || '',
+        email: user?.email || '',
+        name: user?.name || '',
+        phone: user?.phone || '',
+        position: user?.position || '',
+      }
+      setProfile(nextProfile)
+      setOriginalProfile(nextProfile)
+    }, 0)
     return () => window.clearTimeout(timer)
   }, [user])
 
@@ -348,18 +339,21 @@ export default function SettingsView() {
             </div>
 
             <div className="appearance-content">
-              <div className="grid grid-cols-3 gap-4">
-                {themes.map((item) => (
-                  <div
+              <fieldset className="theme-card-group">
+                <legend className="sr-only">主题模式</legend>
+                {THEME_OPTIONS.map((item) => (
+                  <label
                     className={`theme-card ${theme === item.value ? 'active' : ''}`}
                     key={item.value}
-                    onKeyUp={(event) => {
-                      if (event.key === 'Enter') setTheme(item.value)
-                    }}
-                    onClick={() => setTheme(item.value)}
-                    role="button"
-                    tabIndex={0}
                   >
+                    <input
+                      checked={theme === item.value}
+                      className="theme-card__input"
+                      name="appearance-theme"
+                      onChange={() => setTheme(item.value)}
+                      type="radio"
+                      value={item.value}
+                    />
                     <div className="theme-icon">
                       <i className={item.icon} />
                     </div>
@@ -369,9 +363,9 @@ export default function SettingsView() {
                         <i className="ri-check-line" />
                       </div>
                     ) : null}
-                  </div>
+                  </label>
                 ))}
-              </div>
+              </fieldset>
             </div>
           </div>
         </GlassCard>

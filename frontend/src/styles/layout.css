@@ -11,6 +11,30 @@
   position: relative;
 }
 
+.app-background {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.app-background::before {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle 760px at var(--light-x, 28%) var(--light-y, 18%),
+    var(--color-ambient-glow),
+    transparent 58%
+  );
+  content: '';
+  pointer-events: none;
+}
+
+.app-background::after {
+  content: none;
+}
+
 .app-topbar {
   --wails-draggable: drag;
   align-items: center;
@@ -409,6 +433,58 @@
   z-index: 999;
 }
 
+.theme-selector__menu {
+  --wails-draggable: no-drag;
+  display: grid;
+  width: min(196px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-panel);
+  background: color-mix(in srgb, var(--color-surface-raised) 96%, transparent);
+  box-shadow: var(--shadow-panel);
+  position: fixed;
+  z-index: 1100;
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
+  backdrop-filter: blur(28px) saturate(155%);
+}
+
+.theme-selector__option {
+  --wails-draggable: no-drag;
+  display: grid;
+  min-height: 42px;
+  grid-template-columns: 22px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.82rem;
+  text-align: left;
+  transition:
+    background-color var(--motion-instant) var(--ease-standard),
+    color var(--motion-instant) var(--ease-standard);
+}
+
+.theme-selector__option:hover,
+.theme-selector__option:focus-visible {
+  background: color-mix(in srgb, var(--color-accent) 11%, transparent);
+  color: var(--color-text);
+}
+
+.theme-selector__option[aria-selected='true'] {
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  color: var(--color-accent);
+}
+
+.theme-selector__option > :last-child {
+  justify-self: end;
+}
+
 .app-topbar-portal {
   --wails-draggable: no-drag;
 }
@@ -530,7 +606,8 @@
   margin: 0 auto;
   max-width: 1600px;
   min-width: 0;
-  padding: calc(var(--app-topbar-height) + var(--app-topbar-inset) + 28px) clamp(18px, 3vw, 44px) 44px;
+  padding: calc(var(--app-topbar-height) + var(--app-topbar-inset) + 28px) clamp(18px, 3vw, 44px)
+    44px;
   width: 100%;
 }
 

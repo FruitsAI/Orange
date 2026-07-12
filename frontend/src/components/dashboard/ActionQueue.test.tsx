@@ -68,8 +68,8 @@ describe('ActionQueue', () => {
   it('renders a positive empty state when there is nothing to collect', () => {
     render(<ActionQueue payments={[]} />)
 
-    expect(screen.getByText('近期没有待处理收款')).toBeInTheDocument()
-    expect(screen.getByText('所有款项都在计划内，可以专注推进项目。')).toBeInTheDocument()
+    expect(screen.getByText('未来七天暂无待处理收款')).toBeInTheDocument()
+    expect(screen.getByText('可以前往收款日历查看更远日期的计划。')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '查看收款日历' })).toHaveAttribute('href', '/calendar')
   })
 })

@@ -4,14 +4,18 @@ import { MemoryRouter } from 'react-router-dom'
 
 interface RenderOptions {
   initialEntries?: string[]
+  reactStrictMode?: boolean
 }
 
-export function render(ui: ReactElement, { initialEntries = ['/'] }: RenderOptions = {}) {
+export function render(
+  ui: ReactElement,
+  { initialEntries = ['/'], reactStrictMode = false }: RenderOptions = {},
+) {
   function Wrapper({ children }: { children: ReactNode }) {
     return <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
   }
 
-  return testingLibraryRender(ui, { wrapper: Wrapper })
+  return testingLibraryRender(ui, { reactStrictMode, wrapper: Wrapper })
 }
 
 export * from '@testing-library/react'

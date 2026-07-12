@@ -15,14 +15,9 @@ const project = (id: number, overrides: Partial<Project> = {}) =>
     ...overrides,
   }) as Project
 
-describe('ProjectList compact dashboard variant', () => {
+describe('ProjectList compact dashboard list', () => {
   it('limits recent projects to five accessible row links', () => {
-    render(
-      <ProjectList
-        projects={Array.from({ length: 7 }, (_, index) => project(index + 1))}
-        variant="compact"
-      />,
-    )
+    render(<ProjectList projects={Array.from({ length: 7 }, (_, index) => project(index + 1))} />)
 
     const links = screen.getAllByRole('link', { name: /项目/ })
     expect(links).toHaveLength(5)
@@ -41,11 +36,11 @@ describe('ProjectList compact dashboard variant', () => {
             total_amount: 100_000,
           }),
         ]}
-        variant="compact"
       />,
     )
 
-    const link = screen.getByRole('link', { name: /未来展厅/ })
+    expect(screen.getByText('最近创建的项目')).toBeInTheDocument()
+    const link = screen.getByRole('link', { name: /未来展厅.*回款进度75%/ })
     expect(link).toHaveTextContent('橙子科技')
     expect(link).toHaveTextContent('¥100,000.00')
     expect(link).toHaveTextContent('75%')
@@ -54,7 +49,7 @@ describe('ProjectList compact dashboard variant', () => {
   })
 
   it('shows a useful empty state', () => {
-    render(<ProjectList projects={[]} variant="compact" />)
+    render(<ProjectList projects={[]} />)
 
     expect(screen.getByText('还没有近期项目')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '新建项目' })).toHaveAttribute(

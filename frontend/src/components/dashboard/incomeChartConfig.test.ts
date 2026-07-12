@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createIncomeChartConfig,
   incomePeriodOptions,
-  sanitizeIncomeValues,
+  normalizeIncomeSeries,
 } from './incomeChartConfig'
 
 describe('income chart configuration', () => {
@@ -34,7 +34,7 @@ describe('income chart configuration', () => {
     expect(incomePeriodOptions).toEqual([
       { label: '周', period: 'week', subtitle: '近7天计划与实际回款' },
       { label: '月', period: 'month', subtitle: '近30天计划与实际回款' },
-      { label: '季度', period: 'quarter', subtitle: '本季度计划与实际回款' },
+      { label: '季度', period: 'quarter', subtitle: '近3个月计划与实际回款' },
       { label: '年', period: 'year', subtitle: '近12个月计划与实际回款' },
     ])
   })
@@ -61,10 +61,31 @@ describe('income chart configuration', () => {
     expect(dark.options?.plugins?.tooltip?.backgroundColor).toBe('#211d1a')
   })
 
-  it('turns missing and non-finite data into safe chart values', () => {
-    expect(sanitizeIncomeValues(undefined)).toEqual([])
-    expect(sanitizeIncomeValues([100, Number.NaN, Number.POSITIVE_INFINITY, -25])).toEqual([
-      100, 0, 0, -25,
+  it('normalizes each series to the label count without inventing unlabeled points', () => {
+    expect(normalizeIncomeSeries([100, 200, 300], 2)).toEqual([100, 200])
+    expect(normalizeIncomeSeries([100], 3)).toEqual([100, null, null])
+    expect(normalizeIncomeSeries(undefined, 2)).toEqual([null, null])
+  })
+
+  it('represents non-finite values as missing data instead of zero', () => {
+    expect(normalizeIncomeSeries([100, Number.NaN, Number.POSITIVE_INFINITY, -25], 4)).toEqual([
+      100,
+      null,
+      null,
+      -25,
     ])
+  })
+
+  it('applies normalized series to the chart datasets', () => {
+    const config = createIncomeChartConfig({
+      actualValues: [80],
+      expectedValues: [100, Number.NaN, 300, 500],
+      labels: ['一月', '二月', '三月'],
+      reducedMotion: false,
+      theme: 'light',
+    })
+
+    expect(config.data.datasets[0].data).toEqual([100, null, 300])
+    expect(config.data.datasets[1].data).toEqual([80, null, null])
   })
 })

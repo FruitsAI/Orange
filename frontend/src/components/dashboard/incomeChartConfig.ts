@@ -9,12 +9,15 @@ export const incomePeriodOptions: Array<{
 }> = [
   { label: '周', period: 'week', subtitle: '近7天计划与实际回款' },
   { label: '月', period: 'month', subtitle: '近30天计划与实际回款' },
-  { label: '季度', period: 'quarter', subtitle: '本季度计划与实际回款' },
+  { label: '季度', period: 'quarter', subtitle: '近3个月计划与实际回款' },
   { label: '年', period: 'year', subtitle: '近12个月计划与实际回款' },
 ]
 
-export function sanitizeIncomeValues(values?: number[]) {
-  return (values ?? []).map((value) => (Number.isFinite(value) ? value : 0))
+export function normalizeIncomeSeries(values: number[] | undefined, labelCount: number) {
+  return Array.from({ length: Math.max(0, labelCount) }, (_, index) => {
+    const value = values?.[index]
+    return typeof value === 'number' && Number.isFinite(value) ? value : null
+  })
 }
 
 interface IncomeChartConfigInput {
@@ -33,20 +36,21 @@ export function createIncomeChartConfig({
   theme,
 }: IncomeChartConfigInput): ChartConfiguration<'line'> {
   const isDark = theme === 'dark'
+  const safeLabels = labels ?? []
   const textColor = isDark ? 'rgba(245, 239, 234, 0.68)' : 'rgba(64, 52, 44, 0.7)'
   const gridColor = isDark ? 'rgba(255, 245, 236, 0.07)' : 'rgba(83, 52, 32, 0.08)'
 
   return {
     type: 'line',
     data: {
-      labels: labels ?? [],
+      labels: safeLabels,
       datasets: [
         {
           backgroundColor: 'transparent',
           borderColor: isDark ? '#a89c91' : '#85796f',
           borderDash: [6, 6],
           borderWidth: 2,
-          data: sanitizeIncomeValues(expectedValues),
+          data: normalizeIncomeSeries(expectedValues, safeLabels.length),
           fill: false,
           label: '计划回款',
           pointRadius: 0,
@@ -57,7 +61,7 @@ export function createIncomeChartConfig({
           backgroundColor: isDark ? 'rgba(255, 138, 31, 0.16)' : 'rgba(226, 91, 20, 0.14)',
           borderColor: isDark ? '#ff9d45' : '#df5d16',
           borderWidth: 2.5,
-          data: sanitizeIncomeValues(actualValues),
+          data: normalizeIncomeSeries(actualValues, safeLabels.length),
           fill: true,
           label: '实际回款',
           pointBackgroundColor: isDark ? '#211d1a' : '#fffaf5',

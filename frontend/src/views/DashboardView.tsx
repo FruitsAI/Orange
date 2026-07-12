@@ -189,7 +189,7 @@ export default function DashboardView() {
         {projects.loading && !projects.data && (
           <DashboardSectionSkeleton height={280} label="近期项目" />
         )}
-        {projects.data && <ProjectList projects={projects.data} variant="compact" />}
+        {projects.data && <ProjectList projects={projects.data} />}
       </section>
     </div>
   )

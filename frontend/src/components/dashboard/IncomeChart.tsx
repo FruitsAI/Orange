@@ -2,8 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Chart from 'chart.js/auto'
 import GlassCard from '@/components/common/GlassCard'
 import { useThemeStore } from '@/stores/theme'
+import { formatCurrency } from '@/utils/format'
 import type { DashboardPeriod } from '@/views/dashboard/dashboardModel'
-import { createIncomeChartConfig, incomePeriodOptions } from './incomeChartConfig'
+import {
+  createIncomeChartConfig,
+  incomePeriodOptions,
+  normalizeIncomeSeries,
+} from './incomeChartConfig'
 
 interface IncomeChartProps {
   labels?: string[]
@@ -11,6 +16,21 @@ interface IncomeChartProps {
   actualValues?: number[]
   period: DashboardPeriod
   onPeriodChange: (period: DashboardPeriod) => void
+}
+
+function useReducedMotion() {
+  const [reducedMotion, setReducedMotion] = useState(
+    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const handleChange = (event: MediaQueryListEvent) => setReducedMotion(event.matches)
+    media.addEventListener('change', handleChange)
+    return () => media.removeEventListener('change', handleChange)
+  }, [])
+
+  return reducedMotion
 }
 
 export default function IncomeChart({
@@ -23,7 +43,7 @@ export default function IncomeChart({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const chartRef = useRef<Chart<'line'> | null>(null)
   const effectiveTheme = useThemeStore((state) => state.effectiveTheme)
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const reducedMotion = useReducedMotion()
   const [initialConfig] = useState(() =>
     createIncomeChartConfig({
       actualValues,
@@ -38,6 +58,9 @@ export default function IncomeChart({
     () => incomePeriodOptions.find((option) => option.period === period)?.subtitle ?? '',
     [period],
   )
+  const safeLabels = labels ?? []
+  const accessibleExpected = normalizeIncomeSeries(expectedValues, safeLabels.length)
+  const accessibleActual = normalizeIncomeSeries(actualValues, safeLabels.length)
 
   useEffect(() => {
     const context = canvasRef.current?.getContext('2d')
@@ -89,8 +112,35 @@ export default function IncomeChart({
         </div>
       </div>
       <div className="chart-container income-chart__canvas">
-        <canvas aria-label="计划与实际回款趋势图" ref={canvasRef} role="img" />
+        <canvas aria-hidden="true" ref={canvasRef} />
       </div>
+      <table className="income-chart__accessible">
+        <caption>{subtitle}数据</caption>
+        <thead>
+          <tr>
+            <th scope="col">周期</th>
+            <th scope="col">计划回款</th>
+            <th scope="col">实际回款</th>
+          </tr>
+        </thead>
+        <tbody>
+          {safeLabels.map((label, index) => (
+            <tr key={`${label}-${index}`}>
+              <th scope="row">{label}</th>
+              <td>
+                {accessibleExpected[index] === null
+                  ? '暂无数据'
+                  : formatCurrency(accessibleExpected[index])}
+              </td>
+              <td>
+                {accessibleActual[index] === null
+                  ? '暂无数据'
+                  : formatCurrency(accessibleActual[index])}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </GlassCard>
   )
 }

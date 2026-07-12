@@ -6,7 +6,6 @@ import { formatCurrency } from '@/utils/format'
 
 interface ProjectListProps {
   projects: Project[]
-  variant?: 'compact'
 }
 
 const getProgress = (project: Project) => {
@@ -23,7 +22,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
       <div className="glass-card-header">
         <div>
           <h3 className="glass-card-title">近期项目</h3>
-          <p className="glass-card-subtitle">最近创建与更新的项目</p>
+          <p className="glass-card-subtitle">最近创建的项目</p>
         </div>
         <Link className="btn btn-ghost btn-sm" to="/projects">
           查看全部 <i aria-hidden="true" className="ri-arrow-right-line" />
@@ -55,7 +54,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
                   <span className="project-list__amount">
                     {formatCurrency(project.total_amount)}
                   </span>
-                  <span className="project-list__progress">
+                  <span aria-label={`回款进度${progress}%`} className="project-list__progress">
                     <span aria-hidden="true" className="project-list__progress-track">
                       <span style={{ width: `${progress}%` }} />
                     </span>

@@ -71,6 +71,30 @@ describe('dashboard visual contract', () => {
     )
   })
 
+  it('fully neutralizes legacy GlassCard effects for dashboard content surfaces', () => {
+    expect(dashboardCss).toMatch(
+      /:is\(\.income-chart-card, \.action-queue-card, \.project-list-card--compact\)::before,[\s\S]*::after\s*\{[\s\S]*content:\s*none[\s\S]*display:\s*none/,
+    )
+    expect(dashboardCss).toMatch(
+      /:is\(\.income-chart-card, \.action-queue-card, \.project-list-card--compact\):hover\s*\{[\s\S]*box-shadow:\s*var\(--shadow-soft\)[\s\S]*transform:\s*none/,
+    )
+  })
+
+  it('visually hides the accessible chart table without removing it from layout semantics', () => {
+    expect(dashboardCss).toMatch(
+      /\.income-chart__accessible\s*\{[\s\S]*position:\s*absolute[\s\S]*width:\s*1px[\s\S]*height:\s*1px[\s\S]*overflow:\s*hidden[\s\S]*clip:\s*rect\(0, 0, 0, 0\)/,
+    )
+  })
+
+  it('keeps full-dashboard skeleton dimensions aligned with loaded regions', () => {
+    expect(dashboardCss).toMatch(/\.dashboard-skeleton__hero\s*\{[\s\S]*min-height:\s*360px/)
+    expect(dashboardCss).toMatch(/\.dashboard-skeleton__metric\s*\{[\s\S]*min-height:\s*112px/)
+    expect(dashboardCss).toMatch(
+      /\.dashboard-skeleton__chart,[\s\S]*\.dashboard-skeleton__queue\s*\{[\s\S]*min-height:\s*360px/,
+    )
+    expect(dashboardCss).toMatch(/\.dashboard-skeleton__projects\s*\{[\s\S]*min-height:\s*280px/)
+  })
+
   it('gives Day Ember an explicit high-contrast orange hero treatment', () => {
     const lightHero = dashboardCss.match(
       /\[data-theme='light'\] \.financial-hero\s*\{([^}]+)\}/,

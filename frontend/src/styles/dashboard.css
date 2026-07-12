@@ -311,6 +311,17 @@
   -webkit-backdrop-filter: none;
 }
 
+:is(.income-chart-card, .action-queue-card, .project-list-card--compact)::before,
+:is(.income-chart-card, .action-queue-card, .project-list-card--compact)::after {
+  content: none;
+  display: none;
+}
+
+:is(.income-chart-card, .action-queue-card, .project-list-card--compact):hover {
+  box-shadow: var(--shadow-soft);
+  transform: none;
+}
+
 .income-chart__header {
   align-items: flex-start;
   gap: var(--space-4);
@@ -326,6 +337,18 @@
 .income-chart__canvas {
   height: 320px;
   padding: var(--space-2) 0 0;
+}
+
+.income-chart__accessible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  white-space: nowrap;
 }
 
 .action-queue__list,
@@ -516,6 +539,36 @@
   height: 100%;
   border-radius: inherit;
   background: var(--gradient-glow);
+}
+
+.dashboard-skeleton__surface {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-soft);
+}
+
+.dashboard-skeleton__shimmer {
+  min-height: inherit;
+}
+
+.dashboard-skeleton__hero {
+  min-height: 360px;
+  border-radius: clamp(var(--radius-panel), 3vw, var(--radius-shell));
+}
+
+.dashboard-skeleton__metric {
+  min-height: 112px;
+}
+
+.dashboard-skeleton__chart,
+.dashboard-skeleton__queue {
+  min-height: 360px;
+}
+
+.dashboard-skeleton__projects {
+  min-height: 280px;
 }
 
 @media (max-width: 1000px) {

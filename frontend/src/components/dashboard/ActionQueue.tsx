@@ -38,8 +38,8 @@ export default function ActionQueue({ payments, limit = 5 }: ActionQueueProps) {
           <span aria-hidden="true" className="action-queue__empty-icon">
             <i className="ri-checkbox-circle-line" />
           </span>
-          <strong>近期没有待处理收款</strong>
-          <p>所有款项都在计划内，可以专注推进项目。</p>
+          <strong>未来七天暂无待处理收款</strong>
+          <p>可以前往收款日历查看更远日期的计划。</p>
           <Link className="btn btn-ghost btn-sm" to="/calendar">
             查看收款日历
           </Link>

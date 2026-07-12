@@ -33,11 +33,7 @@ vi.mock('@/components/dashboard/ActionQueue', () => ({
   ),
 }))
 vi.mock('@/components/dashboard/ProjectList', () => ({
-  default: ({ projects, variant }: { projects: Project[]; variant?: string }) => (
-    <div>
-      近期项目 {projects[0]?.name} {variant}
-    </div>
-  ),
+  default: ({ projects }: { projects: Project[] }) => <div>近期项目 {projects[0]?.name}</div>,
 }))
 
 const stats: DashboardStats = {
@@ -109,6 +105,21 @@ describe('DashboardView resource rendering', () => {
     expect(screen.queryByLabelText('正在加载仪表盘')).not.toBeInTheDocument()
   })
 
+  it('uses the action-oriented full skeleton while every resource is pending', () => {
+    vi.mocked(dashboardApi.getStats).mockReturnValue(new Promise(() => undefined))
+    vi.mocked(dashboardApi.getIncomeTrend).mockReturnValue(new Promise(() => undefined))
+    vi.mocked(dashboardApi.getRecentProjects).mockReturnValue(new Promise(() => undefined))
+    vi.mocked(dashboardApi.getUpcomingPayments).mockReturnValue(new Promise(() => undefined))
+
+    const { container } = render(<DashboardView />)
+
+    expect(screen.getByRole('status', { name: '正在加载仪表盘' })).toBeInTheDocument()
+    expect(container.querySelector('.dashboard-skeleton__hero')).toBeInTheDocument()
+    expect(container.querySelector('.dashboard-action-grid')).toBeInTheDocument()
+    expect(container.querySelector('.dashboard-recent-projects')).toBeInTheDocument()
+    expect(screen.queryByText('未来七天暂无待处理收款')).not.toBeInTheDocument()
+  })
+
   it('keeps the hero usable with explicit fallbacks when dashboard resources fail', async () => {
     vi.mocked(dashboardApi.getStats).mockRejectedValue(new Error('stats unavailable'))
     vi.mocked(dashboardApi.getIncomeTrend).mockRejectedValue(new Error('trend unavailable'))
@@ -166,7 +177,7 @@ describe('DashboardView resource rendering', () => {
 
     const { container } = render(<DashboardView />)
 
-    await waitFor(() => expect(screen.getByText('近期项目 轨道站点 compact')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('近期项目 轨道站点')).toBeInTheDocument())
     expect(container.querySelector('.dashboard-action-grid')).toBeInTheDocument()
     expect(container.querySelector('.dashboard-recent-projects')).toBeInTheDocument()
   })

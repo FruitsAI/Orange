@@ -8,6 +8,14 @@ function SkeletonCard({ height }: { height: number }) {
   )
 }
 
+function SkeletonSurface({ className = '' }: { className?: string }) {
+  return (
+    <div aria-hidden="true" className={`dashboard-skeleton__surface ${className}`.trim()}>
+      <div className="skeleton dashboard-skeleton__shimmer" />
+    </div>
+  )
+}
+
 interface DashboardSectionSkeletonProps {
   label: string
   height: number
@@ -23,15 +31,9 @@ export function DashboardSectionSkeleton({ label, height }: DashboardSectionSkel
 
 export function DashboardStatsSkeleton() {
   return (
-    <div
-      aria-label="正在加载统计数据"
-      aria-live="polite"
-      className="grid grid-cols-4"
-      role="status"
-      style={{ marginBottom: 'var(--spacing-lg)' }}
-    >
-      {Array.from({ length: 4 }, (_, index) => (
-        <SkeletonCard height={112} key={index} />
+    <div className="ember-dashboard__metrics">
+      {Array.from({ length: 3 }, (_, index) => (
+        <SkeletonSurface className="dashboard-skeleton__metric" key={index} />
       ))}
     </div>
   )
@@ -39,15 +41,20 @@ export function DashboardStatsSkeleton() {
 
 export default function DashboardSkeleton() {
   return (
-    <div aria-label="正在加载仪表盘" aria-live="polite" className="dashboard-view" role="status">
+    <div
+      aria-label="正在加载仪表盘"
+      aria-live="polite"
+      className="dashboard-view ember-dashboard dashboard-skeleton"
+      role="status"
+    >
+      <SkeletonSurface className="dashboard-skeleton__hero" />
       <DashboardStatsSkeleton />
-      <div className="grid dashboard-charts-row">
-        <SkeletonCard height={360} />
-        <SkeletonCard height={360} />
+      <div className="dashboard-action-grid">
+        <SkeletonSurface className="dashboard-skeleton__chart" />
+        <SkeletonSurface className="dashboard-skeleton__queue" />
       </div>
-      <div className="grid dashboard-projects-row">
-        <SkeletonCard height={280} />
-        <SkeletonCard height={280} />
+      <div className="dashboard-recent-projects">
+        <SkeletonSurface className="dashboard-skeleton__projects" />
       </div>
     </div>
   )

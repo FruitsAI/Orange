@@ -70,9 +70,10 @@ export function useDialogFocus({ dialogRef, initialFocusRef, onClose, open }: Di
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
+      const wasTopmost = dialogStack.at(-1) === dialogToken
       const stackIndex = dialogStack.lastIndexOf(dialogToken)
       if (stackIndex >= 0) dialogStack.splice(stackIndex, 1)
-      previouslyFocused?.focus()
+      if (wasTopmost) previouslyFocused?.focus()
     }
   }, [dialogRef, initialFocusRef, open])
 }

@@ -72,7 +72,10 @@ export default function UserManagement() {
   const adminCount = users.filter((user) => user.role === 'admin').length
   const userCount = users.filter((user) => user.role !== 'admin').length
   const totalPages = Math.ceil(total / pageSize)
-  const visiblePages = useMemo(() => getVisiblePages(currentPage, totalPages), [currentPage, totalPages])
+  const visiblePages = useMemo(
+    () => getVisiblePages(currentPage, totalPages),
+    [currentPage, totalPages],
+  )
 
   const paginationInfo = useMemo(() => {
     if (total === 0) return '暂无数据'
@@ -164,7 +167,9 @@ export default function UserManagement() {
   }
 
   const handleDelete = async (user: User) => {
-    const confirmed = await confirm(`确定要删除用户「${user.name || user.username}」吗？此操作不可恢复。`)
+    const confirmed = await confirm(
+      `确定要删除用户「${user.name || user.username}」吗？此操作不可恢复。`,
+    )
     if (!confirmed) return
 
     try {
@@ -278,17 +283,23 @@ export default function UserManagement() {
           <div className="user-list">
             {users.map((user) => (
               <div className="user-card" key={user.id}>
-                <div className={`user-avatar ${user.role === 'admin' ? 'avatar-admin' : 'avatar-user'}`}>
+                <div
+                  className={`user-avatar ${user.role === 'admin' ? 'avatar-admin' : 'avatar-user'}`}
+                >
                   <i className={user.role === 'admin' ? 'ri-shield-user-fill' : 'ri-user-fill'} />
                 </div>
 
                 <div className="user-info">
                   <div className="user-name-row">
                     <span className="user-name">{user.name || user.username}</span>
-                    <span className={`user-role-badge ${user.role === 'admin' ? 'role-admin' : 'role-user'}`}>
+                    <span
+                      className={`user-role-badge ${user.role === 'admin' ? 'role-admin' : 'role-user'}`}
+                    >
                       {user.role === 'admin' ? '管理员' : '普通用户'}
                     </span>
-                    <span className={`user-status ${user.status === 1 ? 'status-active' : 'status-disabled'}`}>
+                    <span
+                      className={`user-status ${user.status === 1 ? 'status-active' : 'status-disabled'}`}
+                    >
                       <span className="status-dot" />
                       {user.status === 1 ? '正常' : '禁用'}
                     </span>
@@ -325,10 +336,17 @@ export default function UserManagement() {
                 </div>
 
                 <div className="user-actions">
-                  <button className="action-btn edit" onClick={() => openEditModal(user)} title="编辑" type="button">
+                  <button
+                    aria-label="编辑用户"
+                    className="action-btn edit"
+                    onClick={() => openEditModal(user)}
+                    title="编辑"
+                    type="button"
+                  >
                     <i className="ri-edit-line" />
                   </button>
                   <button
+                    aria-label="重置用户密码"
                     className="action-btn key"
                     onClick={() => {
                       setResetPasswordUser(user)
@@ -340,6 +358,7 @@ export default function UserManagement() {
                     <i className="ri-key-line" />
                   </button>
                   <button
+                    aria-label="删除用户"
                     className="action-btn delete"
                     onClick={() => void handleDelete(user)}
                     title="删除"
@@ -360,6 +379,7 @@ export default function UserManagement() {
 
               <div className="pagination-controls">
                 <button
+                  aria-label="上一页"
                   className="page-btn"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
@@ -385,6 +405,7 @@ export default function UserManagement() {
                 </div>
 
                 <button
+                  aria-label="下一页"
                   className="page-btn"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
@@ -414,7 +435,11 @@ export default function UserManagement() {
 
       {showModal ? (
         <div className="modal-overlay open" onClick={() => setShowModal(false)} role="presentation">
-          <div className="modal open" onClick={(event) => event.stopPropagation()} style={{ maxHeight: '90vh', width: 560 }}>
+          <div
+            className="modal open"
+            onClick={(event) => event.stopPropagation()}
+            style={{ maxHeight: '90vh', width: 560 }}
+          >
             <div
               className="modal-header"
               style={{
@@ -424,7 +449,12 @@ export default function UserManagement() {
               }}
             >
               <h3 className="modal-title">{editingUser ? '编辑用户' : '新增用户'}</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)} type="button">
+              <button
+                aria-label={editingUser ? '关闭编辑用户弹窗' : '关闭新增用户弹窗'}
+                className="modal-close"
+                onClick={() => setShowModal(false)}
+                type="button"
+              >
                 <i className="ri-close-line" />
               </button>
             </div>
@@ -437,7 +467,9 @@ export default function UserManagement() {
                   <input
                     className="form-input"
                     disabled={Boolean(editingUser)}
-                    onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, username: event.target.value }))
+                    }
                     required
                     value={form.username}
                   />
@@ -448,7 +480,9 @@ export default function UserManagement() {
                   </label>
                   <input
                     className="form-input"
-                    onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, name: event.target.value }))
+                    }
                     required
                     value={form.name}
                   />
@@ -463,7 +497,9 @@ export default function UserManagement() {
                   <input
                     autoComplete="new-password"
                     className="form-input"
-                    onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, password: event.target.value }))
+                    }
                     required
                     type="password"
                     value={form.password}
@@ -478,7 +514,10 @@ export default function UserManagement() {
                     <select
                       className="form-select"
                       onChange={(event) =>
-                        setForm((current) => ({ ...current, role: event.target.value as 'admin' | 'user' }))
+                        setForm((current) => ({
+                          ...current,
+                          role: event.target.value as 'admin' | 'user',
+                        }))
                       }
                       value={form.role}
                     >
@@ -493,7 +532,9 @@ export default function UserManagement() {
                   <div className="input-wrapper">
                     <select
                       className="form-select"
-                      onChange={(event) => setForm((current) => ({ ...current, status: Number(event.target.value) }))}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, status: Number(event.target.value) }))
+                      }
                       value={form.status}
                     >
                       <option value={1}>正常</option>
@@ -509,7 +550,9 @@ export default function UserManagement() {
                   <label className="form-label">邮箱</label>
                   <input
                     className="form-input"
-                    onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, email: event.target.value }))
+                    }
                     type="email"
                     value={form.email}
                   />
@@ -518,7 +561,9 @@ export default function UserManagement() {
                   <label className="form-label">手机</label>
                   <input
                     className="form-input"
-                    onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, phone: event.target.value }))
+                    }
                     value={form.phone}
                   />
                 </div>
@@ -529,7 +574,9 @@ export default function UserManagement() {
                   <label className="form-label">部门</label>
                   <input
                     className="form-input"
-                    onChange={(event) => setForm((current) => ({ ...current, department: event.target.value }))}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, department: event.target.value }))
+                    }
                     value={form.department}
                   />
                 </div>
@@ -537,7 +584,9 @@ export default function UserManagement() {
                   <label className="form-label">职位</label>
                   <input
                     className="form-input"
-                    onChange={(event) => setForm((current) => ({ ...current, position: event.target.value }))}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, position: event.target.value }))
+                    }
                     value={form.position}
                   />
                 </div>
@@ -557,11 +606,24 @@ export default function UserManagement() {
       ) : null}
 
       {resetPasswordUser ? (
-        <div className="modal-overlay open" onClick={() => setResetPasswordUser(null)} role="presentation">
-          <div className="modal open" onClick={(event) => event.stopPropagation()} style={{ width: 420 }}>
+        <div
+          className="modal-overlay open"
+          onClick={() => setResetPasswordUser(null)}
+          role="presentation"
+        >
+          <div
+            className="modal open"
+            onClick={(event) => event.stopPropagation()}
+            style={{ width: 420 }}
+          >
             <div className="modal-header">
               <h3 className="modal-title">重置密码 - {resetPasswordUser.username}</h3>
-              <button className="modal-close" onClick={() => setResetPasswordUser(null)} type="button">
+              <button
+                aria-label="关闭重置密码弹窗"
+                className="modal-close"
+                onClick={() => setResetPasswordUser(null)}
+                type="button"
+              >
                 <i className="ri-close-line" />
               </button>
             </div>
@@ -580,7 +642,11 @@ export default function UserManagement() {
                 />
               </div>
               <div className="modal-footer">
-                <button className="btn btn-ghost" onClick={() => setResetPasswordUser(null)} type="button">
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => setResetPasswordUser(null)}
+                  type="button"
+                >
                   取消
                 </button>
                 <button className="btn btn-primary" type="submit">

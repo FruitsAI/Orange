@@ -239,18 +239,28 @@ export default function TokenManagement() {
                           <i className="ri-time-line" />
                           <span>最后使用: {formatLastUsed(token.last_used_at)}</span>
                         </div>
-                        <div className={`dev-meta-item ${isExpiringSoon(token.expires_at) ? 'text-warning' : ''}`}>
+                        <div
+                          className={`dev-meta-item ${isExpiringSoon(token.expires_at) ? 'text-warning' : ''}`}
+                        >
                           <i className="ri-calendar-line" />
                           <span>{formatExpiryDate(token.expires_at)}</span>
                         </div>
                       </div>
 
                       <div className="dev-token-actions">
-                        <button className="dev-action-btn revoke" onClick={() => void handleRevoke(token)} type="button">
+                        <button
+                          className="dev-action-btn revoke"
+                          onClick={() => void handleRevoke(token)}
+                          type="button"
+                        >
                           <i className="ri-forbid-line" />
                           撤销
                         </button>
-                        <button className="dev-action-btn delete" onClick={() => void handleDelete(token)} type="button">
+                        <button
+                          className="dev-action-btn delete"
+                          onClick={() => void handleDelete(token)}
+                          type="button"
+                        >
                           <i className="ri-delete-bin-line" />
                           删除
                         </button>
@@ -291,7 +301,11 @@ export default function TokenManagement() {
                       </div>
 
                       <div className="dev-token-actions">
-                        <button className="dev-action-btn delete" onClick={() => void handleDelete(token)} type="button">
+                        <button
+                          className="dev-action-btn delete"
+                          onClick={() => void handleDelete(token)}
+                          type="button"
+                        >
                           <i className="ri-delete-bin-line" />
                           彻底删除
                         </button>
@@ -306,14 +320,28 @@ export default function TokenManagement() {
       </div>
 
       {showCreateModal ? (
-        <div className="dev-modal-overlay" onClick={() => setShowCreateModal(false)} role="presentation">
-          <div className="dev-modal" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+        <div
+          className="dev-modal-overlay"
+          onClick={() => setShowCreateModal(false)}
+          role="presentation"
+        >
+          <div
+            className="dev-modal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <div className="dev-modal-header">
               <div className="dev-modal-title">
                 <i className="ri-add-circle-line" />
                 <span>生成新令牌</span>
               </div>
-              <button className="dev-modal-close" onClick={() => setShowCreateModal(false)} type="button">
+              <button
+                aria-label="关闭生成令牌弹窗"
+                className="dev-modal-close"
+                onClick={() => setShowCreateModal(false)}
+                type="button"
+              >
                 <i className="ri-close-line" />
               </button>
             </div>
@@ -326,7 +354,9 @@ export default function TokenManagement() {
                 </label>
                 <input
                   className="dev-form-input"
-                  onChange={(event) => setCreateForm((current) => ({ ...current, name: event.target.value }))}
+                  onChange={(event) =>
+                    setCreateForm((current) => ({ ...current, name: event.target.value }))
+                  }
                   onKeyUp={(event) => {
                     if (event.key === 'Enter') void handleCreateToken()
                   }}
@@ -344,7 +374,9 @@ export default function TokenManagement() {
                     <button
                       className={`dev-expiry-option ${createForm.expires_in === option.value ? 'active' : ''}`}
                       key={option.value}
-                      onClick={() => setCreateForm((current) => ({ ...current, expires_in: option.value }))}
+                      onClick={() =>
+                        setCreateForm((current) => ({ ...current, expires_in: option.value }))
+                      }
                       type="button"
                     >
                       <span className="dev-expiry-label">{option.label}</span>
@@ -356,7 +388,11 @@ export default function TokenManagement() {
             </div>
 
             <div className="dev-modal-footer">
-              <button className="dev-btn secondary" onClick={() => setShowCreateModal(false)} type="button">
+              <button
+                className="dev-btn secondary"
+                onClick={() => setShowCreateModal(false)}
+                type="button"
+              >
                 取消
               </button>
               <button
@@ -374,7 +410,11 @@ export default function TokenManagement() {
       ) : null}
 
       {showSuccessModal ? (
-        <div className="dev-modal-overlay" onClick={() => setShowSuccessModal(false)} role="presentation">
+        <div
+          className="dev-modal-overlay"
+          onClick={() => setShowSuccessModal(false)}
+          role="presentation"
+        >
           <div
             aria-modal="true"
             className="dev-modal success"
@@ -401,7 +441,11 @@ export default function TokenManagement() {
 
               <div className="dev-token-display">
                 <code className="dev-token-code">{newTokenValue}</code>
-                <button className="dev-copy-token-btn" onClick={() => void copyToken()} type="button">
+                <button
+                  className="dev-copy-token-btn"
+                  onClick={() => void copyToken()}
+                  type="button"
+                >
                   <i className="ri-file-copy-line" />
                   <span>复制令牌</span>
                 </button>
@@ -420,7 +464,11 @@ export default function TokenManagement() {
             </div>
 
             <div className="dev-modal-footer">
-              <button className="dev-btn primary" onClick={() => setShowSuccessModal(false)} type="button">
+              <button
+                className="dev-btn primary"
+                onClick={() => setShowSuccessModal(false)}
+                type="button"
+              >
                 <i className="ri-check-line" />
                 <span>我已保存</span>
               </button>

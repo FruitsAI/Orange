@@ -151,7 +151,12 @@ export default function DictionaryManagement() {
               <p className="dev-subtitle">管理系统数据字典和配置项</p>
             </div>
           </div>
-          <button className="dev-create-btn" disabled={!activeDictId} onClick={openAddModal} type="button">
+          <button
+            className="dev-create-btn"
+            disabled={!activeDictId}
+            onClick={openAddModal}
+            type="button"
+          >
             <i className="ri-add-line" />
             <span>新增条目</span>
           </button>
@@ -231,10 +236,17 @@ export default function DictionaryManagement() {
                     <span className="dict-item-value">{item.value}</span>
                   </div>
                   <div className="dict-item-actions">
-                    <button className="action-btn edit" onClick={() => openEditModal(item)} title="编辑" type="button">
+                    <button
+                      aria-label="编辑字典条目"
+                      className="action-btn edit"
+                      onClick={() => openEditModal(item)}
+                      title="编辑"
+                      type="button"
+                    >
                       <i className="ri-edit-line" />
                     </button>
                     <button
+                      aria-label="删除字典条目"
                       className="action-btn delete"
                       onClick={() => void deleteDictItem(item.id)}
                       title="删除"
@@ -252,7 +264,12 @@ export default function DictionaryManagement() {
 
       {showModal ? (
         <div className="modal-overlay open" onClick={() => setShowModal(false)} role="presentation">
-          <div className="modal open" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+          <div
+            className="modal open"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <div
               className="modal-header"
               style={{
@@ -262,7 +279,12 @@ export default function DictionaryManagement() {
               }}
             >
               <h3 className="modal-title">{isEditing ? '编辑条目' : '新增条目'}</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)} type="button">
+              <button
+                aria-label={isEditing ? '关闭编辑条目弹窗' : '关闭新增条目弹窗'}
+                className="modal-close"
+                onClick={() => setShowModal(false)}
+                type="button"
+              >
                 <i className="ri-close-line" />
               </button>
             </div>
@@ -272,7 +294,9 @@ export default function DictionaryManagement() {
                 <input
                   autoComplete="off"
                   className="form-input"
-                  onChange={(event) => setModalForm((current) => ({ ...current, label: event.target.value }))}
+                  onChange={(event) =>
+                    setModalForm((current) => ({ ...current, label: event.target.value }))
+                  }
                   spellCheck={false}
                   type="text"
                   value={modalForm.label}
@@ -283,7 +307,9 @@ export default function DictionaryManagement() {
                 <input
                   autoComplete="off"
                   className="form-input"
-                  onChange={(event) => setModalForm((current) => ({ ...current, value: event.target.value }))}
+                  onChange={(event) =>
+                    setModalForm((current) => ({ ...current, value: event.target.value }))
+                  }
                   spellCheck={false}
                   type="text"
                   value={modalForm.value}
@@ -294,7 +320,9 @@ export default function DictionaryManagement() {
                 <input
                   autoComplete="off"
                   className="form-input"
-                  onChange={(event) => setModalForm((current) => ({ ...current, sort: Number(event.target.value) }))}
+                  onChange={(event) =>
+                    setModalForm((current) => ({ ...current, sort: Number(event.target.value) }))
+                  }
                   spellCheck={false}
                   type="number"
                   value={modalForm.sort}
@@ -302,10 +330,18 @@ export default function DictionaryManagement() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)} type="button">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowModal(false)}
+                type="button"
+              >
                 取消
               </button>
-              <button className="btn btn-primary" onClick={() => void handleModalSubmit()} type="button">
+              <button
+                className="btn btn-primary"
+                onClick={() => void handleModalSubmit()}
+                type="button"
+              >
                 保存
               </button>
             </div>

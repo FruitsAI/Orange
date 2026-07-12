@@ -140,6 +140,7 @@ export default function PaymentCreateView() {
     <div className="payment-create-view">
       <div className="flex items-center gap-md" style={{ marginBottom: 24, marginTop: -12 }}>
         <button
+          aria-label="返回上一页"
           className="btn btn-ghost btn-sm pl-0 hover:bg-transparent"
           onClick={() => navigate(-1)}
           type="button"

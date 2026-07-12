@@ -289,6 +289,7 @@ export default function ProjectsView() {
                       <td className="col-fixed-right">
                         <div className="flex items-center gap-xs relative">
                           <button
+                            aria-label="编辑项目"
                             className="btn btn-ghost btn-icon btn-sm"
                             onClick={(event) => {
                               event.stopPropagation()
@@ -300,6 +301,7 @@ export default function ProjectsView() {
                             <i className="ri-edit-line" />
                           </button>
                           <button
+                            aria-label="删除项目"
                             className="btn btn-ghost btn-icon btn-sm text-danger"
                             onClick={(event) => {
                               event.stopPropagation()
@@ -312,6 +314,7 @@ export default function ProjectsView() {
                           </button>
                           <div className="relative">
                             <button
+                              aria-label="更多项目操作"
                               className="btn btn-ghost btn-icon btn-sm"
                               onClick={(event) => showDropdown(project.id, event)}
                               onMouseEnter={keepDropdownOpen}
@@ -404,6 +407,7 @@ export default function ProjectsView() {
 
             <div className="pagination-controls">
               <button
+                aria-label="上一页"
                 className="page-btn"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
@@ -429,6 +433,7 @@ export default function ProjectsView() {
               </div>
 
               <button
+                aria-label="下一页"
                 className="page-btn"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}

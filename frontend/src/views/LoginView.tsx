@@ -54,7 +54,13 @@ export default function LoginView() {
         <div className="shape" />
       </div>
 
-      <button className="theme-toggle-btn" onClick={toggleTheme} title="切换主题" type="button">
+      <button
+        aria-label={effectiveTheme === 'dark' ? '切换至亮色主题' : '切换至深色主题'}
+        className="theme-toggle-btn"
+        onClick={toggleTheme}
+        title="切换主题"
+        type="button"
+      >
         <i className={effectiveTheme === 'dark' ? 'ri-moon-line' : 'ri-sun-line'} />
       </button>
 
@@ -104,6 +110,7 @@ export default function LoginView() {
                   />
                   <i className="ri-lock-line login-icon-override" />
                   <button
+                    aria-label={showPassword ? '隐藏密码' : '显示密码'}
                     className="password-toggle"
                     onClick={() => setShowPassword((value) => !value)}
                     type="button"

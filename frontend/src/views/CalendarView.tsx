@@ -128,6 +128,7 @@ export default function CalendarView() {
           <div className="glass-card-header mb-md">
             <div className="flex items-center gap-md">
               <button
+                aria-label="上一月"
                 className="btn btn-ghost btn-icon"
                 onClick={() => changeMonth(-1)}
                 type="button"
@@ -138,6 +139,7 @@ export default function CalendarView() {
                 {currentMonth.year()}年{currentMonth.month() + 1}月
               </h3>
               <button
+                aria-label="下一月"
                 className="btn btn-ghost btn-icon"
                 onClick={() => changeMonth(1)}
                 type="button"

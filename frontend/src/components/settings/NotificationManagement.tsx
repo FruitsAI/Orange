@@ -351,6 +351,7 @@ export default function NotificationManagement({ isAdmin = false }: Notification
                     {isAdmin ? (
                       <div className="notification-actions">
                         <button
+                          aria-label="编辑通知"
                           className="action-btn"
                           onClick={(event) => {
                             event.stopPropagation()
@@ -362,6 +363,7 @@ export default function NotificationManagement({ isAdmin = false }: Notification
                           <i className="ri-edit-line" />
                         </button>
                         <button
+                          aria-label="删除通知"
                           className="action-btn delete"
                           onClick={(event) => {
                             event.stopPropagation()
@@ -374,7 +376,9 @@ export default function NotificationManagement({ isAdmin = false }: Notification
                         </button>
                       </div>
                     ) : null}
-                    <span className="notification-time">{new Date(notification.create_time).toLocaleString()}</span>
+                    <span className="notification-time">
+                      {new Date(notification.create_time).toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -389,6 +393,7 @@ export default function NotificationManagement({ isAdmin = false }: Notification
 
               <div className="pagination-controls">
                 <button
+                  aria-label="上一页"
                   className="page-btn"
                   disabled={notificationCurrentPage === 1}
                   onClick={notificationPrevPage}
@@ -414,6 +419,7 @@ export default function NotificationManagement({ isAdmin = false }: Notification
                 </div>
 
                 <button
+                  aria-label="下一页"
                   className="page-btn"
                   disabled={notificationCurrentPage === notificationTotalPages}
                   onClick={notificationNextPage}
@@ -442,11 +448,25 @@ export default function NotificationManagement({ isAdmin = false }: Notification
       </div>
 
       {showCreateNotificationModal ? (
-        <div className="modal-overlay open" onClick={() => setShowCreateNotificationModal(false)} role="presentation">
-          <div className="modal" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+        <div
+          className="modal-overlay open"
+          onClick={() => setShowCreateNotificationModal(false)}
+          role="presentation"
+        >
+          <div
+            className="modal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <div className="modal-header">
               <h3 className="modal-title">{isEditingNotification ? '编辑通知' : '发送通知'}</h3>
-              <button className="modal-close" onClick={() => setShowCreateNotificationModal(false)} type="button">
+              <button
+                aria-label={isEditingNotification ? '关闭编辑通知弹窗' : '关闭发送通知弹窗'}
+                className="modal-close"
+                onClick={() => setShowCreateNotificationModal(false)}
+                type="button"
+              >
                 <i className="ri-close-line" />
               </button>
             </div>
@@ -455,7 +475,9 @@ export default function NotificationManagement({ isAdmin = false }: Notification
                 <label className="form-label">通知标题</label>
                 <input
                   className="form-input"
-                  onChange={(event) => setNewNotification((current) => ({ ...current, title: event.target.value }))}
+                  onChange={(event) =>
+                    setNewNotification((current) => ({ ...current, title: event.target.value }))
+                  }
                   placeholder="请输入通知标题"
                   type="text"
                   value={newNotification.title}
@@ -465,7 +487,9 @@ export default function NotificationManagement({ isAdmin = false }: Notification
                 <label className="form-label">通知内容</label>
                 <textarea
                   className="form-input"
-                  onChange={(event) => setNewNotification((current) => ({ ...current, content: event.target.value }))}
+                  onChange={(event) =>
+                    setNewNotification((current) => ({ ...current, content: event.target.value }))
+                  }
                   placeholder="请输入通知内容"
                   rows={4}
                   value={newNotification.content}
@@ -476,7 +500,9 @@ export default function NotificationManagement({ isAdmin = false }: Notification
                 <div className="input-wrapper">
                   <select
                     className="form-select"
-                    onChange={(event) => setNewNotification((current) => ({ ...current, type: event.target.value }))}
+                    onChange={(event) =>
+                      setNewNotification((current) => ({ ...current, type: event.target.value }))
+                    }
                     value={newNotification.type}
                   >
                     <option value="system">系统通知</option>
@@ -512,13 +538,21 @@ export default function NotificationManagement({ isAdmin = false }: Notification
               ) : null}
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowCreateNotificationModal(false)} type="button">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowCreateNotificationModal(false)}
+                type="button"
+              >
                 取消
               </button>
               <button
                 className="btn btn-primary"
                 disabled={creatingNotification}
-                onClick={() => void (isEditingNotification ? handleUpdateNotification() : handleCreateNotification())}
+                onClick={() =>
+                  void (isEditingNotification
+                    ? handleUpdateNotification()
+                    : handleCreateNotification())
+                }
                 type="button"
               >
                 {creatingNotification ? '提交中...' : isEditingNotification ? '更新' : '发送'}

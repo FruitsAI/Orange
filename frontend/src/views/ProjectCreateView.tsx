@@ -224,6 +224,7 @@ export default function ProjectCreateView() {
     <div className="project-create-view">
       <div style={{ marginBottom: 12, marginTop: -12 }}>
         <button
+          aria-label="返回上一页"
           className="btn btn-ghost btn-sm pl-0 hover:bg-transparent"
           onClick={() => navigate(-1)}
           type="button"

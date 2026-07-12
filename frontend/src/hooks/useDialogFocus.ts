@@ -8,6 +8,7 @@ const focusableSelector = [
   'textarea:not([disabled])',
   '[tabindex]:not([tabindex="-1"])',
 ].join(',')
+const dialogStack: symbol[] = []
 
 interface DialogFocusOptions {
   dialogRef: RefObject<HTMLElement | null>
@@ -26,6 +27,8 @@ export function useDialogFocus({ dialogRef, initialFocusRef, onClose, open }: Di
   useEffect(() => {
     if (!open || typeof document === 'undefined') return
 
+    const dialogToken = Symbol('dialog')
+    dialogStack.push(dialogToken)
     const previouslyFocused =
       document.activeElement instanceof HTMLElement ? document.activeElement : null
     const dialog = dialogRef.current
@@ -36,6 +39,8 @@ export function useDialogFocus({ dialogRef, initialFocusRef, onClose, open }: Di
     initialFocus?.focus()
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (dialogStack.at(-1) !== dialogToken) return
+
       if (event.key === 'Escape') {
         event.preventDefault()
         onCloseRef.current()
@@ -65,6 +70,8 @@ export function useDialogFocus({ dialogRef, initialFocusRef, onClose, open }: Di
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
+      const stackIndex = dialogStack.lastIndexOf(dialogToken)
+      if (stackIndex >= 0) dialogStack.splice(stackIndex, 1)
       previouslyFocused?.focus()
     }
   }, [dialogRef, initialFocusRef, open])

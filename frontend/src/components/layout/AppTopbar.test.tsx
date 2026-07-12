@@ -103,10 +103,10 @@ describe('AppTopbar', () => {
     render(<AppTopbar />, { initialEntries: ['/dashboard'] })
 
     await user.click(screen.getByRole('button', { name: '打开用户菜单' }))
-    expect(screen.getByRole('menuitem', { name: '个人信息' })).toBeInTheDocument()
-    await user.click(screen.getByRole('menuitem', { name: '个人信息' }))
+    expect(screen.getByRole('button', { name: '个人信息' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '个人信息' }))
 
-    expect(screen.queryByRole('menuitem', { name: '个人信息' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '个人信息' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '关闭用户菜单' })).not.toBeInTheDocument()
   })
 
@@ -115,10 +115,10 @@ describe('AppTopbar', () => {
     render(<AppTopbar />, { initialEntries: ['/dashboard'] })
 
     await user.click(screen.getByRole('button', { name: '打开用户菜单' }))
-    expect(screen.getByRole('menuitem', { name: '个人信息' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '个人信息' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /主题：跟随系统/ }))
-    expect(screen.queryByRole('menuitem', { name: '个人信息' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '个人信息' })).not.toBeInTheDocument()
     expect(screen.getByRole('listbox', { name: '主题模式' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: '查看通知' }))
@@ -128,7 +128,28 @@ describe('AppTopbar', () => {
     await user.click(screen.getByRole('button', { name: /主题：跟随系统/ }))
     await user.click(screen.getByRole('button', { name: '打开用户菜单' }))
     expect(screen.queryByRole('listbox', { name: '主题模式' })).not.toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: '个人信息' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '个人信息' })).toBeInTheDocument()
+  })
+
+  test('exposes notification and user dropdowns as controlled popovers, not ARIA menus', async () => {
+    const user = userEvent.setup()
+    render(<AppTopbar />, { initialEntries: ['/dashboard'] })
+    const notificationTrigger = screen.getByRole('button', { name: '查看通知' })
+
+    await user.click(notificationTrigger)
+    const notificationPopover = screen.getByRole('region', { name: '最近通知' })
+    expect(notificationTrigger).toHaveAttribute('aria-controls', notificationPopover.id)
+    expect(screen.getByRole('button', { name: '关闭通知菜单' })).toHaveAttribute('tabindex', '-1')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument()
+
+    const userTrigger = screen.getByRole('button', { name: '打开用户菜单' })
+    await user.click(userTrigger)
+    const userPopover = screen.getByRole('region', { name: '用户菜单' })
+    expect(userTrigger).toHaveAttribute('aria-controls', userPopover.id)
+    expect(screen.getByRole('button', { name: '关闭用户菜单' })).toHaveAttribute('tabindex', '-1')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument()
   })
 
   test('closes the notification menu on Escape and restores trigger focus', async () => {
@@ -150,10 +171,10 @@ describe('AppTopbar', () => {
     const trigger = screen.getByRole('button', { name: '打开用户菜单' })
 
     await user.click(trigger)
-    expect(screen.getByRole('menuitem', { name: '个人信息' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '个人信息' })).toBeInTheDocument()
     await user.keyboard('{Escape}')
 
-    expect(screen.queryByRole('menuitem', { name: '个人信息' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '个人信息' })).not.toBeInTheDocument()
     expect(trigger).toHaveFocus()
   })
 
@@ -184,7 +205,7 @@ describe('AppTopbar', () => {
 
     await waitFor(() => expect(notificationApi.list).toHaveBeenCalledTimes(1))
     await user.click(screen.getByRole('button', { name: '查看通知' }))
-    expect(screen.getByRole('menu', { name: '' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '最近通知' })).toBeInTheDocument()
     await waitFor(() => expect(notificationApi.list).toHaveBeenCalledTimes(2))
     const locationButton = screen.getByRole('button', { name: '改变位置' })
     await user.click(locationButton)

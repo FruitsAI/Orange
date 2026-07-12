@@ -50,7 +50,8 @@ describe('useReducedMotion', () => {
   })
 
   it('is safe during server rendering', () => {
-    vi.stubGlobal('window', undefined)
+    const query = createMediaQuery(true)
+    vi.spyOn(window, 'matchMedia').mockReturnValue(query.mediaQuery)
 
     function ServerProbe() {
       return <span>{useReducedMotion() ? 'reduce' : 'animate'}</span>
@@ -62,13 +63,42 @@ describe('useReducedMotion', () => {
   it('uses the initial media-query value and updates in both directions', () => {
     const query = createMediaQuery(true)
     vi.spyOn(window, 'matchMedia').mockReturnValue(query.mediaQuery)
-    const { result } = renderHook(() => useReducedMotion())
+    const { result, unmount } = renderHook(() => useReducedMotion())
 
     expect(result.current).toBe(true)
     act(() => query.update(false))
     expect(result.current).toBe(false)
     act(() => query.update(true))
     expect(result.current).toBe(true)
+    unmount()
+  })
+
+  it('shares one media-query listener across consumers until the final unmount', () => {
+    const query = createMediaQuery(false)
+    const matchMedia = vi.spyOn(window, 'matchMedia').mockReturnValue(query.mediaQuery)
+    const first = renderHook(() => useReducedMotion())
+    const second = renderHook(() => useReducedMotion())
+
+    expect(matchMedia).toHaveBeenCalledTimes(1)
+    expect(query.addEventListener).toHaveBeenCalledTimes(1)
+
+    act(() => query.update(true))
+    expect(first.result.current).toBe(true)
+    expect(second.result.current).toBe(true)
+
+    first.unmount()
+    expect(query.removeEventListener).not.toHaveBeenCalled()
+    act(() => query.update(false))
+    expect(second.result.current).toBe(false)
+
+    second.unmount()
+    expect(query.removeEventListener).toHaveBeenCalledTimes(1)
+
+    const third = renderHook(() => useReducedMotion())
+    expect(matchMedia).toHaveBeenCalledTimes(2)
+    expect(query.addEventListener).toHaveBeenCalledTimes(2)
+    third.unmount()
+    expect(query.removeEventListener).toHaveBeenCalledTimes(2)
   })
 
   it('removes the modern change listener on unmount', () => {

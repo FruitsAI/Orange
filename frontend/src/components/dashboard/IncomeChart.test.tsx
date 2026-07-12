@@ -60,7 +60,9 @@ describe('IncomeChart', () => {
           },
           addListener: () => undefined,
           dispatchEvent: () => false,
-          matches: query === '(prefers-reduced-motion: reduce)' && reducedMotion,
+          get matches() {
+            return query === '(prefers-reduced-motion: reduce)' && reducedMotion
+          },
           media: query,
           onchange: null,
           removeEventListener: (type: string, listener: (event: MediaQueryListEvent) => void) => {

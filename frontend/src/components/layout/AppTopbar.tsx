@@ -14,6 +14,9 @@ const getNotificationTypeName = (type: number) => {
   return '系统'
 }
 
+const notificationPopoverId = 'app-topbar-notification-popover'
+const userPopoverId = 'app-topbar-user-popover'
+
 interface AppTopbarProps {
   scrolled?: boolean
 }
@@ -120,12 +123,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   const handleTopbarDoubleClick = (event: MouseEvent<HTMLElement>) => {
     const target = event.target
     if (!(target instanceof Element)) return
-    if (
-      target.closest(
-        'a, button, input, select, textarea, [role="menu"], [role="menuitem"], [role="dialog"]',
-      )
-    )
-      return
+    if (target.closest('a, button, input, select, textarea, [role="dialog"]')) return
     if (window.getComputedStyle(target).getPropertyValue('--wails-draggable').trim() !== 'drag')
       return
 
@@ -185,6 +183,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
 
         <div className="app-topbar__menu-wrapper app-topbar__notification-wrapper">
           <button
+            aria-controls={notificationPopoverId}
             aria-expanded={showNotifications}
             aria-label="查看通知"
             className="app-topbar__icon-button"
@@ -201,7 +200,12 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
 
           {showNotifications ? (
             <>
-              <div className="app-topbar__dropdown app-topbar__notification-menu" role="menu">
+              <div
+                aria-label="最近通知"
+                className="app-topbar__dropdown app-topbar__notification-menu"
+                id={notificationPopoverId}
+                role="region"
+              >
                 <div className="app-topbar__dropdown-header">
                   <span>最近通知</span>
                   <button
@@ -223,7 +227,6 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
                         className="app-topbar__notification-item"
                         key={item.id}
                         onClick={() => handleNotificationClick(item)}
-                        role="menuitem"
                         type="button"
                       >
                         <span className="app-topbar__notification-title">
@@ -249,6 +252,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
                       aria-label="关闭通知菜单"
                       className="app-topbar__overlay"
                       onClick={closeMenuAndRestoreFocus}
+                      tabIndex={-1}
                       type="button"
                     />,
                     document.body,
@@ -269,6 +273,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
 
         <div className="app-topbar__menu-wrapper">
           <button
+            aria-controls={userPopoverId}
             aria-expanded={showUserMenu}
             aria-label="打开用户菜单"
             className="app-topbar__user-button"
@@ -287,20 +292,24 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
 
           {showUserMenu ? (
             <>
-              <div className="app-topbar__dropdown app-topbar__user-menu" role="menu">
+              <div
+                aria-label="用户菜单"
+                className="app-topbar__dropdown app-topbar__user-menu"
+                id={userPopoverId}
+                role="region"
+              >
                 <button
                   onClick={() => {
                     closeMenus()
                     navigate('/settings')
                   }}
-                  role="menuitem"
                   type="button"
                 >
                   <i aria-hidden="true" className="ri-user-line" />
                   <span>个人信息</span>
                 </button>
                 <div className="app-topbar__dropdown-divider" />
-                <button className="is-danger" onClick={handleLogout} role="menuitem" type="button">
+                <button className="is-danger" onClick={handleLogout} type="button">
                   <i aria-hidden="true" className="ri-logout-box-r-line" />
                   <span>退出登录</span>
                 </button>
@@ -311,6 +320,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
                       aria-label="关闭用户菜单"
                       className="app-topbar__overlay"
                       onClick={closeMenuAndRestoreFocus}
+                      tabIndex={-1}
                       type="button"
                     />,
                     document.body,

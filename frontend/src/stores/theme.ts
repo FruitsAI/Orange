@@ -101,6 +101,21 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
 
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', effectiveTheme)
+      // WKWebView can leave descendants that consume inherited custom
+      // properties on the previous composited frame until the window resizes.
+      // Rebuilding body layout in the same task invalidates that stale frame;
+      // the browser cannot paint the temporary display:none state.
+      if (transition && document.body) {
+        const previousDisplay = document.body.style.display
+        const scrollX = window.scrollX
+        const scrollY = window.scrollY
+        document.body.style.display = 'none'
+        void document.body.offsetHeight
+        document.body.style.display = previousDisplay
+        if (scrollX !== 0 || scrollY !== 0) {
+          window.scrollTo(scrollX, scrollY)
+        }
+      }
     }
   },
 

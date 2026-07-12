@@ -63,8 +63,12 @@ describe('theme store', () => {
     cleanupThemeListener?.()
     cleanupThemeListener = undefined
     act(() => vi.runOnlyPendingTimers())
+    vi.restoreAllMocks()
     vi.useRealTimers()
     vi.unstubAllGlobals()
+    Object.defineProperty(window, 'scrollX', { configurable: true, value: 0 })
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
+    document.body.style.display = ''
     document.documentElement.classList.remove('theme-transitioning')
   })
 
@@ -118,10 +122,30 @@ describe('theme store', () => {
     expect(document.documentElement).not.toHaveClass('theme-transitioning')
   })
 
+  it('rebuilds the body layout after changing the root theme for WebKit', () => {
+    installMatchMedia(false)
+    document.body.style.display = 'block'
+    const layoutRead = vi.spyOn(document.body, 'offsetHeight', 'get')
+    layoutRead.mockClear()
+    Object.defineProperty(window, 'scrollX', { configurable: true, value: 24 })
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 960 })
+    const restoreScroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+
+    useThemeStore.getState().setTheme('dark')
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+    expect(layoutRead).toHaveBeenCalled()
+    expect(document.body.style.display).toBe('block')
+    expect(restoreScroll).toHaveBeenCalledWith(24, 960)
+  })
+
   it('does not animate the initial application or reduced-motion changes', () => {
     const media = installMatchMedia(true)
+    const initialLayoutRead = vi.spyOn(document.body, 'offsetHeight', 'get')
+    initialLayoutRead.mockClear()
 
     cleanupThemeListener = useThemeStore.getState().initializeTheme()
+    expect(initialLayoutRead).not.toHaveBeenCalled()
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
     expect(document.documentElement).not.toHaveClass('theme-transitioning')
 

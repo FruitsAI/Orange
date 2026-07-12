@@ -44,7 +44,7 @@ export default function DashboardSkeleton() {
     <div
       aria-label="正在加载仪表盘"
       aria-live="polite"
-      className="dashboard-view ember-dashboard dashboard-skeleton"
+      className="ember-dashboard dashboard-skeleton"
       role="status"
     >
       <SkeletonSurface className="dashboard-skeleton__hero" />

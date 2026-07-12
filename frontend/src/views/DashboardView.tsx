@@ -96,7 +96,7 @@ export default function DashboardView() {
   if (initialLoading) return <DashboardSkeleton />
 
   return (
-    <div className="dashboard-view ember-dashboard">
+    <div className="ember-dashboard">
       <FinancialHero
         busy={
           stats.loading ||

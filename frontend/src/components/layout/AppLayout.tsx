@@ -36,7 +36,7 @@ export default function AppLayout() {
       <div className="app-background" ref={appBackgroundRef} />
       <AppTopbar scrolled={scrolled} />
       <main
-        className="main-content app-main"
+        className="app-main"
         id="mainContent"
         onScroll={(event) => {
           const nextScrolled = event.currentTarget.scrollTop > 24
@@ -44,7 +44,7 @@ export default function AppLayout() {
         }}
         ref={mainContentRef}
       >
-        <div className="view-content app-view-content animate-fade-in">
+        <div className="app-view-content animate-fade-in">
           <Outlet />
         </div>
       </main>

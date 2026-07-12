@@ -110,140 +110,6 @@ select:focus {
     0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-/* Page Title - Living Light Glow */
-.page-title {
-  background: linear-gradient(135deg, var(--text-primary) 30%, var(--text-secondary) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  /* color: transparent;  Removed to be safe, sometimes blend mode is better */
-  position: relative;
-}
-
-/* Nav Item Glow Override */
-.nav-item.active .nav-item-icon {
-  filter: drop-shadow(0 0 8px var(--color-primary));
-  transform: scale(1.1);
-}
-
-.nav-item.active {
-  background: rgba(var(--color-primary-rgb), 0.1) !important;
-  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-}
-
-/* 快捷操作按钮 */
-.quick-action {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-lg) var(--spacing-md);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  position: relative;
-  transition:
-    background var(--transition-fast),
-    transform var(--transition-instant),
-    box-shadow var(--transition-fast);
-}
-
-.quick-action:hover {
-  background: rgba(0, 0, 0, 0.03);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-}
-
-.quick-action:active {
-  transform: scale(0.98);
-}
-
-[data-theme='dark'] .quick-action:hover {
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-
-.quick-action-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  position: relative;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: transform var(--transition-fast);
-}
-
-.quick-action:hover .quick-action-icon {
-  transform: scale(1.08);
-}
-
-/* 通知点 */
-.notification-dot {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 10px;
-  height: 10px;
-  background: var(--color-danger);
-  border-radius: 50%;
-  border: 2px solid var(--bg-base);
-  box-shadow: 0 2px 4px rgba(255, 59, 48, 0.3);
-}
-
-/* 视图过渡动画 */
-/* .view-content 已经在 AppLayout 中处理，这里保留 keyframes 以防万一 */
-@keyframes viewFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 卡片入场动画 */
-.glass-card {
-  animation: cardSlideIn 0.5s cubic-bezier(0.2, 0, 0, 1) backwards;
-}
-
-.glass-card:nth-child(1) {
-  animation-delay: 0.05s;
-}
-.glass-card:nth-child(2) {
-  animation-delay: 0.1s;
-}
-.glass-card:nth-child(3) {
-  animation-delay: 0.15s;
-}
-.glass-card:nth-child(4) {
-  animation-delay: 0.2s;
-}
-
-@keyframes cardSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* 滚动时侧边栏收缩效果 */
-.sidebar.scrolled {
-  box-shadow:
-    var(--glass-shadow-outer),
-    inset -1px 0 0 rgba(255, 255, 255, 0.1);
-}
-
 /* 通知类型徽章 */
 .notification-type-badge {
   display: inline-flex;
@@ -1023,63 +889,6 @@ select:focus {
   padding: 8px; /* spacing-sm */
 }
 
-/* components/dashboard/ProjectList.tsx */
-.project-list-card .table-scroll-container {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.project-list-card .project-table {
-  min-width: 500px;
-}
-
-.project-list-card .project-table th,
-.project-list-card .project-table td {
-  white-space: nowrap;
-}
-
-/* 响应式：小屏幕下缩小行高和字体 */
-@media (max-width: 768px) {
-  .project-list-card .project-table th,
-  .project-list-card .project-table td {
-    padding: var(--spacing-sm) var(--spacing-sm);
-    font-size: 13px;
-  }
-
-  .project-list-card .project-table th {
-    font-size: 12px;
-  }
-
-  .project-list-card .progress-bar {
-    width: 60px !important;
-  }
-}
-
-/* components/dashboard/QuickActions.tsx */
-.quick-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-/* 768px-1024px 时变为4列（快捷操作独立一行，宽度充足） */
-@media (min-width: 768px) and (max-width: 1024px) {
-  .quick-actions-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-/* components/dashboard/StatCard.tsx */
-/* 样式已迁移至 liquid-glass.css，移除本地覆盖以保证 1:1 还原 */
-
-/* components/layout/AppLayout.tsx */
-.main-content {
-  transition: margin-left var(--transition-spring);
-  height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
 /* 简单的淡入淡出过渡 */
 .fade-enter-active,
 .fade-leave-active {
@@ -1089,37 +898,6 @@ select:focus {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-.sidebar-logo-text {
-  margin-left: 12px;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 20px;
-  /* Liquid Metal Shimmer */
-  background: linear-gradient(
-    110deg,
-    var(--text-primary) 30%,
-    rgba(255, 255, 255, 0.8) 45%,
-    rgba(255, 255, 255, 0.8) 55%,
-    var(--text-primary) 70%
-  );
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: logoShimmer 6s ease-in-out infinite;
-  will-change: background-position;
-}
-
-@keyframes logoShimmer {
-  0%,
-  100% {
-    background-position: 100% 0;
-  }
-  50% {
-    background-position: -100% 0;
-  }
 }
 
 /* components/notification/NotificationDetailModal.tsx */
@@ -5015,32 +4793,6 @@ select:focus {
   background: rgba(239, 68, 68, 0.05);
 }
 
-/* views/DashboardView.tsx */
-.dashboard-view .dashboard-charts-row {
-  grid-template-columns: 2fr 1fr;
-  align-items: stretch;
-  margin-bottom: var(--spacing-lg);
-}
-
-.dashboard-view .dashboard-projects-row {
-  grid-template-columns: 2fr 1fr;
-  align-items: stretch;
-}
-
-@media (max-width: 1024px) {
-  .dashboard-view .dashboard-charts-row,
-  .dashboard-view .dashboard-projects-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboard-view .dashboard-charts-row,
-  .dashboard-view .dashboard-projects-row {
-    gap: var(--spacing-md);
-  }
-}
-
 /* views/LoginView.tsx */
 .login-wrapper {
   min-height: 100vh;
@@ -6418,12 +6170,6 @@ select:focus {
 }
 .payment-create-view .text-danger {
   color: var(--color-danger);
-}
-
-/* views/ProjectCreateView.tsx */
-.project-create-view .page-header {
-  display: flex;
-  align-items: center;
 }
 
 .project-create-view .section-title {

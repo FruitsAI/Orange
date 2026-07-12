@@ -5,6 +5,7 @@ import './assets/liquid-glass.css'
 import './assets/main.css'
 import './styles/layout.css'
 import './styles/dashboard.css'
+import './styles/stat-card.css'
 import 'remixicon/fonts/remixicon.css'
 
 import '@fontsource/inter/400.css'

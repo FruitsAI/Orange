@@ -43,11 +43,6 @@
   --motion-normal: var(--motion-page);
   --motion-slow: var(--motion-hero);
 
-  /* Layout */
-  --sidebar-width: 260px;
-  --sidebar-collapsed-width: 88px;
-  --header-height: 64px;
-
   /* Legacy spacing aliases */
   --spacing-xs: 6px;
   --spacing-sm: 12px;
@@ -128,7 +123,6 @@
   --bg-base-rgb: var(--color-bg-rgb);
   --bg-elevated: var(--color-surface-glass);
   --bg-content: var(--color-surface-raised);
-  --bg-sidebar: var(--color-surface-glass);
   --bg-hover: var(--color-surface-hover);
   --bg-card: var(--color-surface);
   --text-primary: var(--color-text);
@@ -203,7 +197,6 @@
   --bg-base-rgb: var(--color-bg-rgb);
   --bg-elevated: var(--color-surface-glass);
   --bg-content: var(--color-surface-raised);
-  --bg-sidebar: var(--color-surface-glass);
   --bg-hover: var(--color-surface-hover);
   --bg-card: var(--color-surface);
   --text-primary: var(--color-text);

@@ -711,3 +711,15 @@
     transition-duration: 0.01ms;
   }
 }
+
+@media print {
+  .app-background,
+  .app-topbar,
+  .app-dock {
+    display: none !important;
+  }
+
+  .app-view-content {
+    padding-top: 0;
+  }
+}

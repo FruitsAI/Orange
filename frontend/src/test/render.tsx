@@ -18,4 +18,4 @@ export function render(
   return testingLibraryRender(ui, { reactStrictMode, wrapper: Wrapper })
 }
 
-export * from '@testing-library/react'
+export { fireEvent, screen, waitFor, within } from '@testing-library/react'

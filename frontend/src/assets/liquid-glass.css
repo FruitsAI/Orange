@@ -140,411 +140,12 @@
 }
 
 /* ============================================
-   桌面布局框架
-   ============================================ */
-.app-container {
-  display: flex;
-  min-height: 100vh;
-  position: relative;
-}
-
-/* 动态背景 - Deep Space Mesh Gradient (Interactive) */
-.app-background {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-
-  /* 更加复杂和微妙的渐变层 */
-  background:
-    /* Interactive Cursor Glow */
-    radial-gradient(
-      circle 800px at var(--light-x, 50%) var(--light-y, 50%),
-      rgba(255, 159, 10, 0.15) 0%,
-      transparent 50%
-    ),
-    /* Top Left - Primary Glow (Fixed Anchor) */
-    radial-gradient(ellipse 90% 60% at 10% 5%, rgba(255, 159, 10, 0.1) 0%, transparent 50%),
-    /* Bottom Right - Secondary/Cool Glow */
-    radial-gradient(ellipse 100% 80% at 90% 90%, rgba(94, 92, 230, 0.12) 0%, transparent 50%),
-    /* Center/Bottom - Teal Hint */
-    radial-gradient(ellipse 80% 50% at 50% 110%, rgba(48, 176, 199, 0.08) 0%, transparent 60%),
-    /* Base */ var(--bg-base);
-
-  transition: background 0.1s ease; /* Faster transition for cursor tracking */
-  will-change: opacity, filter;
-}
-
-/* Ambient Pulse Animation (Independent of mouse) */
-.app-background::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 159, 10, 0.03), transparent 60%);
-  animation: ambientPulse 8s ease-in-out infinite alternate;
-  pointer-events: none;
-}
-
-@keyframes ambientPulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(1.1);
-    opacity: 1;
-  }
-}
-
-[data-theme='dark'] .app-background {
-  background:
-    /* Interactive Cursor Glow - Dark Mode */
-    radial-gradient(
-      circle 800px at var(--light-x, 50%) var(--light-y, 50%),
-      rgba(255, 159, 10, 0.18) 0%,
-      transparent 55%
-    ),
-    /* Top Left - Stronger Primary */
-    radial-gradient(ellipse 90% 60% at 10% 5%, rgba(255, 159, 10, 0.15) 0%, transparent 55%),
-    /* Bottom Right - Violet */
-    radial-gradient(ellipse 100% 80% at 90% 90%, rgba(94, 92, 230, 0.15) 0%, transparent 55%),
-    /* Subconscious Depth */
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.01) 0%, transparent 60%),
-    var(--bg-base);
-}
-
-/* ============================================
-   侧边栏导航 - Liquid Glass 材质
-   ============================================ */
-.sidebar {
-  /* 悬浮胶囊样式 (Floating Capsule) */
-  width: 80px;
-  height: auto;
-  max-height: 90vh;
-  position: fixed;
-  left: 24px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  padding: 24px 12px;
-  z-index: 100;
-  border-radius: 40px;
-  border: var(--glass-border);
-  box-shadow: var(--glass-shadow-outer);
-
-  /* 流体过渡动画 */
-  transition:
-    width var(--transition-spring),
-    transform var(--transition-spring),
-    background var(--transition-normal);
-}
-
-/* 折叠状态 */
-.sidebar.collapsed {
-  width: var(--sidebar-collapsed-width);
-}
-
-/* 侧边栏头部 */
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin-bottom: var(--spacing-lg);
-}
-
-.sidebar-logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-}
-
-/* Logo 图标 - 多层 Liquid Glass */
-/* Logo 图标 - 多层 Liquid Glass */
-.sidebar-logo-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: transform var(--transition-fast);
-}
-
-.sidebar-logo-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 12px rgba(255, 149, 0, 0.3));
-}
-
-.sidebar-logo-icon:hover {
-  transform: scale(1.05);
-}
-
-.sidebar-logo-text {
-  display: none;
-}
-
-.sidebar.collapsed .sidebar-logo-text {
-  display: none;
-}
-
-/* ============================================
-   导航菜单
-   ============================================ */
-.nav-menu {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.nav-section {
-  margin-bottom: var(--spacing-md);
-}
-
-.nav-section-title {
-  font-family: var(--font-text);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-tertiary);
-  padding: 0;
-  margin-bottom: 0;
-  height: 0;
-  overflow: hidden;
-  opacity: 0;
-}
-
-.sidebar.collapsed .nav-section-title {
-  opacity: 0;
-  height: 0;
-  padding: 0;
-  overflow: hidden;
-}
-
-/* 导航项 - 胶囊形状 */
-/* 导航项 - 图标居中 */
-.nav-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  padding: 12px;
-  border-radius: 16px; /* Squircle */
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-family: var(--font-text);
-  font-size: 14px;
-  font-weight: 500;
-  position: relative;
-  cursor: pointer;
-  width: 100%;
-  aspect-ratio: 1;
-
-  /* 流体过渡 */
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast),
-    transform var(--transition-instant);
-}
-
-/* 悬停效果 - 柔和高亮 */
-.nav-item:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--text-primary);
-  transform: scale(1.05); /* 缩放代替位移 */
-}
-
-[data-theme='dark'] .nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-/* 点击反馈 - 轻微缩放 */
-.nav-item:active {
-  transform: scale(0.98);
-}
-
-/* 激活状态 - Neon Prism Effect */
-.nav-item.active {
-  background: rgba(var(--color-primary-rgb), 0.12) !important;
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  color: var(--color-primary);
-  font-weight: 600;
-
-  /* Prismatic Borders & Glow */
-  border: 1px solid rgba(var(--color-primary-rgb), 0.3);
-  box-shadow:
-    0 4px 20px rgba(var(--color-primary-rgb), 0.25),
-    inset 0 0 15px rgba(var(--color-primary-rgb), 0.1),
-    /* Subtle Chromatic Aberration */ -1px 0 2px rgba(0, 200, 255, 0.2),
-    1px 0 2px rgba(255, 0, 100, 0.2);
-
-  position: relative;
-}
-
-/* Neon Filament (Left Bar) */
-.nav-item.active::before {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 12px;
-  bottom: 12px;
-  width: 3px;
-  background: var(--color-primary);
-  border-radius: 4px;
-  box-shadow: 0 0 8px var(--color-primary);
-  opacity: 1;
-}
-
-[data-theme='dark'] .nav-item.active {
-  background: rgba(var(--color-primary-rgb), 0.2) !important;
-  box-shadow:
-    0 4px 25px rgba(var(--color-primary-rgb), 0.4),
-    inset 0 0 20px rgba(var(--color-primary-rgb), 0.15),
-    -1px 0 4px rgba(0, 200, 255, 0.3),
-    1px 0 4px rgba(255, 0, 100, 0.3);
-}
-
-.nav-item-icon {
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-  transition: transform var(--transition-fast);
-}
-
-.nav-item:hover .nav-item-icon {
-  transform: scale(1.1);
-}
-
-.nav-item-text {
-  display: none;
-}
-
-.sidebar.collapsed .nav-item-text {
-  display: none;
-}
-
-/* 徽章 - 通知计数 */
-.nav-item-badge {
-  margin-left: auto;
-  background: var(--color-danger);
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: var(--radius-full);
-  min-width: 20px;
-  text-align: center;
-  box-shadow: 0 2px 6px rgba(255, 59, 48, 0.3);
-}
-
-.sidebar.collapsed .nav-item-badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  padding: 2px 5px;
-  min-width: 16px;
-  font-size: 10px;
-}
-
-/* 侧边栏底部 - 隐藏 */
-.sidebar-footer {
-  display: none;
-}
-
-/* 折叠按钮 */
-.sidebar-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast),
-    transform var(--transition-instant);
-}
-
-.sidebar-toggle:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--text-primary);
-}
-
-.sidebar-toggle:active {
-  transform: scale(0.95);
-}
-
-[data-theme='dark'] .sidebar-toggle:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* ============================================
-   主内容区域
-   ============================================ */
-.main-content {
-  flex: 1;
-  margin-left: 120px; /* 80px width + 24px left + 16px gap */
-  min-height: 100vh;
-  padding: var(--spacing-xl);
-  transition: margin-left var(--transition-spring);
-}
-
-.sidebar.collapsed ~ .main-content {
-  margin-left: var(--sidebar-collapsed-width);
-}
-
-/* 页面头部 */
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-xl);
-  padding-bottom: var(--spacing-lg);
-  border-bottom: 1px solid var(--separator-color);
-}
-
-.page-title {
-  font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.025em;
-  line-height: 1.2;
-}
-
-.page-subtitle {
-  font-size: 15px;
-  color: var(--text-secondary);
-  margin-top: var(--spacing-xs);
-  letter-spacing: -0.01em;
-}
-
-.page-actions {
-  display: flex;
-  gap: var(--spacing-sm);
-  align-items: center;
-}
-
-/* ============================================
    Glass 卡片组件 - 多层 Liquid Glass
    ============================================ */
 .glass-card {
+  --specular-x: 50%;
+  --specular-y: 0%;
+
   position: relative;
   background: var(--bg-content);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation))
@@ -572,11 +173,11 @@
   content: '';
   position: absolute;
   inset: 0;
-  /* Dynamic Cursor Following Highlight */
   background: radial-gradient(
-    800px circle at var(--specular-x, 50%) var(--specular-y, 0%),
-    rgba(255, 255, 255, 0.25),
-    transparent 40%
+    ellipse 80% 50% at var(--specular-x) var(--specular-y),
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.1) 30%,
+    transparent 60%
   );
   pointer-events: none;
   z-index: 1;
@@ -589,6 +190,15 @@
 
 .glass-card:hover::before {
   opacity: 1;
+}
+
+[data-theme='dark'] .glass-card::before {
+  background: radial-gradient(
+    ellipse 80% 50% at var(--specular-x) var(--specular-y),
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.05) 30%,
+    transparent 60%
+  );
 }
 
 /* 顶部边缘高光 */
@@ -848,82 +458,6 @@
   );
   background-size: 200% 100%;
   animation: shimmer 3s infinite linear;
-}
-
-.stat-card-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  margin-bottom: var(--spacing-md);
-  position: relative;
-
-  /* 玻璃效果 */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.stat-card-icon--primary {
-  background: linear-gradient(145deg, rgba(255, 159, 10, 0.25), rgba(255, 179, 64, 0.15));
-  color: var(--color-primary);
-}
-
-.stat-card-icon--success {
-  background: linear-gradient(145deg, rgba(52, 199, 89, 0.25), rgba(48, 209, 88, 0.15));
-  color: var(--color-success);
-}
-
-.stat-card-icon--warning {
-  background: linear-gradient(145deg, rgba(255, 149, 0, 0.25), rgba(255, 159, 10, 0.15));
-  color: var(--color-warning);
-}
-
-.stat-card-icon--danger {
-  background: linear-gradient(145deg, rgba(255, 59, 48, 0.25), rgba(255, 69, 58, 0.15));
-  color: var(--color-danger);
-}
-
-.stat-card-value {
-  font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.stat-card-label {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin-top: var(--spacing-xs);
-  letter-spacing: -0.01em;
-}
-
-.stat-card-trend {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  margin-top: var(--spacing-sm);
-  padding: 5px 10px;
-  border-radius: var(--radius-full);
-}
-
-.stat-card-trend--up {
-  background: rgba(52, 199, 89, 0.12);
-  color: var(--color-success);
-}
-
-.stat-card-trend--down {
-  background: rgba(255, 59, 48, 0.12);
-  color: var(--color-danger);
 }
 
 /* ===========================
@@ -1204,20 +738,6 @@
   .grid-cols-5 {
     grid-template-columns: repeat(3, 1fr);
   }
-
-  .sidebar {
-    width: var(--sidebar-collapsed-width);
-  }
-
-  .sidebar .nav-item-text,
-  .sidebar .nav-section-title,
-  .sidebar .sidebar-logo-text {
-    display: none;
-  }
-
-  .main-content {
-    margin-left: var(--sidebar-collapsed-width);
-  }
 }
 
 @media (max-width: 1024px) {
@@ -1230,33 +750,6 @@
   }
   .grid-cols-5 {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  /* 统计卡片响应式 - 缩小尺寸并居中 */
-  .stat-card {
-    padding: var(--spacing-md);
-    align-items: center;
-    text-align: center;
-  }
-
-  .stat-card-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-    margin-bottom: var(--spacing-sm);
-  }
-
-  .stat-card-value {
-    font-size: 22px;
-  }
-
-  .stat-card-label {
-    font-size: 12px;
-  }
-
-  .stat-card-trend {
-    font-size: 11px;
-    padding: 4px 8px;
   }
 }
 
@@ -1275,81 +768,6 @@
   /* 网格间距调整 */
   .grid {
     gap: var(--spacing-md);
-  }
-
-  /* 侧边栏转换为底部 Dock */
-  .sidebar {
-    transform: none;
-    width: auto;
-    height: auto;
-    position: fixed;
-    top: auto;
-    left: 50%;
-    bottom: var(--spacing-md);
-    transform: translateX(-50%);
-    flex-direction: row;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-right: none;
-
-    /* 借用 .dock 的样式 */
-    border-radius: var(--radius-xl);
-    background: var(--bg-elevated);
-    backdrop-filter: blur(60px) saturate(200%) brightness(1.1);
-    -webkit-backdrop-filter: blur(60px) saturate(200%) brightness(1.1);
-    border: var(--glass-border);
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4);
-    z-index: 1000;
-  }
-
-  /* 暗色模式适配 */
-  [data-theme='dark'] .sidebar {
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  }
-
-  /* 隐藏不需要的元素 */
-  .sidebar-header,
-  .sidebar-footer,
-  .nav-section-title,
-  .nav-item-text,
-  .nav-item-badge {
-    display: none;
-  }
-
-  /* 导航容器横向排列 */
-  .nav-menu {
-    flex-direction: row;
-    overflow: visible;
-    gap: var(--spacing-xs);
-  }
-
-  .nav-section {
-    margin-bottom: 0;
-    display: flex;
-    flex-direction: row;
-    gap: var(--spacing-xs);
-  }
-
-  /* 导航项样式调整 */
-  .nav-item {
-    padding: 12px;
-    border-radius: var(--radius-lg);
-    width: auto; /* 重置 Desktop 的 width: 100% */
-    aspect-ratio: auto; /* 重置 Desktop 的 aspect-ratio */
-  }
-
-  .nav-item-icon {
-    font-size: 24px;
-    width: 24px;
-    height: 24px;
-  }
-
-  .main-content {
-    margin-left: 0;
-    padding-bottom: 120px; /* 防止底部遮挡 */
   }
 }
 
@@ -2046,66 +1464,14 @@
   }
 }
 
-/* 导航项激活动画 */
-@keyframes navItemActivate {
-  0% {
-    transform: scale(0.95);
-  }
-  50% {
-    transform: scale(1.02);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* 页面标题过渡 */
-.page-title,
-.page-subtitle {
-  transition:
-    opacity 0.2s ease-out,
-    transform 0.2s ease-out;
-}
-
-/* ============================================
-   动态光效背景
-   ============================================ */
-.app-background {
-  --light-x: 20%;
-  --light-y: 20%;
-}
-
-.app-background::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse 60% 50% at var(--light-x) var(--light-y),
-    rgba(255, 159, 10, 0.12) 0%,
-    transparent 50%
-  );
-  pointer-events: none;
-  transition: background 0.3s ease-out;
-}
-
-[data-theme='dark'] .app-background::before {
-  background: radial-gradient(
-    ellipse 60% 50% at var(--light-x) var(--light-y),
-    rgba(255, 159, 10, 0.15) 0%,
-    transparent 50%
-  );
-}
-
 /* ============================================
    动态镜面高光
    ============================================ */
-.glass-card,
 .liquid-glass {
   --specular-x: 50%;
   --specular-y: 0%;
 }
 
-.glass-card::before,
 .liquid-glass::before {
   background: radial-gradient(
     ellipse 80% 50% at var(--specular-x) var(--specular-y),
@@ -2115,7 +1481,6 @@
   );
 }
 
-[data-theme='dark'] .glass-card::before,
 [data-theme='dark'] .liquid-glass::before {
   background: radial-gradient(
     ellipse 80% 50% at var(--specular-x) var(--specular-y),
@@ -2128,8 +1493,7 @@
 /* ============================================
    焦点样式 - 无障碍
    ============================================ */
-.btn:focus-visible,
-.nav-item:focus-visible {
+.btn:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
@@ -2138,14 +1502,8 @@
    打印样式
    ============================================ */
 @media print {
-  .sidebar,
-  .app-background,
   .theme-toggle {
     display: none !important;
-  }
-
-  .main-content {
-    margin-left: 0 !important;
   }
 
   .glass-card,

@@ -37,6 +37,9 @@ describe('topbar window interaction boundaries', () => {
     expect(Number(menuRule?.style.zIndex)).toBeGreaterThan(999)
     expect(menuRule?.style.maxWidth).toContain('100vw')
     expect(menuRule?.style.getPropertyValue('--wails-draggable')).toBe('no-drag')
+    expect(findStyleRule('.theme-selector__label')?.style.justifySelf).toBe('start')
+    expect(findStyleRule('.theme-selector__check')?.style.justifySelf).toBe('end')
+    expect(findStyleRule('.theme-selector__option > :last-child')).toBeUndefined()
   })
 
   test('uses one tokenized warm ambient light for the shell', () => {

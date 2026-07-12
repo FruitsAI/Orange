@@ -50,6 +50,9 @@ describe('ThemeSelector', () => {
     const options = within(listbox).getAllByRole('option')
     expect(options.map((option) => option.tabIndex)).toEqual([0, -1, -1])
     expect(options[0]).toHaveAttribute('aria-selected', 'true')
+    const unselectedOption = within(listbox).getByRole('option', { name: '亮色' })
+    expect(unselectedOption.querySelector('.theme-selector__label')).toHaveTextContent('亮色')
+    expect(unselectedOption.lastElementChild).toHaveClass('theme-selector__check')
     expect(screen.getByRole('button', { name: '关闭主题菜单' })).toHaveAttribute('tabindex', '-1')
   })
 

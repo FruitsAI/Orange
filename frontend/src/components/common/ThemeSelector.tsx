@@ -166,10 +166,13 @@ export default function ThemeSelector({ onBeforeOpen, onOpenChange, open }: Them
                     type="button"
                   >
                     <i aria-hidden="true" className={option.icon} />
-                    <span>{option.label}</span>
-                    {theme === option.value ? (
-                      <i aria-hidden="true" className="ri-check-line" />
-                    ) : null}
+                    <span className="theme-selector__label">{option.label}</span>
+                    <i
+                      aria-hidden="true"
+                      className={`theme-selector__check ri-check-line ${
+                        theme === option.value ? 'is-visible' : ''
+                      }`}
+                    />
                   </button>
                 ))}
               </div>

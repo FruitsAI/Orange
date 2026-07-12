@@ -481,8 +481,17 @@
   color: var(--color-accent);
 }
 
-.theme-selector__option > :last-child {
+.theme-selector__label {
+  justify-self: start;
+}
+
+.theme-selector__check {
   justify-self: end;
+  opacity: 0;
+}
+
+.theme-selector__check.is-visible {
+  opacity: 1;
 }
 
 .app-topbar-portal {

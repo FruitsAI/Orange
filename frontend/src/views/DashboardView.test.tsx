@@ -15,14 +15,29 @@ vi.mock('@/api/dashboard', () => ({
 }))
 
 vi.mock('@/components/dashboard/IncomeChart', () => ({
-  default: ({ values }: { values: number[] }) => <div>趋势数据 {values.join(',')}</div>,
+  default: ({
+    actualValues,
+    expectedValues,
+  }: {
+    actualValues: number[]
+    expectedValues: number[]
+  }) => (
+    <div>
+      趋势数据 计划 {expectedValues.join(',')} 实际 {actualValues.join(',')}
+    </div>
+  ),
 }))
-vi.mock('@/components/dashboard/QuickActions', () => ({ default: () => <div>快捷操作</div> }))
+vi.mock('@/components/dashboard/ActionQueue', () => ({
+  default: ({ payments }: { payments: Array<{ id: number }> }) => (
+    <div>行动队列 {payments.length}</div>
+  ),
+}))
 vi.mock('@/components/dashboard/ProjectList', () => ({
-  default: ({ projects }: { projects: Project[] }) => <div>近期项目 {projects[0]?.name}</div>,
-}))
-vi.mock('@/components/dashboard/UpcomingPayments', () => ({
-  default: () => <div>待收款列表</div>,
+  default: ({ projects, variant }: { projects: Project[]; variant?: string }) => (
+    <div>
+      近期项目 {projects[0]?.name} {variant}
+    </div>
+  ),
 }))
 
 const stats: DashboardStats = {
@@ -87,7 +102,9 @@ describe('DashboardView resource rendering', () => {
     expect(screen.getByLabelText('较上期上升 3.00%，表现改善')).toBeInTheDocument()
     expect(screen.getByLabelText('较上期上升 4.00%，表现承压')).toBeInTheDocument()
     expect(screen.getByLabelText('较上期上升 2.00%，表现承压')).toBeInTheDocument()
-    expect(screen.getByText('趋势数据 100')).toBeInTheDocument()
+    expect(screen.getByText('趋势数据 计划 120,230 实际 100')).toBeInTheDocument()
+    expect(screen.getByText('行动队列 1')).toBeInTheDocument()
+    expect(screen.queryByText('快捷操作')).not.toBeInTheDocument()
     expect(screen.getByLabelText('正在加载近期项目')).toBeInTheDocument()
     expect(screen.queryByLabelText('正在加载仪表盘')).not.toBeInTheDocument()
   })
@@ -129,5 +146,28 @@ describe('DashboardView resource rendering', () => {
     expect(screen.getByText('已结算加载中')).toBeInTheDocument()
     expect(screen.queryByText('暂无待收款计划')).not.toBeInTheDocument()
     expect(screen.queryByText('--')).not.toBeInTheDocument()
+  })
+
+  it('renders recent projects as the wide compact section below the action grid', async () => {
+    const recentProject = {
+      company: '橙子科技',
+      id: 8,
+      name: '轨道站点',
+      received_amount: 200,
+      status: 'active',
+      total_amount: 500,
+    } as Project
+    vi.mocked(dashboardApi.getStats).mockResolvedValue(apiResponse(stats) as never)
+    vi.mocked(dashboardApi.getIncomeTrend).mockResolvedValue(apiResponse(trend) as never)
+    vi.mocked(dashboardApi.getRecentProjects).mockResolvedValue(
+      apiResponse([recentProject]) as never,
+    )
+    vi.mocked(dashboardApi.getUpcomingPayments).mockResolvedValue(apiResponse([]) as never)
+
+    const { container } = render(<DashboardView />)
+
+    await waitFor(() => expect(screen.getByText('近期项目 轨道站点 compact')).toBeInTheDocument())
+    expect(container.querySelector('.dashboard-action-grid')).toBeInTheDocument()
+    expect(container.querySelector('.dashboard-recent-projects')).toBeInTheDocument()
   })
 })

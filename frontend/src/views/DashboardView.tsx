@@ -1,9 +1,8 @@
+import ActionQueue from '@/components/dashboard/ActionQueue'
 import FinancialHero, { type FinancialHeroProps } from '@/components/dashboard/FinancialHero'
 import IncomeChart from '@/components/dashboard/IncomeChart'
 import ProjectList from '@/components/dashboard/ProjectList'
-import QuickActions from '@/components/dashboard/QuickActions'
 import SummaryMetric, { type SummaryMetricProps } from '@/components/dashboard/SummaryMetric'
-import UpcomingPayments from '@/components/dashboard/UpcomingPayments'
 import { formatCurrency } from '@/utils/format'
 import DashboardError from './dashboard/DashboardError'
 import DashboardSkeleton, { DashboardSectionSkeleton } from './dashboard/DashboardSkeleton'
@@ -130,8 +129,12 @@ export default function DashboardView() {
         </div>
       )}
 
-      <div className="grid dashboard-charts-row">
-        <div aria-busy={trend.refreshing} className="flex flex-col gap-md">
+      <div className="dashboard-action-grid">
+        <section
+          aria-busy={trend.loading || trend.refreshing}
+          aria-label="现金流趋势"
+          className="dashboard-action-grid__chart flex flex-col gap-md"
+        >
           {trend.error && (
             <DashboardError
               message="收入趋势加载失败"
@@ -144,31 +147,19 @@ export default function DashboardView() {
           )}
           {trend.data && (
             <IncomeChart
+              actualValues={trend.data.actual_values}
+              expectedValues={trend.data.expected_values}
               labels={trend.data.labels}
               onPeriodChange={setPeriod}
               period={activePeriod}
-              values={trend.data.actual_values}
             />
           )}
-        </div>
-        <QuickActions />
-      </div>
-
-      <div className="grid dashboard-projects-row">
-        <div aria-busy={projects.refreshing} className="flex flex-col gap-md">
-          {projects.error && (
-            <DashboardError
-              message="近期项目加载失败"
-              onRetry={() => retry('projects')}
-              resourceLabel="近期项目"
-            />
-          )}
-          {projects.loading && !projects.data && (
-            <DashboardSectionSkeleton height={280} label="近期项目" />
-          )}
-          {projects.data && <ProjectList projects={projects.data} />}
-        </div>
-        <div aria-busy={payments.refreshing} className="flex flex-col gap-md">
+        </section>
+        <section
+          aria-busy={payments.loading || payments.refreshing}
+          aria-label="待处理收款"
+          className="dashboard-action-grid__queue flex flex-col gap-md"
+        >
           {payments.error && (
             <DashboardError
               message="收款计划加载失败"
@@ -177,11 +168,29 @@ export default function DashboardView() {
             />
           )}
           {payments.loading && !payments.data && (
-            <DashboardSectionSkeleton height={280} label="收款计划" />
+            <DashboardSectionSkeleton height={360} label="收款计划" />
           )}
-          {payments.data && <UpcomingPayments payments={payments.data.slice(0, 3)} />}
-        </div>
+          {payments.data && <ActionQueue payments={payments.data} />}
+        </section>
       </div>
+
+      <section
+        aria-busy={projects.loading || projects.refreshing}
+        aria-label="近期项目"
+        className="dashboard-recent-projects flex flex-col gap-md"
+      >
+        {projects.error && (
+          <DashboardError
+            message="近期项目加载失败"
+            onRetry={() => retry('projects')}
+            resourceLabel="近期项目"
+          />
+        )}
+        {projects.loading && !projects.data && (
+          <DashboardSectionSkeleton height={280} label="近期项目" />
+        )}
+        {projects.data && <ProjectList projects={projects.data} variant="compact" />}
+      </section>
     </div>
   )
 }

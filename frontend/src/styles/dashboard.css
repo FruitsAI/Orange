@@ -287,6 +287,243 @@
   margin-top: calc(var(--space-2) * -1);
 }
 
+.dashboard-action-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  align-items: stretch;
+  gap: var(--space-5);
+}
+
+.dashboard-action-grid > section,
+.dashboard-recent-projects {
+  min-width: 0;
+}
+
+.dashboard-action-grid > section > .glass-card {
+  height: 100%;
+}
+
+:is(.income-chart-card, .action-queue-card, .project-list-card--compact) {
+  border-color: var(--color-border);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.income-chart__header {
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.income-chart__periods {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+.income-chart__canvas {
+  height: 320px;
+  padding: var(--space-2) 0 0;
+}
+
+.action-queue__list,
+.project-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.action-queue__item {
+  position: relative;
+  display: grid;
+  min-height: 68px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2) var(--space-3) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  color: var(--color-text);
+  text-decoration: none;
+  transition:
+    border-color var(--motion-instant) var(--ease-standard),
+    background var(--motion-instant) var(--ease-standard),
+    transform var(--motion-instant) var(--ease-standard);
+}
+
+.action-queue__item::before {
+  position: absolute;
+  width: 3px;
+  top: var(--space-3);
+  bottom: var(--space-3);
+  left: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-text-subtle);
+  content: '';
+}
+
+.action-queue__item--overdue::before {
+  background: var(--color-danger);
+}
+
+.action-queue__item--today::before {
+  background: var(--color-accent);
+}
+
+.action-queue__item:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface);
+  transform: translateY(-2px);
+}
+
+.action-queue__copy,
+.action-queue__meta,
+.project-list__identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.action-queue__copy strong,
+.project-list__identity strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-queue__copy span,
+.project-list__identity span {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-queue__meta {
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.action-queue__meta span {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.action-queue__item--overdue .action-queue__meta span {
+  color: var(--color-danger);
+}
+
+.action-queue__arrow,
+.project-list__arrow {
+  color: var(--color-text-subtle);
+}
+
+.action-queue__empty,
+.project-list__empty {
+  display: flex;
+  min-height: 236px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.action-queue__empty strong,
+.project-list__empty strong {
+  color: var(--color-text);
+}
+
+.action-queue__empty p,
+.project-list__empty p {
+  max-width: 34ch;
+  margin: 0 0 var(--space-2);
+  font-size: 0.82rem;
+}
+
+.action-queue__empty-icon,
+.project-list__empty-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: rgba(var(--color-accent-rgb), 0.1);
+  color: var(--color-accent);
+  font-size: 1.25rem;
+}
+
+.project-list__item {
+  display: grid;
+  min-height: 64px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(100px, 0.7fr) minmax(130px, 0.8fr) auto auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  text-decoration: none;
+  transition:
+    border-color var(--motion-instant) var(--ease-standard),
+    background var(--motion-instant) var(--ease-standard),
+    transform var(--motion-instant) var(--ease-standard);
+}
+
+.project-list__item:hover {
+  border-color: var(--color-border);
+  background: color-mix(in srgb, var(--color-surface) 76%, transparent);
+  transform: translateY(-1px);
+}
+
+.project-list__amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.project-list__progress {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(56px, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.project-list__progress-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+}
+
+.project-list__progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gradient-glow);
+}
+
+@media (max-width: 1000px) {
+  .dashboard-action-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 980px) {
   .financial-hero {
     min-height: 330px;
@@ -337,6 +574,23 @@
   .summary-metric__trend {
     grid-column: 2;
   }
+
+  .income-chart__header {
+    flex-direction: column;
+  }
+
+  .income-chart__periods {
+    justify-content: flex-start;
+  }
+
+  .project-list__item {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .project-list__amount,
+  .project-list__progress {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -349,6 +603,16 @@
   }
 
   .financial-hero__cta:hover {
+    transform: none;
+  }
+
+  .action-queue__item,
+  .project-list__item {
+    transition: none;
+  }
+
+  .action-queue__item:hover,
+  .project-list__item:hover {
     transform: none;
   }
 }

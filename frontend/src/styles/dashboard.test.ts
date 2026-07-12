@@ -50,6 +50,27 @@ describe('dashboard visual contract', () => {
     expect(dashboardCss).toContain('@media (prefers-reduced-motion: reduce)')
   })
 
+  it('uses an action-oriented two-to-one grid that collapses at 1000px', () => {
+    expect(dashboardCss).toMatch(
+      /\.dashboard-action-grid\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 2fr\) minmax\(280px, 1fr\)/,
+    )
+    expect(dashboardCss).toContain('@media (max-width: 1000px)')
+    expect(dashboardCss).toMatch(
+      /@media \(max-width: 1000px\)[\s\S]*\.dashboard-action-grid\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/,
+    )
+  })
+
+  it('keeps dashboard content cards opaque and motion restrained', () => {
+    expect(dashboardCss).toMatch(
+      /:is\(\.income-chart-card, \.action-queue-card, \.project-list-card--compact\)[\s\S]*background:\s*var\(--color-surface-raised\)/,
+    )
+    expect(dashboardCss).toContain('backdrop-filter: none')
+    expect(dashboardCss).toMatch(/\.action-queue__item:hover[\s\S]*translateY\(-2px\)/)
+    expect(dashboardCss).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.action-queue__item:hover[\s\S]*transform:\s*none/,
+    )
+  })
+
   it('gives Day Ember an explicit high-contrast orange hero treatment', () => {
     const lightHero = dashboardCss.match(
       /\[data-theme='light'\] \.financial-hero\s*\{([^}]+)\}/,

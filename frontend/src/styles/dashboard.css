@@ -651,17 +651,8 @@
     transform: translateY(-50%);
   }
 
-  .financial-hero__cta {
-    transition: none;
-  }
-
   .financial-hero__cta:hover {
     transform: none;
-  }
-
-  .action-queue__item,
-  .project-list__item {
-    transition: none;
   }
 
   .action-queue__item:hover,

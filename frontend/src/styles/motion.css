@@ -93,7 +93,8 @@
   .app-background {
     --light-x: 50% !important;
     --light-y: 50% !important;
-    transition: none !important;
+    transition-delay: 0ms !important;
+    transition-duration: 1ms !important;
   }
 
   .app-background::before {

@@ -1,6 +1,7 @@
-import { useId } from 'react'
+import { useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import type { Notification } from '@/api/notification'
+import { useDialogFocus } from '@/hooks/useDialogFocus'
 
 interface NotificationDetailModalProps {
   open: boolean
@@ -20,24 +21,40 @@ export default function NotificationDetailModal({
   onClose,
 }: NotificationDetailModalProps) {
   const titleId = useId()
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
+  useDialogFocus({ dialogRef, initialFocusRef: closeRef, onClose, open })
 
   if (!open || typeof document === 'undefined') return null
 
   return createPortal(
-    <div className="app-topbar-portal modal-overlay open" onClick={onClose} role="presentation">
+    <div
+      className="app-topbar-portal modal-overlay open"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+      role="presentation"
+    >
       <div
         aria-labelledby={titleId}
         aria-modal="true"
         className="modal open"
-        onClick={(event) => event.stopPropagation()}
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <div className="modal-header">
           <h3 className="modal-title" id={titleId}>
             通知详情
           </h3>
-          <button aria-label="关闭通知详情" className="modal-close" onClick={onClose} type="button">
-            <i className="ri-close-line" />
+          <button
+            aria-label="关闭通知详情"
+            className="modal-close"
+            onClick={onClose}
+            ref={closeRef}
+            type="button"
+          >
+            <i aria-hidden="true" className="ri-close-line" />
           </button>
         </div>
         {notification ? (

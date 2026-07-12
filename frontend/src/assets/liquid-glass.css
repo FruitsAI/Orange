@@ -992,11 +992,12 @@
 }
 
 .status-badge::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
+  content: none;
+}
+
+.status-badge__icon {
+  font-size: 13px;
+  line-height: 1;
 }
 
 .status-badge--active {
@@ -1017,6 +1018,16 @@
 .status-badge--overdue {
   background: rgba(239, 68, 68, 0.1);
   color: var(--color-danger);
+}
+
+.status-badge--notstarted {
+  background: var(--bg-hover);
+  color: var(--text-tertiary);
+}
+
+.status-badge--archived {
+  background: var(--separator-color);
+  color: var(--text-secondary);
 }
 
 /* ===========================

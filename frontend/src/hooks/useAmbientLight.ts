@@ -1,21 +1,21 @@
 import { useEffect, useRef, type RefObject } from 'react'
+import { useReducedMotion } from './useReducedMotion'
 
 const clampPercentage = (value: number) => Math.min(100, Math.max(0, value))
 
 export function useAmbientLight<T extends HTMLElement>(): RefObject<T | null> {
   const elementRef = useRef<T | null>(null)
+  const reducedMotion = useReducedMotion()
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     let frameId: number | null = null
     let pointerX = 0
     let pointerY = 0
-    let pointerListening = false
-    let enabled = false
+    let active = true
 
     const updateLight = () => {
       frameId = null
-      if (!enabled) return
+      if (!active) return
       const element = elementRef.current
       if (!element) return
 
@@ -31,43 +31,18 @@ export function useAmbientLight<T extends HTMLElement>(): RefObject<T | null> {
       if (frameId === null) frameId = window.requestAnimationFrame(updateLight)
     }
 
-    const start = () => {
-      if (pointerListening) return
-      enabled = true
-      pointerListening = true
-      window.addEventListener('pointermove', handlePointerMove, { passive: true })
-    }
+    if (reducedMotion) return
 
-    const stop = () => {
-      enabled = false
-      if (pointerListening) {
-        pointerListening = false
-        window.removeEventListener('pointermove', handlePointerMove)
-      }
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+    return () => {
+      active = false
+      window.removeEventListener('pointermove', handlePointerMove)
       if (frameId !== null) {
         window.cancelAnimationFrame(frameId)
         frameId = null
       }
     }
-
-    const handleMotionPreference = (event: MediaQueryListEvent) => {
-      if (event.matches) stop()
-      else start()
-    }
-
-    if (mediaQuery.matches) stop()
-    else start()
-
-    if (mediaQuery.addEventListener) mediaQuery.addEventListener('change', handleMotionPreference)
-    else mediaQuery.addListener(handleMotionPreference)
-
-    return () => {
-      stop()
-      if (mediaQuery.removeEventListener)
-        mediaQuery.removeEventListener('change', handleMotionPreference)
-      else mediaQuery.removeListener(handleMotionPreference)
-    }
-  }, [])
+  }, [reducedMotion])
 
   return elementRef
 }

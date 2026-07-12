@@ -48,6 +48,10 @@ describe('dashboard visual contract', () => {
   it('contains narrow-screen and reduced-motion safeguards', () => {
     expect(dashboardCss).toContain('@media (max-width: 720px)')
     expect(dashboardCss).toContain('@media (prefers-reduced-motion: reduce)')
+    expect(dashboardCss).not.toContain('transition: none')
+    expect(dashboardCss).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.financial-hero__cta:hover[\s\S]*transform:\s*none/,
+    )
   })
 
   it('uses an action-oriented two-to-one grid that collapses at 1000px', () => {

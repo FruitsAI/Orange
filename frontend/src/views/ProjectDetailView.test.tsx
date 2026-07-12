@@ -101,6 +101,24 @@ describe('ProjectDetailView payment deep links', () => {
     expect(screen.getByText('中期款')).toBeInTheDocument()
   })
 
+  it('gives icon-only project controls explicit accessible labels', async () => {
+    renderProjectDetail('/projects/42')
+
+    await waitFor(() => expect(screen.getByText('项目整体进度')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: '返回项目列表' })).toHaveAttribute(
+      'aria-label',
+      '返回项目列表',
+    )
+    expect(screen.getByRole('button', { name: '编辑项目' })).toHaveAttribute(
+      'aria-label',
+      '编辑项目',
+    )
+    expect(screen.getByRole('button', { name: '导出项目' })).toHaveAttribute(
+      'aria-label',
+      '导出项目',
+    )
+  })
+
   it('switches to the payment plan tab when search params change', async () => {
     const user = userEvent.setup()
     renderProjectDetail('/projects/42')

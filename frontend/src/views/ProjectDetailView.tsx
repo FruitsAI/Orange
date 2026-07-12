@@ -114,11 +114,12 @@ export default function ProjectDetailView() {
       <div className="header-section">
         <div className="flex items-center gap-4">
           <button
+            aria-label="返回项目列表"
             className="btn btn-ghost btn-icon"
             onClick={() => navigate('/projects')}
             type="button"
           >
-            <i className="ri-arrow-left-line text-2xl text-primary" />
+            <i aria-hidden="true" className="ri-arrow-left-line text-2xl text-primary" />
           </button>
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-3">{project.name}</h1>
@@ -130,15 +131,21 @@ export default function ProjectDetailView() {
         </div>
         <div className="flex gap-2">
           <button
+            aria-label="编辑项目"
             className="btn btn-ghost btn-icon"
             onClick={() => navigate(`/projects/edit/${project.id}`)}
             title="编辑项目"
             type="button"
           >
-            <i className="ri-edit-line" />
+            <i aria-hidden="true" className="ri-edit-line" />
           </button>
-          <button className="btn btn-ghost btn-icon" title="导出" type="button">
-            <i className="ri-download-2-line" />
+          <button
+            aria-label="导出项目"
+            className="btn btn-ghost btn-icon"
+            title="导出项目"
+            type="button"
+          >
+            <i aria-hidden="true" className="ri-download-2-line" />
           </button>
         </div>
       </div>

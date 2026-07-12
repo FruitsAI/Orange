@@ -131,6 +131,32 @@ describe('AppTopbar', () => {
     expect(screen.getByRole('menuitem', { name: '个人信息' })).toBeInTheDocument()
   })
 
+  test('closes the notification menu on Escape and restores trigger focus', async () => {
+    const user = userEvent.setup()
+    render(<AppTopbar />, { initialEntries: ['/dashboard'] })
+    const trigger = screen.getByRole('button', { name: '查看通知' })
+
+    await user.click(trigger)
+    expect(screen.getByRole('button', { name: '关闭通知菜单' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('button', { name: '关闭通知菜单' })).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+  })
+
+  test('closes the user menu on Escape and restores trigger focus', async () => {
+    const user = userEvent.setup()
+    render(<AppTopbar />, { initialEntries: ['/dashboard'] })
+    const trigger = screen.getByRole('button', { name: '打开用户菜单' })
+
+    await user.click(trigger)
+    expect(screen.getByRole('menuitem', { name: '个人信息' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('menuitem', { name: '个人信息' })).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+  })
+
   test('closes open menus when the current location changes', async () => {
     function LocationDriver() {
       const navigate = useNavigate()
@@ -160,13 +186,15 @@ describe('AppTopbar', () => {
     await user.click(screen.getByRole('button', { name: '查看通知' }))
     expect(screen.getByRole('menu', { name: '' })).toBeInTheDocument()
     await waitFor(() => expect(notificationApi.list).toHaveBeenCalledTimes(2))
-    await user.click(screen.getByRole('button', { name: '改变位置' }))
+    const locationButton = screen.getByRole('button', { name: '改变位置' })
+    await user.click(locationButton)
 
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: '关闭通知菜单' })).not.toBeInTheDocument(),
     )
     expect(notificationApi.list).toHaveBeenCalledTimes(2)
     expect(notificationApi.getUnreadCount).toHaveBeenCalledTimes(2)
+    expect(locationButton).toHaveFocus()
   })
 
   test('portals the full-window menu overlay outside the draggable topbar', async () => {
@@ -208,12 +236,17 @@ describe('AppTopbar', () => {
     })
     const { container } = render(<AppTopbar />, { initialEntries: ['/dashboard'] })
 
-    await user.click(screen.getByRole('button', { name: '查看通知' }))
+    const notificationTrigger = screen.getByRole('button', { name: '查看通知' })
+    await user.click(notificationTrigger)
     await waitFor(() => expect(screen.getByText('项目已更新')).toBeInTheDocument())
     await user.click(screen.getByText('项目已更新'))
 
     const dialog = screen.getByRole('dialog', { name: '通知详情' })
     expect(container.querySelector('.app-topbar')).not.toContainElement(dialog)
     expect(dialog.closest('.app-topbar-portal')).toBeInTheDocument()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: '通知详情' })).not.toBeInTheDocument()
+    expect(notificationTrigger).toHaveFocus()
   })
 })

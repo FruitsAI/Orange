@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Chart from 'chart.js/auto'
 import GlassCard from '@/components/common/GlassCard'
+import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useThemeStore } from '@/stores/theme'
 import { formatCurrency } from '@/utils/format'
 import {
@@ -16,21 +17,6 @@ interface IncomeChartProps {
   actualValues?: IncomeSeriesValue[]
   period: DashboardPeriod
   onPeriodChange: (period: DashboardPeriod) => void
-}
-
-function useReducedMotion() {
-  const [reducedMotion, setReducedMotion] = useState(
-    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  )
-
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const handleChange = (event: MediaQueryListEvent) => setReducedMotion(event.matches)
-    media.addEventListener('change', handleChange)
-    return () => media.removeEventListener('change', handleChange)
-  }, [])
-
-  return reducedMotion
 }
 
 export default function IncomeChart({

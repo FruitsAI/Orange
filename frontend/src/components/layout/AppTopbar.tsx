@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type MouseEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Window } from '@wailsio/runtime'
@@ -28,6 +28,8 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [recentNotifications, setRecentNotifications] = useState<Notification[]>([])
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
+  const notificationTriggerRef = useRef<HTMLButtonElement>(null)
+  const userTriggerRef = useRef<HTMLButtonElement>(null)
 
   const userInitial = (user?.name || user?.username || 'U').charAt(0).toUpperCase()
   const closeMenus = useCallback(() => {
@@ -35,6 +37,29 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   }, [])
   const showNotifications = activeMenu === 'notifications'
   const showUserMenu = activeMenu === 'user'
+
+  const closeMenuAndRestoreFocus = useCallback(() => {
+    const trigger =
+      activeMenu === 'notifications'
+        ? notificationTriggerRef.current
+        : activeMenu === 'user'
+          ? userTriggerRef.current
+          : null
+    closeMenus()
+    trigger?.focus()
+  }, [activeMenu, closeMenus])
+
+  useEffect(() => {
+    if (activeMenu !== 'notifications' && activeMenu !== 'user') return
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      closeMenuAndRestoreFocus()
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [activeMenu, closeMenuAndRestoreFocus])
 
   useEffect(() => {
     // Route changes are an external navigation event that invalidates open anchored menus.
@@ -69,6 +94,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
 
   const handleNotificationClick = async (item: Notification) => {
     closeMenus()
+    notificationTriggerRef.current?.focus()
     setSelectedNotification(item)
     if (item.is_read) return
 
@@ -166,6 +192,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
               setActiveMenu(showNotifications ? null : 'notifications')
               refreshNotifications()
             }}
+            ref={notificationTriggerRef}
             type="button"
           >
             <i aria-hidden="true" className="ri-notification-3-line" />
@@ -221,7 +248,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
                     <button
                       aria-label="关闭通知菜单"
                       className="app-topbar__overlay"
-                      onClick={closeMenus}
+                      onClick={closeMenuAndRestoreFocus}
                       type="button"
                     />,
                     document.body,
@@ -248,6 +275,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
             onClick={() => {
               setActiveMenu(showUserMenu ? null : 'user')
             }}
+            ref={userTriggerRef}
             type="button"
           >
             <span aria-hidden="true" className="app-topbar__avatar">
@@ -282,7 +310,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
                     <button
                       aria-label="关闭用户菜单"
                       className="app-topbar__overlay"
-                      onClick={closeMenus}
+                      onClick={closeMenuAndRestoreFocus}
                       type="button"
                     />,
                     document.body,

@@ -19,8 +19,8 @@ vi.mock('@/components/dashboard/IncomeChart', () => ({
     actualValues,
     expectedValues,
   }: {
-    actualValues: number[]
-    expectedValues: number[]
+    actualValues: Array<number | null>
+    expectedValues: Array<number | null>
   }) => (
     <div>
       趋势数据 计划 {expectedValues.join(',')} 实际 {actualValues.join(',')}
@@ -86,7 +86,8 @@ describe('DashboardView resource rendering', () => {
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: '近30天预计回款' })).toBeInTheDocument(),
     )
-    expect(screen.getByText('¥350.00')).toBeInTheDocument()
+    expect(screen.getByText('¥120.00')).toBeInTheDocument()
+    expect(screen.getByText('同期已回款 ¥100.00')).toBeInTheDocument()
     expect(screen.getByText('已结算')).toBeInTheDocument()
     expect(screen.getByText('¥700.00')).toBeInTheDocument()
     expect(screen.getByText('待结算')).toBeInTheDocument()
@@ -98,7 +99,7 @@ describe('DashboardView resource rendering', () => {
     expect(screen.getByLabelText('较上期上升 3.00%，表现改善')).toBeInTheDocument()
     expect(screen.getByLabelText('较上期上升 4.00%，表现承压')).toBeInTheDocument()
     expect(screen.getByLabelText('较上期上升 2.00%，表现承压')).toBeInTheDocument()
-    expect(screen.getByText('趋势数据 计划 120,230 实际 100')).toBeInTheDocument()
+    expect(screen.getByText('趋势数据 计划 120 实际 100')).toBeInTheDocument()
     expect(screen.getByText('行动队列 1')).toBeInTheDocument()
     expect(screen.queryByText('快捷操作')).not.toBeInTheDocument()
     expect(screen.getByLabelText('正在加载近期项目')).toBeInTheDocument()

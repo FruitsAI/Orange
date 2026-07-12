@@ -9,6 +9,7 @@ import DashboardSkeleton, { DashboardSectionSkeleton } from './dashboard/Dashboa
 import {
   findNearestUpcomingPayment,
   getPaymentDueLabel,
+  normalizeSeries,
   sumIncomeValues,
   toMetricTrend,
 } from './dashboard/dashboardModel'
@@ -27,11 +28,17 @@ export default function DashboardView() {
     trend,
   } = useDashboardData()
   const nearestPayment = findNearestUpcomingPayment(payments.data)
+  const expectedValues = trend.data
+    ? normalizeSeries(trend.data.labels, trend.data.expected_values)
+    : []
+  const actualValues = trend.data
+    ? normalizeSeries(trend.data.labels, trend.data.actual_values)
+    : []
   const expected: FinancialHeroProps['expected'] = trend.data
     ? {
-        amountText: formatCurrency(sumIncomeValues(trend.data.expected_values)),
+        amountText: formatCurrency(sumIncomeValues(expectedValues)),
         status: 'data',
-        supportingText: `同期已回款 ${formatCurrency(sumIncomeValues(trend.data.actual_values))}`,
+        supportingText: `同期已回款 ${formatCurrency(sumIncomeValues(actualValues))}`,
       }
     : trend.loading
       ? { status: 'loading' }
@@ -147,8 +154,8 @@ export default function DashboardView() {
           )}
           {trend.data && (
             <IncomeChart
-              actualValues={trend.data.actual_values}
-              expectedValues={trend.data.expected_values}
+              actualValues={actualValues}
+              expectedValues={expectedValues}
               labels={trend.data.labels}
               onPeriodChange={setPeriod}
               period={activePeriod}

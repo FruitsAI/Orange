@@ -16,7 +16,7 @@ export interface PaymentDisplayItem {
 
 const periodLabels: Record<DashboardPeriod, string> = {
   month: '近30天',
-  quarter: '本季度',
+  quarter: '近3个月',
   week: '近7天',
   year: '近12个月',
 }
@@ -25,8 +25,20 @@ export function getPeriodLabel(period: DashboardPeriod) {
   return periodLabels[period]
 }
 
-export function sumIncomeValues(values: number[]) {
-  return values.reduce((total, value) => total + value, 0)
+export type IncomeSeriesValue = number | null
+
+export function normalizeSeries(
+  labels: string[],
+  values?: ReadonlyArray<IncomeSeriesValue>,
+): IncomeSeriesValue[] {
+  return labels.map((_, index) => {
+    const value = values?.[index]
+    return typeof value === 'number' && Number.isFinite(value) ? value : null
+  })
+}
+
+export function sumIncomeValues(values: ReadonlyArray<IncomeSeriesValue>) {
+  return values.reduce<number>((total, value) => total + (value ?? 0), 0)
 }
 
 export function findNearestUpcomingPayment(payments: PaymentDisplayItem[] | null) {

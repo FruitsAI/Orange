@@ -1,6 +1,10 @@
 import type { ChartConfiguration, TooltipItem } from 'chart.js'
 import { formatCurrency } from '@/utils/format'
-import type { DashboardPeriod } from '@/views/dashboard/dashboardModel'
+import {
+  normalizeSeries,
+  type DashboardPeriod,
+  type IncomeSeriesValue,
+} from '@/views/dashboard/dashboardModel'
 
 export const incomePeriodOptions: Array<{
   label: string
@@ -13,17 +17,10 @@ export const incomePeriodOptions: Array<{
   { label: '年', period: 'year', subtitle: '近12个月计划与实际回款' },
 ]
 
-export function normalizeIncomeSeries(values: number[] | undefined, labelCount: number) {
-  return Array.from({ length: Math.max(0, labelCount) }, (_, index) => {
-    const value = values?.[index]
-    return typeof value === 'number' && Number.isFinite(value) ? value : null
-  })
-}
-
 interface IncomeChartConfigInput {
   labels?: string[]
-  expectedValues?: number[]
-  actualValues?: number[]
+  expectedValues?: IncomeSeriesValue[]
+  actualValues?: IncomeSeriesValue[]
   theme: 'light' | 'dark'
   reducedMotion: boolean
 }
@@ -50,7 +47,7 @@ export function createIncomeChartConfig({
           borderColor: isDark ? '#a89c91' : '#85796f',
           borderDash: [6, 6],
           borderWidth: 2,
-          data: normalizeIncomeSeries(expectedValues, safeLabels.length),
+          data: normalizeSeries(safeLabels, expectedValues),
           fill: false,
           label: '计划回款',
           pointRadius: 0,
@@ -61,7 +58,7 @@ export function createIncomeChartConfig({
           backgroundColor: isDark ? 'rgba(255, 138, 31, 0.16)' : 'rgba(226, 91, 20, 0.14)',
           borderColor: isDark ? '#ff9d45' : '#df5d16',
           borderWidth: 2.5,
-          data: normalizeIncomeSeries(actualValues, safeLabels.length),
+          data: normalizeSeries(safeLabels, actualValues),
           fill: true,
           label: '实际回款',
           pointBackgroundColor: isDark ? '#211d1a' : '#fffaf5',

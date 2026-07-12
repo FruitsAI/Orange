@@ -43,7 +43,7 @@ describe('ProjectList compact dashboard list', () => {
     const link = screen.getByRole('link', { name: /未来展厅.*回款进度75%/ })
     expect(link).toHaveTextContent('橙子科技')
     expect(link).toHaveTextContent('¥100,000.00')
-    expect(link).toHaveTextContent('75%')
+    expect(link).toHaveTextContent('回款 75%')
     expect(link).toHaveTextContent('进行中')
     expect(screen.queryByRole('columnheader')).not.toBeInTheDocument()
   })

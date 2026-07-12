@@ -58,7 +58,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
                     <span aria-hidden="true" className="project-list__progress-track">
                       <span style={{ width: `${progress}%` }} />
                     </span>
-                    <span>{progress}%</span>
+                    <span>回款 {progress}%</span>
                   </span>
                   <StatusBadge status={project.status} />
                   <i aria-hidden="true" className="ri-arrow-right-s-line project-list__arrow" />

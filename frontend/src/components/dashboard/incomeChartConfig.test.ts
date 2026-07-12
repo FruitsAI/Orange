@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  createIncomeChartConfig,
-  incomePeriodOptions,
-  normalizeIncomeSeries,
-} from './incomeChartConfig'
+import { normalizeSeries } from '@/views/dashboard/dashboardModel'
+import { createIncomeChartConfig, incomePeriodOptions } from './incomeChartConfig'
 
 describe('income chart configuration', () => {
   it('builds expected and actual series with distinct visual priority', () => {
@@ -62,18 +59,18 @@ describe('income chart configuration', () => {
   })
 
   it('normalizes each series to the label count without inventing unlabeled points', () => {
-    expect(normalizeIncomeSeries([100, 200, 300], 2)).toEqual([100, 200])
-    expect(normalizeIncomeSeries([100], 3)).toEqual([100, null, null])
-    expect(normalizeIncomeSeries(undefined, 2)).toEqual([null, null])
+    expect(normalizeSeries(['一月', '二月'], [100, 200, 300])).toEqual([100, 200])
+    expect(normalizeSeries(['一月', '二月', '三月'], [100])).toEqual([100, null, null])
+    expect(normalizeSeries(['一月', '二月'], undefined)).toEqual([null, null])
   })
 
   it('represents non-finite values as missing data instead of zero', () => {
-    expect(normalizeIncomeSeries([100, Number.NaN, Number.POSITIVE_INFINITY, -25], 4)).toEqual([
-      100,
-      null,
-      null,
-      -25,
-    ])
+    expect(
+      normalizeSeries(
+        ['一月', '二月', '三月', '四月'],
+        [100, Number.NaN, Number.POSITIVE_INFINITY, -25],
+      ),
+    ).toEqual([100, null, null, -25])
   })
 
   it('applies normalized series to the chart datasets', () => {

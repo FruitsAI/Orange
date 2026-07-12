@@ -3,17 +3,17 @@ import Chart from 'chart.js/auto'
 import GlassCard from '@/components/common/GlassCard'
 import { useThemeStore } from '@/stores/theme'
 import { formatCurrency } from '@/utils/format'
-import type { DashboardPeriod } from '@/views/dashboard/dashboardModel'
 import {
-  createIncomeChartConfig,
-  incomePeriodOptions,
-  normalizeIncomeSeries,
-} from './incomeChartConfig'
+  normalizeSeries,
+  type DashboardPeriod,
+  type IncomeSeriesValue,
+} from '@/views/dashboard/dashboardModel'
+import { createIncomeChartConfig, incomePeriodOptions } from './incomeChartConfig'
 
 interface IncomeChartProps {
   labels?: string[]
-  expectedValues?: number[]
-  actualValues?: number[]
+  expectedValues?: IncomeSeriesValue[]
+  actualValues?: IncomeSeriesValue[]
   period: DashboardPeriod
   onPeriodChange: (period: DashboardPeriod) => void
 }
@@ -59,8 +59,8 @@ export default function IncomeChart({
     [period],
   )
   const safeLabels = labels ?? []
-  const accessibleExpected = normalizeIncomeSeries(expectedValues, safeLabels.length)
-  const accessibleActual = normalizeIncomeSeries(actualValues, safeLabels.length)
+  const accessibleExpected = normalizeSeries(safeLabels, expectedValues)
+  const accessibleActual = normalizeSeries(safeLabels, actualValues)
 
   useEffect(() => {
     const context = canvasRef.current?.getContext('2d')

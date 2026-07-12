@@ -4,6 +4,8 @@ import type { PaymentDisplayItem } from './dashboardModel'
 import {
   findNearestUpcomingPayment,
   getPaymentDueLabel,
+  getPeriodLabel,
+  normalizeSeries,
   sumIncomeValues,
   toMetricTrend,
 } from './dashboardModel'
@@ -19,6 +21,17 @@ const payment = (id: number, daysLeft: number): PaymentDisplayItem => ({
 })
 
 describe('dashboard hero model', () => {
+  it('uses the same rolling three-month label as the income chart', () => {
+    expect(getPeriodLabel('quarter')).toBe('近3个月')
+  })
+
+  it('normalizes income values to labels before aggregation', () => {
+    const normalized = normalizeSeries(['一月', '二月'], [100, Number.NaN, 300])
+
+    expect(normalized).toEqual([100, null])
+    expect(sumIncomeValues(normalized)).toBe(100)
+  })
+
   it('sums the successful expected trend values without using dashboard totals', () => {
     const trend: IncomeTrend = {
       actual_values: [50, 75],

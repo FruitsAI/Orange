@@ -2,6 +2,7 @@
   --app-dock-height: 62px;
   --app-topbar-height: 64px;
   --app-topbar-inset: 14px;
+  --app-topbar-top-inset: 24px;
   --app-window-controls-space: 58px;
 }
 
@@ -51,7 +52,7 @@
   padding: 0 12px;
   position: fixed;
   right: var(--app-topbar-inset);
-  top: var(--app-topbar-inset);
+  top: var(--app-topbar-top-inset);
   transition:
     background-color 180ms ease,
     border-color 180ms ease,
@@ -615,8 +616,8 @@
   margin: 0 auto;
   max-width: 1600px;
   min-width: 0;
-  padding: calc(var(--app-topbar-height) + var(--app-topbar-inset) + 28px) clamp(18px, 3vw, 44px)
-    44px;
+  padding: calc(var(--app-topbar-height) + var(--app-topbar-top-inset) + 28px)
+    clamp(18px, 3vw, 44px) 44px;
   width: 100%;
 }
 

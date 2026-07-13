@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import type { Project } from '@/api/project'
-import GlassCard from '@/components/common/GlassCard'
+import EmberPanel from '@/components/common/EmberPanel'
+import EmptyState from '@/components/common/EmptyState'
+import PanelHeader from '@/components/common/PanelHeader'
 import StatusBadge from '@/components/common/StatusBadge'
 import { formatCurrency } from '@/utils/format'
 
@@ -18,28 +20,29 @@ export default function ProjectList({ projects }: ProjectListProps) {
   const visibleProjects = projects.slice(0, 5)
 
   return (
-    <GlassCard className="project-list-card project-list-card--compact">
-      <div className="glass-card-header">
-        <div>
-          <h3 className="glass-card-title">近期项目</h3>
-          <p className="glass-card-subtitle">最近创建的项目</p>
-        </div>
-        <Link className="btn btn-ghost btn-sm" to="/projects">
-          查看全部 <i aria-hidden="true" className="ri-arrow-right-line" />
-        </Link>
-      </div>
+    <EmberPanel>
+      <PanelHeader
+        action={
+          <Link className="btn btn-ghost btn-sm" to="/projects">
+            查看全部 <i aria-hidden="true" className="ri-arrow-right-line" />
+          </Link>
+        }
+        headingLevel={2}
+        subtitle="最近创建的项目"
+        title="近期项目"
+      />
 
       {visibleProjects.length === 0 ? (
-        <div className="project-list__empty">
-          <span aria-hidden="true" className="project-list__empty-icon">
-            <i className="ri-folder-add-line" />
-          </span>
-          <strong>还没有近期项目</strong>
-          <p>创建第一个项目，开始追踪合同与回款进度。</p>
-          <Link className="btn btn-secondary btn-sm" to="/projects/create">
-            新建项目
-          </Link>
-        </div>
+        <EmptyState
+          action={
+            <Link className="btn btn-secondary btn-sm" to="/projects/create">
+              新建项目
+            </Link>
+          }
+          description="创建第一个项目，开始追踪合同与回款进度。"
+          icon={<i className="ri-folder-add-line" />}
+          title="还没有近期项目"
+        />
       ) : (
         <ul className="project-list__items">
           {visibleProjects.map((project) => {
@@ -68,6 +71,6 @@ export default function ProjectList({ projects }: ProjectListProps) {
           })}
         </ul>
       )}
-    </GlassCard>
+    </EmberPanel>
   )
 }

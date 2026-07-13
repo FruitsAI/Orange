@@ -39,6 +39,7 @@ describe('ProjectList compact dashboard list', () => {
       />,
     )
 
+    expect(screen.getByRole('heading', { level: 2, name: '近期项目' })).toBeInTheDocument()
     expect(screen.getByText('最近创建的项目')).toBeInTheDocument()
     const link = screen.getByRole('link', { name: /未来展厅.*回款进度75%/ })
     expect(link).toHaveTextContent('橙子科技')

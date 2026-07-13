@@ -303,25 +303,6 @@
   height: 100%;
 }
 
-:is(.income-chart-card, .action-queue-card, .project-list-card--compact) {
-  border-color: var(--color-border);
-  background: var(--color-surface-raised);
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-:is(.income-chart-card, .action-queue-card, .project-list-card--compact)::before,
-:is(.income-chart-card, .action-queue-card, .project-list-card--compact)::after {
-  content: none;
-  display: none;
-}
-
-:is(.income-chart-card, .action-queue-card, .project-list-card--compact):hover {
-  box-shadow: var(--shadow-soft);
-  transform: none;
-}
-
 .income-chart__header {
   align-items: flex-start;
   gap: var(--space-4);
@@ -448,43 +429,6 @@
 .action-queue__arrow,
 .project-list__arrow {
   color: var(--color-text-subtle);
-}
-
-.action-queue__empty,
-.project-list__empty {
-  display: flex;
-  min-height: 236px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-6);
-  color: var(--color-text-muted);
-  text-align: center;
-}
-
-.action-queue__empty strong,
-.project-list__empty strong {
-  color: var(--color-text);
-}
-
-.action-queue__empty p,
-.project-list__empty p {
-  max-width: 34ch;
-  margin: 0 0 var(--space-2);
-  font-size: 0.82rem;
-}
-
-.action-queue__empty-icon,
-.project-list__empty-icon {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  border-radius: var(--radius-pill);
-  background: rgba(var(--color-accent-rgb), 0.1);
-  color: var(--color-accent);
-  font-size: 1.25rem;
 }
 
 .project-list__item {

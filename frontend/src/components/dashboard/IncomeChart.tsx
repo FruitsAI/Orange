@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Chart from 'chart.js/auto'
-import GlassCard from '@/components/common/GlassCard'
+import EmberPanel from '@/components/common/EmberPanel'
+import PanelHeader from '@/components/common/PanelHeader'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useThemeStore } from '@/stores/theme'
 import { formatCurrency } from '@/utils/format'
@@ -77,26 +78,28 @@ export default function IncomeChart({
   }, [actualValues, effectiveTheme, expectedValues, labels, reducedMotion])
 
   return (
-    <GlassCard className="income-chart-card">
-      <div className="glass-card-header income-chart__header">
-        <div>
-          <h3 className="glass-card-title">现金流趋势</h3>
-          <p className="glass-card-subtitle">{subtitle}</p>
-        </div>
-        <div aria-label="趋势周期" className="income-chart__periods" role="group">
-          {incomePeriodOptions.map((option) => (
-            <button
-              aria-pressed={period === option.period}
-              className={`btn btn-sm ${period === option.period ? 'btn-secondary active' : 'btn-ghost'}`}
-              key={option.period}
-              onClick={() => onPeriodChange(option.period)}
-              type="button"
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <EmberPanel>
+      <PanelHeader
+        action={
+          <div aria-label="趋势周期" className="income-chart__periods" role="group">
+            {incomePeriodOptions.map((option) => (
+              <button
+                aria-pressed={period === option.period}
+                className={`btn btn-sm ${period === option.period ? 'btn-secondary active' : 'btn-ghost'}`}
+                key={option.period}
+                onClick={() => onPeriodChange(option.period)}
+                type="button"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        }
+        className="income-chart__header"
+        headingLevel={2}
+        subtitle={subtitle}
+        title="现金流趋势"
+      />
       <div className="chart-container income-chart__canvas">
         <canvas aria-hidden="true" ref={canvasRef} />
       </div>
@@ -127,6 +130,6 @@ export default function IncomeChart({
           ))}
         </tbody>
       </table>
-    </GlassCard>
+    </EmberPanel>
   )
 }

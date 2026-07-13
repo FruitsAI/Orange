@@ -86,6 +86,7 @@ describe('IncomeChart', () => {
       />,
     )
 
+    expect(screen.getByRole('heading', { level: 2, name: '现金流趋势' })).toBeInTheDocument()
     expect(screen.getByText('近30天计划与实际回款')).toBeInTheDocument()
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
       '周',

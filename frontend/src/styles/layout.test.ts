@@ -10,6 +10,19 @@ const findStyleRule = (selector: string) =>
   )
 
 describe('topbar window interaction boundaries', () => {
+  test('separates the macOS top safety inset from the inline shell inset', () => {
+    const rootRule = findStyleRule(':root')
+    const topbarRule = findStyleRule('.app-topbar')
+    const contentRule = findStyleRule('.app-view-content')
+
+    expect(rootRule?.style.getPropertyValue('--app-topbar-top-inset')).toBe('24px')
+    expect(rootRule?.style.getPropertyValue('--app-topbar-inset')).toBe('14px')
+    expect(topbarRule?.style.top).toBe('var(--app-topbar-top-inset)')
+    expect(topbarRule?.style.left).toBe('var(--app-topbar-inset)')
+    expect(topbarRule?.style.right).toBe('var(--app-topbar-inset)')
+    expect(contentRule?.style.padding).toContain('var(--app-topbar-top-inset)')
+  })
+
   test('keeps the scrolled topbar stationary', () => {
     const scrolledRule = rules.find(
       (rule): rule is CSSStyleRule =>

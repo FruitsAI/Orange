@@ -23,6 +23,7 @@ describe('ActionQueue', () => {
   it('sorts overdue, today, and upcoming payments by urgency', () => {
     render(<ActionQueue payments={[payment(1, 5), payment(2, 0), payment(3, -2), payment(4, 2)]} />)
 
+    expect(screen.getByRole('heading', { level: 2, name: '待处理收款' })).toBeInTheDocument()
     const links = screen.getAllByRole('link', { name: /项目/ })
     expect(links.map((link) => link.textContent)).toEqual([
       expect.stringContaining('项目 3'),

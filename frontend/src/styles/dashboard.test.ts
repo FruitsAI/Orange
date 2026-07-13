@@ -3,6 +3,8 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const dashboardCss = readFileSync(resolve('src/styles/dashboard.css'), 'utf8')
+const componentsCss = readFileSync(resolve('src/styles/components.css'), 'utf8')
+const mainSource = readFileSync(resolve('src/main.tsx'), 'utf8')
 
 function relativeLuminance(hex: string) {
   const channels = hex
@@ -37,6 +39,19 @@ function composite(foreground: string, background: string, alpha: number) {
 }
 
 describe('dashboard visual contract', () => {
+  it('loads semantic component styles after legacy glass and before feature styles', () => {
+    const componentsIndex = mainSource.indexOf("import './styles/components.css'")
+    const liquidGlassIndex = mainSource.indexOf("import './assets/liquid-glass.css'")
+    const legacyMainIndex = mainSource.indexOf("import './assets/main.css'")
+    const layoutIndex = mainSource.indexOf("import './styles/layout.css'")
+    const dashboardIndex = mainSource.indexOf("import './styles/dashboard.css'")
+
+    expect(componentsIndex).toBeGreaterThan(liquidGlassIndex)
+    expect(componentsIndex).toBeGreaterThan(legacyMainIndex)
+    expect(componentsIndex).toBeLessThan(layoutIndex)
+    expect(componentsIndex).toBeLessThan(dashboardIndex)
+  })
+
   it('uses semantic design tokens and keeps its pseudo-element orbit non-interactive', () => {
     expect(dashboardCss).toContain('var(--color-surface)')
     expect(dashboardCss).toContain('var(--color-accent-rgb)')
@@ -65,10 +80,10 @@ describe('dashboard visual contract', () => {
   })
 
   it('keeps dashboard content cards opaque and motion restrained', () => {
-    expect(dashboardCss).toMatch(
-      /:is\(\.income-chart-card, \.action-queue-card, \.project-list-card--compact\)[\s\S]*background:\s*var\(--color-surface-raised\)/,
+    expect(componentsCss).toMatch(
+      /\.glass-card\.ember-panel\s*\{[\s\S]*background:\s*var\(--color-surface-raised\)/,
     )
-    expect(dashboardCss).toContain('backdrop-filter: none')
+    expect(componentsCss).toContain('backdrop-filter: none')
     expect(dashboardCss).toMatch(/\.action-queue__item:hover[\s\S]*translateY\(-2px\)/)
     expect(dashboardCss).toMatch(
       /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.action-queue__item:hover[\s\S]*transform:\s*none/,
@@ -76,11 +91,14 @@ describe('dashboard visual contract', () => {
   })
 
   it('fully neutralizes legacy GlassCard effects for dashboard content surfaces', () => {
-    expect(dashboardCss).toMatch(
-      /:is\(\.income-chart-card, \.action-queue-card, \.project-list-card--compact\)::before,[\s\S]*::after\s*\{[\s\S]*content:\s*none[\s\S]*display:\s*none/,
+    expect(componentsCss).toMatch(
+      /\.glass-card\.ember-panel::before,[\s\S]*\.glass-card\.ember-panel::after\s*\{[\s\S]*content:\s*none[\s\S]*display:\s*none/,
     )
-    expect(dashboardCss).toMatch(
-      /:is\(\.income-chart-card, \.action-queue-card, \.project-list-card--compact\):hover\s*\{[\s\S]*box-shadow:\s*var\(--shadow-soft\)[\s\S]*transform:\s*none/,
+    expect(componentsCss).toMatch(
+      /\.glass-card\.ember-panel:hover\s*\{[\s\S]*box-shadow:\s*var\(--shadow-soft\)[\s\S]*transform:\s*none/,
+    )
+    expect(dashboardCss).not.toContain(
+      ':is(.income-chart-card, .action-queue-card, .project-list-card--compact)',
     )
   })
 

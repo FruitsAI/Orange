@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
-import GlassCard from '@/components/common/GlassCard'
+import EmberPanel from '@/components/common/EmberPanel'
+import EmptyState from '@/components/common/EmptyState'
+import PanelHeader from '@/components/common/PanelHeader'
 import { formatCurrency } from '@/utils/format'
 import type { PaymentDisplayItem } from '@/views/dashboard/dashboardModel'
 
@@ -20,30 +22,31 @@ export default function ActionQueue({ payments, limit = 5 }: ActionQueueProps) {
     .slice(0, limit)
 
   return (
-    <GlassCard className="action-queue-card">
-      <div className="glass-card-header">
-        <div>
-          <h3 className="glass-card-title">待处理收款</h3>
-          <p className="glass-card-subtitle">按到期紧迫度排序</p>
-        </div>
-        {payments.length > 0 && (
-          <Link className="btn btn-ghost btn-sm" to="/calendar">
-            查看全部
-          </Link>
-        )}
-      </div>
+    <EmberPanel>
+      <PanelHeader
+        action={
+          payments.length > 0 ? (
+            <Link className="btn btn-ghost btn-sm" to="/calendar">
+              查看全部
+            </Link>
+          ) : undefined
+        }
+        headingLevel={2}
+        subtitle="按到期紧迫度排序"
+        title="待处理收款"
+      />
 
       {visiblePayments.length === 0 ? (
-        <div className="action-queue__empty">
-          <span aria-hidden="true" className="action-queue__empty-icon">
-            <i className="ri-checkbox-circle-line" />
-          </span>
-          <strong>未来七天暂无待处理收款</strong>
-          <p>可以前往收款日历查看更远日期的计划。</p>
-          <Link className="btn btn-ghost btn-sm" to="/calendar">
-            查看收款日历
-          </Link>
-        </div>
+        <EmptyState
+          action={
+            <Link className="btn btn-ghost btn-sm" to="/calendar">
+              查看收款日历
+            </Link>
+          }
+          description="可以前往收款日历查看更远日期的计划。"
+          icon={<i className="ri-checkbox-circle-line" />}
+          title="未来七天暂无待处理收款"
+        />
       ) : (
         <ol className="action-queue__list">
           {visiblePayments.map((item) => (
@@ -66,6 +69,6 @@ export default function ActionQueue({ payments, limit = 5 }: ActionQueueProps) {
           ))}
         </ol>
       )}
-    </GlassCard>
+    </EmberPanel>
   )
 }

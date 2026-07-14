@@ -85,7 +85,7 @@ describe('AppTopbar', () => {
     )
   })
 
-  test('maximises draggable topbar gaps but not interactive controls', () => {
+  test('uses the shared window action for draggable topbar gaps but not interactive controls', () => {
     const { container } = render(<AppTopbar />, { initialEntries: ['/dashboard'] })
 
     fireEvent.doubleClick(screen.getByRole('banner'))

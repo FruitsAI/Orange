@@ -2,7 +2,7 @@
   --app-dock-height: 62px;
   --app-topbar-height: 64px;
   --app-topbar-inset: 14px;
-  --app-topbar-top-inset: 24px;
+  --app-topbar-top-inset: 52px;
   --app-window-controls-space: 58px;
 }
 
@@ -34,6 +34,16 @@
 
 .app-background::after {
   content: none;
+}
+
+.app-titlebar-drag-region {
+  --wails-draggable: drag;
+  height: var(--app-topbar-top-inset);
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 999;
 }
 
 .app-topbar {
@@ -715,6 +725,7 @@
 
 @media print {
   .app-background,
+  .app-titlebar-drag-region,
   .app-topbar,
   .app-dock {
     display: none !important;

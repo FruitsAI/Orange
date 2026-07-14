@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import AppDock from '@/components/layout/AppDock'
 import AppTopbar from '@/components/layout/AppTopbar'
+import { handleWindowDragRegionDoubleClick } from '@/components/layout/windowDrag'
 import { useAmbientLight } from '@/hooks/useAmbientLight'
 
 export default function AppLayout() {
@@ -11,11 +12,26 @@ export default function AppLayout() {
 
   return (
     <div className="app-container">
-      <svg className="svg-filters" style={{ height: 0, overflow: 'hidden', position: 'absolute', width: 0 }}>
+      <svg
+        className="svg-filters"
+        style={{ height: 0, overflow: 'hidden', position: 'absolute', width: 0 }}
+      >
         <defs>
           <filter height="140%" id="glass-refraction" width="140%" x="-20%" y="-20%">
-            <feTurbulence baseFrequency="0.015" numOctaves="3" result="noise" seed="1" type="fractalNoise" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
+            <feTurbulence
+              baseFrequency="0.015"
+              numOctaves="3"
+              result="noise"
+              seed="1"
+              type="fractalNoise"
+            />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              scale="3"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
           </filter>
           <filter id="glass-blur">
             <feGaussianBlur in="SourceGraphic" stdDeviation="20" />
@@ -34,6 +50,11 @@ export default function AppLayout() {
       </svg>
 
       <div className="app-background" ref={appBackgroundRef} />
+      <div
+        aria-hidden="true"
+        className="app-titlebar-drag-region"
+        onDoubleClick={handleWindowDragRegionDoubleClick}
+      />
       <AppTopbar scrolled={scrolled} />
       <main
         className="app-main"

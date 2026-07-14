@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Window } from '@wailsio/runtime'
 import { notificationApi, type Notification } from '@/api/notification'
 import ThemeSelector from '@/components/common/ThemeSelector'
 import NotificationDetailModal from '@/components/notification/NotificationDetailModal'
 import { useAuthStore } from '@/stores/auth'
 import { primaryNavigationItems } from './primaryNavigation'
+import { handleWindowDragRegionDoubleClick } from './windowDrag'
 
 const getNotificationTypeName = (type: number) => {
   if (type === 2) return '活动'
@@ -120,25 +120,11 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
     await navigate('/login')
   }
 
-  const handleTopbarDoubleClick = (event: MouseEvent<HTMLElement>) => {
-    const target = event.target
-    if (!(target instanceof Element)) return
-    if (target.closest('a, button, input, select, textarea, [role="dialog"]')) return
-    if (window.getComputedStyle(target).getPropertyValue('--wails-draggable').trim() !== 'drag')
-      return
-
-    try {
-      void Window.ToggleMaximise().catch(() => {})
-    } catch {
-      // The browser preview has no native Wails window transport.
-    }
-  }
-
   return (
     <header
       className="app-topbar"
       data-scrolled={scrolled || undefined}
-      onDoubleClick={handleTopbarDoubleClick}
+      onDoubleClick={handleWindowDragRegionDoubleClick}
     >
       <NavLink
         aria-label="Orange 工作台"

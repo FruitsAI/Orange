@@ -1,0 +1,70 @@
+.ods-progress {
+  --ods-progress-color: var(--ods-color-accent);
+
+  width: 100%;
+}
+
+.ods-progress[data-tone='success'] {
+  --ods-progress-color: var(--ods-color-status-success);
+}
+
+.ods-progress[data-tone='warning'] {
+  --ods-progress-color: var(--ods-color-status-warning);
+}
+
+.ods-progress[data-tone='danger'] {
+  --ods-progress-color: var(--ods-color-status-danger);
+}
+
+.ods-progress__track {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: var(--ods-space-2);
+  overflow: hidden;
+  border-radius: var(--ods-radius-pill);
+  background: var(--ods-color-bg-surface-hover);
+}
+
+.ods-progress[data-size='sm'] .ods-progress__track {
+  height: var(--ods-space-1);
+}
+
+.ods-progress[data-size='lg'] .ods-progress__track {
+  height: var(--ods-space-3);
+}
+
+.ods-progress__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ods-progress-color);
+  transition: width var(--ods-duration-page) var(--ods-ease-emphasized);
+}
+
+.ods-progress[data-indeterminate='true'] .ods-progress__fill {
+  width: 42%;
+  animation: ods-progress-indeterminate 1.4s var(--ods-ease-emphasized) infinite;
+}
+
+@keyframes ods-progress-indeterminate {
+  from {
+    transform: translateX(-120%);
+  }
+
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ods-progress__fill {
+    transition: none;
+  }
+
+  .ods-progress[data-indeterminate='true'] .ods-progress__fill {
+    width: 100%;
+    animation: none;
+    opacity: 0.55;
+  }
+}

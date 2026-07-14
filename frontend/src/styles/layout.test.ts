@@ -16,7 +16,7 @@ describe('topbar window interaction boundaries', () => {
     const topbarRule = findStyleRule('.app-topbar')
     const contentRule = findStyleRule('.app-view-content')
 
-    expect(rootRule?.style.getPropertyValue('--app-topbar-top-inset')).toBe('52px')
+    expect(rootRule?.style.getPropertyValue('--app-topbar-top-inset')).toBe('68px')
     expect(rootRule?.style.getPropertyValue('--app-topbar-inset')).toBe('14px')
     expect(dragRegionRule?.style.position).toBe('fixed')
     expect(dragRegionRule?.style.top).toBe('0px')

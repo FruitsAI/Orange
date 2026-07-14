@@ -1,0 +1,79 @@
+.ods-tabs {
+  display: grid;
+  gap: var(--ods-space-4);
+  min-width: 0;
+}
+
+.ods-tabs__list {
+  align-items: center;
+  background: var(--ods-color-bg-canvas-subtle);
+  border: 1px solid var(--ods-color-border-default);
+  border-radius: var(--ods-radius-pill);
+  display: inline-flex;
+  gap: var(--ods-space-1);
+  padding: var(--ods-space-1);
+  width: fit-content;
+}
+
+.ods-tabs__list[data-orientation='vertical'] {
+  align-items: stretch;
+  border-radius: var(--ods-radius-panel);
+  flex-direction: column;
+}
+
+.ods-tabs__tab {
+  background: transparent;
+  border: 0;
+  border-radius: var(--ods-radius-pill);
+  color: var(--ods-color-fg-muted);
+  cursor: pointer;
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-sm);
+  font-weight: var(--ods-font-weight-medium);
+  height: var(--ods-control-height-sm);
+  line-height: var(--ods-line-height-body);
+  padding-inline: var(--ods-control-padding-inline-sm);
+  transition:
+    background-color var(--ods-duration-fast) var(--ods-ease-standard),
+    box-shadow var(--ods-duration-fast) var(--ods-ease-standard),
+    color var(--ods-duration-fast) var(--ods-ease-standard),
+    transform var(--ods-duration-fast) var(--ods-ease-standard);
+}
+
+.ods-tabs__tab:hover:not(:disabled) {
+  background: var(--ods-color-bg-surface-hover);
+  color: var(--ods-color-fg-default);
+}
+
+.ods-tabs__tab[aria-selected='true'] {
+  background: var(--ods-color-bg-surface-raised);
+  box-shadow: var(--ods-shadow-soft);
+  color: var(--ods-color-accent);
+}
+
+.ods-tabs__tab:focus-visible {
+  outline: var(--ods-focus-ring-width) solid var(--ods-color-border-focus);
+  outline-offset: var(--ods-focus-ring-offset);
+}
+
+.ods-tabs__tab:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.ods-tabs__tab:disabled {
+  color: var(--ods-color-fg-disabled);
+  cursor: not-allowed;
+}
+
+.ods-tabs__panel {
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-body);
+  min-width: 0;
+  outline: none;
+}
+
+.ods-tabs__panel:focus-visible {
+  border-radius: var(--ods-radius-sm);
+  outline: var(--ods-focus-ring-width) solid var(--ods-color-border-focus);
+  outline-offset: var(--ods-focus-ring-offset);
+}

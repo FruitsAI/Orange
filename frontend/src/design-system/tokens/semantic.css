@@ -1,0 +1,88 @@
+/**
+ * Theme-independent public tokens.
+ *
+ * Product and component styles may consume --ods-* semantic tokens. They must
+ * not depend on --ods-ref-* values or legacy Orange variables directly.
+ */
+:root {
+  /* Typography */
+  --ods-font-family-display: var(--ods-ref-font-family-display);
+  --ods-font-family-body: var(--ods-ref-font-family-body);
+  --ods-font-family-mono: var(--ods-ref-font-family-mono);
+  --ods-font-weight-regular: var(--ods-ref-font-weight-regular);
+  --ods-font-weight-medium: var(--ods-ref-font-weight-medium);
+  --ods-font-weight-semibold: var(--ods-ref-font-weight-semibold);
+  --ods-font-weight-bold: var(--ods-ref-font-weight-bold);
+  --ods-font-size-xs: var(--ods-ref-font-size-11);
+  --ods-font-size-sm: var(--ods-ref-font-size-12);
+  --ods-font-size-md: var(--ods-ref-font-size-14);
+  --ods-font-size-lg: var(--ods-ref-font-size-16);
+  --ods-font-size-xl: var(--ods-ref-font-size-17);
+  --ods-font-size-2xl: var(--ods-ref-font-size-20);
+  --ods-font-size-3xl: var(--ods-ref-font-size-30);
+  --ods-font-size-display: var(--ods-ref-font-size-56);
+  --ods-line-height-tight: var(--ods-ref-line-height-tight);
+  --ods-line-height-heading: var(--ods-ref-line-height-heading);
+  --ods-line-height-body: var(--ods-ref-line-height-body);
+  --ods-line-height-relaxed: var(--ods-ref-line-height-relaxed);
+  --ods-letter-spacing-tight: var(--ods-ref-letter-spacing-tight);
+  --ods-letter-spacing-body: var(--ods-ref-letter-spacing-body);
+  --ods-letter-spacing-wide: var(--ods-ref-letter-spacing-wide);
+
+  /* Spacing */
+  --ods-space-0: var(--ods-ref-space-0);
+  --ods-space-1: var(--ods-ref-space-1);
+  --ods-space-2: var(--ods-ref-space-2);
+  --ods-space-3: var(--ods-ref-space-3);
+  --ods-space-4: var(--ods-ref-space-4);
+  --ods-space-5: var(--ods-ref-space-5);
+  --ods-space-6: var(--ods-ref-space-6);
+  --ods-space-8: var(--ods-ref-space-8);
+  --ods-space-10: var(--ods-ref-space-10);
+  --ods-space-12: var(--ods-ref-space-12);
+  --ods-space-14: var(--ods-ref-space-14);
+  --ods-space-16: var(--ods-ref-space-16);
+
+  /* Geometry and controls */
+  --ods-radius-none: var(--ods-ref-radius-0);
+  --ods-radius-xs: var(--ods-ref-radius-4);
+  --ods-radius-sm: var(--ods-ref-radius-8);
+  --ods-radius-control: var(--ods-ref-radius-10);
+  --ods-radius-md: var(--ods-ref-radius-12);
+  --ods-radius-panel: var(--ods-ref-radius-16);
+  --ods-radius-shell: var(--ods-ref-radius-20);
+  --ods-radius-lg: var(--ods-ref-radius-24);
+  --ods-radius-pill: var(--ods-ref-radius-full);
+  --ods-control-height-sm: var(--ods-ref-control-height-sm);
+  --ods-control-height-md: var(--ods-ref-control-height-md);
+  --ods-control-height-lg: var(--ods-ref-control-height-lg);
+  --ods-control-padding-inline-sm: var(--ods-ref-space-3);
+  --ods-control-padding-inline-md: var(--ods-ref-space-4);
+  --ods-control-padding-inline-lg: var(--ods-ref-space-5);
+  --ods-control-gap: var(--ods-ref-space-2);
+
+  /* Motion */
+  --ods-duration-instant: var(--ods-ref-duration-140);
+  --ods-duration-fast: var(--ods-ref-duration-200);
+  --ods-duration-page: var(--ods-ref-duration-280);
+  --ods-duration-hero: var(--ods-ref-duration-440);
+  --ods-ease-standard: var(--ods-ref-ease-standard);
+  --ods-ease-emphasized: var(--ods-ref-ease-emphasized);
+  --ods-ease-spring: var(--ods-ref-ease-spring);
+
+  /* Focus and stacking */
+  --ods-focus-ring-width: 2px;
+  --ods-focus-ring-offset: 3px;
+  --ods-z-base: var(--ods-ref-z-base);
+  --ods-z-sticky: var(--ods-ref-z-sticky);
+  --ods-z-dropdown: var(--ods-ref-z-dropdown);
+  --ods-z-overlay: var(--ods-ref-z-overlay);
+  --ods-z-modal: var(--ods-ref-z-modal);
+  --ods-z-toast: var(--ods-ref-z-toast);
+
+  /* Desktop shell */
+  --ods-shell-titlebar-clearance: 52px;
+  --ods-shell-topbar-height: 64px;
+  --ods-shell-topbar-inline-inset: 14px;
+  --ods-shell-content-gap: var(--ods-space-6);
+}

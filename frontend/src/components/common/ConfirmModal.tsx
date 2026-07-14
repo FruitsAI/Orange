@@ -1,4 +1,5 @@
 import { useId, useRef } from 'react'
+import { Button } from '@/design-system'
 import { useDialogFocus } from '@/hooks/useDialogFocus'
 
 interface ConfirmModalProps {
@@ -44,12 +45,12 @@ export default function ConfirmModal({
         </h3>
         <p className="confirm-message">{message}</p>
         <div className="confirm-actions">
-          <button className="btn btn-ghost" onClick={onCancel} ref={cancelRef} type="button">
+          <Button onClick={onCancel} ref={cancelRef} variant="ghost">
             取消
-          </button>
-          <button className="btn btn-primary" onClick={onConfirm} type="button">
+          </Button>
+          <Button onClick={onConfirm} variant="primary">
             确认
-          </button>
+          </Button>
         </div>
       </div>
     </div>

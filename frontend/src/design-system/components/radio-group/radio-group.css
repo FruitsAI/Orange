@@ -1,0 +1,102 @@
+.ods-radio-group {
+  border: 0;
+  display: grid;
+  gap: var(--ods-space-3);
+  margin: var(--ods-space-0);
+  min-width: 0;
+  padding: var(--ods-space-0);
+}
+
+.ods-radio-group__legend {
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-sm);
+  font-weight: var(--ods-font-weight-semibold);
+  line-height: var(--ods-line-height-body);
+  margin-block-end: var(--ods-space-2);
+  padding: var(--ods-space-0);
+}
+
+.ods-radio {
+  align-items: center;
+  color: var(--ods-color-fg-default);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-sm);
+  gap: var(--ods-control-gap);
+  line-height: var(--ods-line-height-body);
+  position: relative;
+  width: fit-content;
+}
+
+.ods-radio__input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.ods-radio__control {
+  align-items: center;
+  background: var(--ods-color-bg-surface);
+  border: 1px solid var(--ods-color-border-strong);
+  border-radius: var(--ods-radius-pill);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: var(--ods-space-5);
+  justify-content: center;
+  transition:
+    background-color var(--ods-duration-fast) var(--ods-ease-standard),
+    border-color var(--ods-duration-fast) var(--ods-ease-standard),
+    box-shadow var(--ods-duration-fast) var(--ods-ease-standard),
+    transform var(--ods-duration-fast) var(--ods-ease-standard);
+  width: var(--ods-space-5);
+}
+
+.ods-radio__indicator {
+  background: var(--ods-color-accent-fg);
+  border-radius: var(--ods-radius-pill);
+  height: var(--ods-space-2);
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity var(--ods-duration-fast) var(--ods-ease-standard),
+    transform var(--ods-duration-fast) var(--ods-ease-standard);
+  width: var(--ods-space-2);
+}
+
+.ods-radio:hover .ods-radio__control {
+  background: var(--ods-color-bg-surface-hover);
+  border-color: var(--ods-color-accent);
+}
+
+.ods-radio__input:focus-visible + .ods-radio__control {
+  box-shadow: 0 0 0 var(--ods-focus-ring-width) var(--ods-color-selection);
+  outline: var(--ods-focus-ring-width) solid var(--ods-color-border-focus);
+  outline-offset: var(--ods-focus-ring-offset);
+}
+
+.ods-radio__input:checked + .ods-radio__control {
+  background: var(--ods-color-accent);
+  border-color: var(--ods-color-accent);
+}
+
+.ods-radio__input:checked + .ods-radio__control .ods-radio__indicator {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.ods-radio:active .ods-radio__control {
+  transform: scale(0.94);
+}
+
+.ods-radio[data-disabled='true'] {
+  color: var(--ods-color-fg-disabled);
+  cursor: not-allowed;
+}
+
+.ods-radio[data-disabled='true'] .ods-radio__control {
+  background: var(--ods-color-bg-canvas-subtle);
+  border-color: var(--ods-color-border-default);
+}

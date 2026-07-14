@@ -1,0 +1,104 @@
+.ods-surface,
+.ods-card {
+  border: 1px solid var(--ods-color-border-default);
+  border-radius: var(--ods-radius-panel);
+  color: var(--ods-color-fg-default);
+}
+
+.ods-surface[data-padding='none'],
+.ods-card[data-padding='none'] {
+  padding: var(--ods-space-0);
+}
+
+.ods-surface[data-padding='sm'],
+.ods-card[data-padding='sm'] {
+  padding: var(--ods-space-3);
+}
+
+.ods-surface[data-padding='md'],
+.ods-card[data-padding='md'] {
+  padding: var(--ods-space-5);
+}
+
+.ods-surface[data-padding='lg'],
+.ods-card[data-padding='lg'] {
+  padding: var(--ods-space-6);
+}
+
+.ods-surface[data-variant='base'] {
+  background: var(--ods-color-bg-surface);
+}
+
+.ods-surface[data-variant='raised'] {
+  background: var(--ods-color-bg-surface-raised);
+  box-shadow: var(--ods-shadow-soft);
+}
+
+.ods-surface[data-variant='glass'] {
+  background: var(--ods-color-bg-surface-glass);
+  box-shadow: var(--ods-shadow-panel);
+  backdrop-filter: blur(28px) saturate(145%);
+}
+
+.ods-surface[data-variant='inset'] {
+  background: var(--ods-color-bg-canvas-subtle);
+  box-shadow: inset 0 1px 0 var(--ods-color-border-default);
+}
+
+.ods-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-4);
+}
+
+.ods-card[data-variant='transparent'] {
+  border-color: transparent;
+  background: transparent;
+}
+
+.ods-card[data-variant='default'] {
+  background: var(--ods-color-bg-surface);
+}
+
+.ods-card[data-variant='secondary'] {
+  background: var(--ods-color-bg-surface-raised);
+  box-shadow: var(--ods-shadow-soft);
+}
+
+.ods-card[data-variant='tertiary'] {
+  background: var(--ods-color-bg-surface-glass);
+  box-shadow: var(--ods-shadow-panel);
+}
+
+.ods-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-1);
+}
+
+.ods-card__title {
+  margin: var(--ods-space-0);
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-display);
+  font-size: var(--ods-font-size-lg);
+  font-weight: var(--ods-font-weight-semibold);
+  line-height: var(--ods-line-height-heading);
+  letter-spacing: var(--ods-letter-spacing-tight);
+}
+
+.ods-card__description {
+  margin: var(--ods-space-0);
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-sm);
+  line-height: var(--ods-line-height-body);
+}
+
+.ods-card__content {
+  min-width: 0;
+}
+
+.ods-card__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--ods-space-3);
+}

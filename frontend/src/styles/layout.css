@@ -1,9 +1,8 @@
 :root {
   --app-dock-height: 62px;
   --app-topbar-height: 64px;
-  --app-topbar-inset: 14px;
-  --app-topbar-top-inset: 68px;
-  --app-window-controls-space: 58px;
+  --app-topbar-inset: 76px;
+  --app-topbar-top-inset: 12px;
 }
 
 .app-container {
@@ -104,7 +103,6 @@
   gap: 10px;
   justify-self: start;
   letter-spacing: -0.02em;
-  padding-left: var(--app-window-controls-space);
   text-decoration: none;
 }
 
@@ -632,10 +630,6 @@
 }
 
 @media (max-width: 1180px) {
-  :root {
-    --app-window-controls-space: 42px;
-  }
-
   .app-topbar__brand span,
   .app-topbar__user-name,
   .app-topbar__user-button > .ri-arrow-down-s-line {

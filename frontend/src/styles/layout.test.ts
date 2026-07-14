@@ -10,14 +10,14 @@ const findStyleRule = (selector: string) =>
   )
 
 describe('topbar window interaction boundaries', () => {
-  test('separates the macOS top safety inset from the inline shell inset', () => {
+  test('keeps a compact draggable topbar clear of the macOS window controls', () => {
     const rootRule = findStyleRule(':root')
     const dragRegionRule = findStyleRule('.app-titlebar-drag-region')
     const topbarRule = findStyleRule('.app-topbar')
     const contentRule = findStyleRule('.app-view-content')
 
-    expect(rootRule?.style.getPropertyValue('--app-topbar-top-inset')).toBe('68px')
-    expect(rootRule?.style.getPropertyValue('--app-topbar-inset')).toBe('14px')
+    expect(rootRule?.style.getPropertyValue('--app-topbar-top-inset')).toBe('12px')
+    expect(rootRule?.style.getPropertyValue('--app-topbar-inset')).toBe('76px')
     expect(dragRegionRule?.style.position).toBe('fixed')
     expect(dragRegionRule?.style.top).toBe('0px')
     expect(dragRegionRule?.style.left).toBe('0px')
@@ -28,6 +28,7 @@ describe('topbar window interaction boundaries', () => {
     expect(topbarRule?.style.top).toBe('var(--app-topbar-top-inset)')
     expect(topbarRule?.style.left).toBe('var(--app-topbar-inset)')
     expect(topbarRule?.style.right).toBe('var(--app-topbar-inset)')
+    expect(topbarRule?.style.getPropertyValue('--wails-draggable')).toBe('drag')
     expect(contentRule?.style.padding).toContain('var(--app-topbar-top-inset)')
   })
 

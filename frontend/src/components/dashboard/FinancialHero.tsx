@@ -111,10 +111,15 @@ export default function FinancialHero({
   periodLabel,
 }: FinancialHeroProps) {
   return (
-    <section aria-busy={busy} aria-label="财务概览" className="financial-hero">
+    <section
+      aria-busy={busy}
+      aria-label="财务概览"
+      className="financial-hero"
+      data-motion="entrance"
+    >
       <div className="financial-hero__content">
         <div className="financial-hero__eyebrow">
-          <span aria-hidden="true" className="financial-hero__pulse" />
+          <span aria-hidden="true" className="financial-hero__pulse" data-motion="continuous" />
           Ember Orbit
         </div>
         <h1 className="financial-hero__title">{periodLabel}预计回款</h1>

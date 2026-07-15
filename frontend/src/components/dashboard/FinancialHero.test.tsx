@@ -26,7 +26,15 @@ describe('FinancialHero', () => {
   it('presents the period expected income as the semantic hero heading and stable RMB amount', () => {
     render(<FinancialHero {...baseProps} />)
 
+    expect(screen.getByRole('region', { name: '财务概览' })).toHaveAttribute(
+      'data-motion',
+      'entrance',
+    )
     expect(screen.getByRole('region', { name: '财务概览' })).toBeInTheDocument()
+    expect(document.querySelector('.financial-hero__pulse')).toHaveAttribute(
+      'data-motion',
+      'continuous',
+    )
     expect(screen.getByRole('heading', { level: 1, name: '近30天预计回款' })).toBeInTheDocument()
     expect(screen.getByText('人民币 12,345 元')).toBeInTheDocument()
   })

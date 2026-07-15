@@ -96,7 +96,7 @@ export default function DashboardView() {
   if (initialLoading) return <DashboardSkeleton />
 
   return (
-    <div className="ember-dashboard">
+    <div className="ember-dashboard" data-motion-scope="dashboard">
       <FinancialHero
         busy={
           stats.loading ||
@@ -120,7 +120,11 @@ export default function DashboardView() {
         periodLabel={periodLabel}
       />
 
-      <div aria-busy={stats.loading || stats.refreshing} className="ember-dashboard__metrics">
+      <div
+        aria-busy={stats.loading || stats.refreshing}
+        className="ember-dashboard__metrics"
+        data-motion-group="summary-metrics"
+      >
         {summaryMetrics.map((metric) => (
           <SummaryMetric key={metric.label} {...metric} />
         ))}
@@ -141,6 +145,7 @@ export default function DashboardView() {
           aria-busy={trend.loading || trend.refreshing}
           aria-label="现金流趋势"
           className="dashboard-action-grid__chart flex flex-col gap-md"
+          data-motion="entrance"
         >
           {trend.error && (
             <DashboardError
@@ -166,6 +171,7 @@ export default function DashboardView() {
           aria-busy={payments.loading || payments.refreshing}
           aria-label="待处理收款"
           className="dashboard-action-grid__queue flex flex-col gap-md"
+          data-motion="entrance"
         >
           {payments.error && (
             <DashboardError
@@ -185,6 +191,7 @@ export default function DashboardView() {
         aria-busy={projects.loading || projects.refreshing}
         aria-label="近期项目"
         className="dashboard-recent-projects flex flex-col gap-md"
+        data-motion="entrance"
       >
         {projects.error && (
           <DashboardError

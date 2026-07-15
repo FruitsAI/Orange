@@ -4,6 +4,59 @@
   gap: var(--space-5);
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  [data-motion-scope='dashboard'] [data-motion='entrance'] {
+    animation: ember-enter-up var(--motion-page) var(--ease-emphasized) both;
+  }
+
+  [data-motion-scope='dashboard'] [data-motion-group] > [data-motion-item] {
+    animation-name: ember-fade-in;
+    animation-duration: var(--motion-fast);
+    animation-delay: 60ms;
+  }
+
+  [data-motion-group='summary-metrics'] > :nth-child(2) {
+    animation-delay: 100ms;
+  }
+
+  [data-motion-group='summary-metrics'] > :nth-child(3) {
+    animation-delay: 140ms;
+  }
+
+  .dashboard-action-grid > section[data-motion='entrance'] {
+    animation-delay: 160ms;
+  }
+
+  .dashboard-action-grid > section:nth-child(2)[data-motion='entrance'] {
+    animation-delay: 200ms;
+  }
+
+  .dashboard-recent-projects[data-motion='entrance'] {
+    animation-delay: 240ms;
+  }
+}
+
+@keyframes financial-hero-busy-pulse {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes project-progress-reveal {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 .financial-hero {
   --hero-risk: var(--color-danger);
   --hero-foreground: var(--color-text);
@@ -99,6 +152,10 @@
   box-shadow: 0 0 18px rgba(var(--color-accent-rgb), 0.72);
 }
 
+.financial-hero[aria-busy='true'] .financial-hero__pulse {
+  animation: financial-hero-busy-pulse 1.2s var(--ease-standard) infinite;
+}
+
 .financial-hero__title {
   color: var(--hero-foreground-muted);
   font-size: clamp(1rem, 1.8vw, 1.25rem);
@@ -184,9 +241,12 @@
     box-shadow var(--motion-instant) var(--ease-standard);
 }
 
-.financial-hero__cta:hover {
-  box-shadow: 0 16px 36px rgba(var(--color-accent-rgb), 0.32);
-  transform: translateY(-2px);
+.financial-hero__cta i {
+  transition: transform var(--motion-instant) var(--ease-standard);
+}
+
+.financial-hero__cta:active {
+  transform: scale(0.98);
 }
 
 .payment-item--highlighted {
@@ -380,12 +440,6 @@
   background: var(--color-accent);
 }
 
-.action-queue__item:hover {
-  border-color: var(--color-border-strong);
-  background: var(--color-surface);
-  transform: translateY(-2px);
-}
-
 .action-queue__copy,
 .action-queue__meta,
 .project-list__identity {
@@ -429,6 +483,12 @@
 .action-queue__arrow,
 .project-list__arrow {
   color: var(--color-text-subtle);
+  transition: transform var(--motion-instant) var(--ease-standard);
+}
+
+.action-queue__item:active,
+.project-list__item:active {
+  transform: scale(0.985);
 }
 
 .project-list__item {
@@ -446,12 +506,6 @@
     border-color var(--motion-instant) var(--ease-standard),
     background var(--motion-instant) var(--ease-standard),
     transform var(--motion-instant) var(--ease-standard);
-}
-
-.project-list__item:hover {
-  border-color: var(--color-border);
-  background: color-mix(in srgb, var(--color-surface) 76%, transparent);
-  transform: translateY(-1px);
 }
 
 .project-list__amount {
@@ -483,6 +537,8 @@
   height: 100%;
   border-radius: inherit;
   background: var(--gradient-glow);
+  animation: project-progress-reveal var(--motion-page) var(--ease-emphasized) both;
+  transform-origin: left center;
 }
 
 .dashboard-skeleton__surface {
@@ -533,6 +589,36 @@
 
 [data-theme='dark'] .financial-hero__cta {
   color: var(--color-bg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .financial-hero__cta:hover {
+    box-shadow: 0 16px 36px rgba(var(--color-accent-rgb), 0.32);
+    transform: translateY(-2px);
+  }
+
+  .financial-hero__cta:hover i {
+    transform: translate(2px, -2px);
+  }
+
+  .financial-hero__cta:hover:active {
+    transform: scale(0.98);
+  }
+
+  .action-queue__item:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface);
+  }
+
+  .action-queue__item:hover .action-queue__arrow,
+  .project-list__item:hover .project-list__arrow {
+    transform: translateX(3px);
+  }
+
+  .project-list__item:hover {
+    border-color: var(--color-border);
+    background: color-mix(in srgb, var(--color-surface) 76%, transparent);
+  }
 }
 
 @media (max-width: 720px) {
@@ -591,16 +677,22 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .financial-hero[aria-busy='true'] .financial-hero__pulse,
+  .project-list__progress-track > span {
+    animation: none;
+    transform: none;
+  }
+
   .financial-hero::after {
     transform: translateY(-50%);
   }
 
-  .financial-hero__cta:hover {
-    transform: none;
-  }
-
+  .financial-hero__cta:hover,
+  .financial-hero__cta:active,
   .action-queue__item:hover,
-  .project-list__item:hover {
+  .action-queue__item:active,
+  .project-list__item:hover,
+  .project-list__item:active {
     transform: none;
   }
 }

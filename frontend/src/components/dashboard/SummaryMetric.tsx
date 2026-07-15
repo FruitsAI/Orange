@@ -16,7 +16,12 @@ export default function SummaryMetric({ icon, label, status, trend, value }: Sum
     status === 'loading' ? `${label}加载中` : status === 'error' ? '暂不可用' : value
 
   return (
-    <article aria-busy={status === 'loading'} className="summary-metric">
+    <article
+      aria-busy={status === 'loading'}
+      className="summary-metric"
+      data-motion="entrance"
+      data-motion-item
+    >
       <div aria-hidden="true" className="summary-metric__icon">
         <i className={icon} />
       </div>

@@ -16,6 +16,8 @@ describe('SummaryMetric', () => {
 
     expect(screen.getByText('已结算')).toBeInTheDocument()
     expect(screen.getByText('¥8,000.00')).toBeInTheDocument()
+    expect(screen.getByRole('article')).toHaveAttribute('data-motion', 'entrance')
+    expect(screen.getByRole('article')).toHaveAttribute('data-motion-item')
     expect(container.querySelector('.ri-checkbox-circle-line')).toBeInTheDocument()
     expect(screen.queryByText(/较上期/)).not.toBeInTheDocument()
   })

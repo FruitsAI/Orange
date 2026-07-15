@@ -81,7 +81,7 @@ describe('DashboardView resource rendering', () => {
     vi.mocked(dashboardApi.getRecentProjects).mockReturnValue(new Promise(() => undefined))
     vi.mocked(dashboardApi.getUpcomingPayments).mockResolvedValue(apiResponse([payment]) as never)
 
-    render(<DashboardView />)
+    const { container } = render(<DashboardView />)
 
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: '近30天预计回款' })).toBeInTheDocument(),
@@ -101,6 +101,17 @@ describe('DashboardView resource rendering', () => {
     expect(screen.getByLabelText('较上期上升 2.00%，表现承压')).toBeInTheDocument()
     expect(screen.getByText('趋势数据 计划 120 实际 100')).toBeInTheDocument()
     expect(screen.getByText('行动队列 1')).toBeInTheDocument()
+    expect(container.querySelector('[data-motion-scope="dashboard"]')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '财务概览' })).toHaveAttribute(
+      'data-motion',
+      'entrance',
+    )
+    expect(screen.getByLabelText('现金流趋势')).toHaveAttribute('data-motion', 'entrance')
+    expect(screen.getByLabelText('待处理收款')).toHaveAttribute('data-motion', 'entrance')
+    expect(screen.getByLabelText('近期项目')).toHaveAttribute('data-motion', 'entrance')
+    expect(
+      container.querySelectorAll('[data-motion-group="summary-metrics"] [data-motion-item]'),
+    ).toHaveLength(3)
     expect(screen.queryByText('快捷操作')).not.toBeInTheDocument()
     expect(screen.getByLabelText('正在加载近期项目')).toBeInTheDocument()
     expect(screen.queryByLabelText('正在加载仪表盘')).not.toBeInTheDocument()

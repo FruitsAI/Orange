@@ -63,9 +63,14 @@ describe('dashboard visual contract', () => {
   it('contains narrow-screen and reduced-motion safeguards', () => {
     expect(dashboardCss).toContain('@media (max-width: 720px)')
     expect(dashboardCss).toContain('@media (prefers-reduced-motion: reduce)')
+    expect(dashboardCss).toContain('@media (hover: hover) and (pointer: fine)')
     expect(dashboardCss).not.toContain('transition: none')
     expect(dashboardCss).toMatch(
       /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.financial-hero__cta:hover[\s\S]*transform:\s*none/,
+    )
+    expect(dashboardCss).toMatch(/\.financial-hero__cta:active[\s\S]*scale\(0\.98\)/)
+    expect(dashboardCss).toMatch(
+      /\.action-queue__item:active,[\s\S]*\.project-list__item:active[\s\S]*scale\(0\.985\)/,
     )
   })
 
@@ -84,9 +89,18 @@ describe('dashboard visual contract', () => {
       /\.glass-card\.ember-panel\s*\{[\s\S]*background:\s*var\(--color-surface-raised\)/,
     )
     expect(componentsCss).toContain('backdrop-filter: none')
-    expect(dashboardCss).toMatch(/\.action-queue__item:hover[\s\S]*translateY\(-2px\)/)
+    expect(dashboardCss).toMatch(
+      /@media \(hover: hover\) and \(pointer: fine\)[\s\S]*\.action-queue__item:hover[\s\S]*\.action-queue__item:hover \.action-queue__arrow[\s\S]*translateX\(3px\)/,
+    )
     expect(dashboardCss).toMatch(
       /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.action-queue__item:hover[\s\S]*transform:\s*none/,
+    )
+    expect(dashboardCss).not.toContain('transition: all')
+    expect(dashboardCss).toMatch(
+      /\.financial-hero\[aria-busy='true'\] \.financial-hero__pulse\s*\{[\s\S]*financial-hero-busy-pulse/,
+    )
+    expect(dashboardCss).toMatch(
+      /\.project-list__progress-track > span\s*\{[\s\S]*project-progress-reveal[\s\S]*transform-origin:\s*left center/,
     )
   })
 

@@ -1,5 +1,16 @@
 import { FormEvent, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import {
+  Alert,
+  Button,
+  Card,
+  Checkbox,
+  Field,
+  IconButton,
+  Image,
+  Input,
+  InputGroup,
+} from '@/design-system'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 
@@ -54,91 +65,102 @@ export default function LoginView() {
         <div className="shape" />
       </div>
 
-      <button
-        aria-label={effectiveTheme === 'dark' ? '切换至亮色主题' : '切换至深色主题'}
-        className="theme-toggle-btn"
+      <IconButton
+        className="login-theme-toggle"
+        label={effectiveTheme === 'dark' ? '切换至亮色主题' : '切换至深色主题'}
         onClick={toggleTheme}
         title="切换主题"
-        type="button"
+        variant="secondary"
       >
         <i className={effectiveTheme === 'dark' ? 'ri-moon-line' : 'ri-sun-line'} />
-      </button>
+      </IconButton>
 
       <div className="login-container">
-        <div className="login-card">
+        <Card.Root className="login-card" padding="lg" variant="default">
           <div className="login-logo">
             <div className="login-logo-icon">
-              <img alt="Orange Logo" src="/orange.png" />
+              <Image
+                alt="Orange Logo"
+                className="login-logo-image"
+                radius="full"
+                showSkeleton={false}
+                src="/orange.png"
+              />
             </div>
             <h1>Orange</h1>
             <p>项目收款管理系统</p>
           </div>
 
           <div className="form-panel active-panel">
-            <form onSubmit={handleLogin}>
-              <div className="input-group">
-                <label htmlFor="username">用户名 / 邮箱 / 手机号</label>
-                <div className="input-wrapper">
-                  <input
+            <form className="login-form" onSubmit={handleLogin}>
+              <Field.Root id="username">
+                <Field.Label>用户名 / 邮箱 / 手机号</Field.Label>
+                <InputGroup startContent={<i aria-hidden="true" className="ri-mail-line" />}>
+                  <Input
                     autoCapitalize="off"
                     autoComplete="username"
                     autoCorrect="off"
-                    id="username"
                     onChange={(event) => setUsername(event.target.value)}
                     placeholder="请输入用户名或邮箱"
                     spellCheck={false}
                     type="text"
                     value={username}
                   />
-                  <i className="ri-mail-line login-icon-override" />
-                </div>
-              </div>
+                </InputGroup>
+              </Field.Root>
 
-              <div className="input-group">
-                <label htmlFor="password">密码</label>
-                <div className="input-wrapper">
-                  <input
+              <Field.Root id="password">
+                <Field.Label>密码</Field.Label>
+                <InputGroup
+                  endContent={
+                    <IconButton
+                      label={showPassword ? '隐藏密码' : '显示密码'}
+                      onClick={() => setShowPassword((value) => !value)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <i className={showPassword ? 'ri-eye-line' : 'ri-eye-off-line'} />
+                    </IconButton>
+                  }
+                  startContent={<i aria-hidden="true" className="ri-lock-line" />}
+                >
+                  <Input
                     autoCapitalize="off"
                     autoComplete="current-password"
                     autoCorrect="off"
-                    id="password"
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="请输入密码"
                     spellCheck={false}
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                   />
-                  <i className="ri-lock-line login-icon-override" />
-                  <button
-                    aria-label={showPassword ? '隐藏密码' : '显示密码'}
-                    className="password-toggle"
-                    onClick={() => setShowPassword((value) => !value)}
-                    type="button"
-                  >
-                    <i className={showPassword ? 'ri-eye-line' : 'ri-eye-off-line'} />
-                  </button>
-                </div>
+                </InputGroup>
+              </Field.Root>
+
+              <div className="login-form__options">
+                <Checkbox
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                >
+                  记住用户名
+                </Checkbox>
               </div>
 
-              <div className="form-options">
-                <label className="remember-me">
-                  <input
-                    checked={rememberMe}
-                    onChange={(event) => setRememberMe(event.target.checked)}
-                    type="checkbox"
-                  />
-                  <span>记住用户名</span>
-                </label>
-              </div>
+              {loginError ? (
+                <Alert
+                  className="login-alert"
+                  icon={<i className="ri-error-warning-line" />}
+                  title={loginError}
+                  tone="danger"
+                />
+              ) : null}
 
-              {loginError ? <div className="login-error">{loginError}</div> : null}
-
-              <button className="btn-primary-login" disabled={loading} type="submit">
+              <Button fullWidth pending={loading} type="submit" variant="primary">
                 {loading ? '登录中...' : '登录'}
-              </button>
+              </Button>
             </form>
           </div>
-        </div>
+        </Card.Root>
       </div>
     </div>
   )

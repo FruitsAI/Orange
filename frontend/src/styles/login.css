@@ -1,0 +1,46 @@
+.login-wrapper .login-theme-toggle {
+  position: fixed;
+  z-index: 100;
+  top: 24px;
+  right: 24px;
+}
+
+.login-wrapper .login-logo-image {
+  width: 72px;
+  height: 72px;
+  overflow: visible;
+  background: transparent;
+}
+
+.login-wrapper .login-form {
+  display: grid;
+  gap: var(--ods-space-5);
+}
+
+.login-wrapper .login-form__options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.login-wrapper .login-form .ods-input[type='password'] {
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  letter-spacing: 0.12em;
+}
+
+.login-wrapper .login-alert {
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .login-wrapper .login-theme-toggle {
+    top: 16px;
+    right: 16px;
+  }
+}

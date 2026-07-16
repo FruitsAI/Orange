@@ -1,0 +1,8 @@
+.ods-close-button {
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-lg);
+}
+
+.ods-close-button:hover:not(:disabled) {
+  color: var(--ods-color-fg-default);
+}

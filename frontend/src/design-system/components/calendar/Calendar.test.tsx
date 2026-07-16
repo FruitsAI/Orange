@@ -12,7 +12,8 @@ function Controlled() {
 describe('Calendar', () => {
   it('renders the selected month and selects a day', async () => {
     render(<Controlled />)
-    expect(screen.getByText('2026 年 7 月')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '选择年份' })).toHaveTextContent('2026 年')
+    expect(screen.getByRole('button', { name: '选择月份' })).toHaveTextContent('7 月')
 
     await userEvent.click(screen.getByRole('button', { name: '20' }))
     const selected = screen.getByRole('button', { name: '20' })
@@ -22,6 +23,7 @@ describe('Calendar', () => {
   it('navigates to the previous month', async () => {
     render(<Controlled />)
     await userEvent.click(screen.getByRole('button', { name: '上个月' }))
-    expect(screen.getByText('2026 年 6 月')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '选择年份' })).toHaveTextContent('2026 年')
+    expect(screen.getByRole('button', { name: '选择月份' })).toHaveTextContent('6 月')
   })
 })

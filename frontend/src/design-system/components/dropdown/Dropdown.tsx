@@ -8,7 +8,12 @@ export interface DropdownProps {
   placement?: PopoverPlacement
 }
 
-function DropdownRoot({ children, onOpenChange, open, placement = 'bottom-start' }: DropdownProps) {
+export function DropdownRoot({
+  children,
+  onOpenChange,
+  open,
+  placement = 'bottom-start',
+}: DropdownProps) {
   return (
     <Popover.Root onOpenChange={onOpenChange} open={open} placement={placement}>
       {children}
@@ -37,7 +42,7 @@ export interface DropdownMenuProps extends HTMLAttributes<HTMLDivElement> {
   label?: string
 }
 
-function DropdownMenu({ children, className, label, ...props }: DropdownMenuProps) {
+export function DropdownMenu({ children, className, label, ...props }: DropdownMenuProps) {
   return (
     <Popover.Content className={['ods-dropdown', className].filter(Boolean).join(' ')} role="menu">
       <div
@@ -63,7 +68,7 @@ export interface DropdownItemProps extends Omit<HTMLAttributes<HTMLButtonElement
   tone?: 'default' | 'danger'
 }
 
-const DropdownItem = forwardRef<HTMLButtonElement, DropdownItemProps>(function DropdownItem(
+export const DropdownItem = forwardRef<HTMLButtonElement, DropdownItemProps>(function DropdownItem(
   {
     children,
     className,

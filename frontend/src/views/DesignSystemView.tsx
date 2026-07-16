@@ -46,6 +46,8 @@ import {
   TextArea,
   Tooltip,
   User,
+  Toaster,
+  toast,
 } from '@/design-system'
 
 const buttonVariants = ['primary', 'secondary', 'tertiary', 'outline', 'ghost', 'danger'] as const
@@ -323,6 +325,27 @@ export default function DesignSystemView() {
           <Tabs.Panel value="settings">设置面板内容。</Tabs.Panel>
         </Tabs.Root>
         <Pagination onPageChange={setPage} page={page} pageCount={8} />
+      </ShowcaseSection>
+
+      <ShowcaseSection
+        title="轻提示 Toast"
+        description="命令式 API，可在任意逻辑中调用；点击气泡即可关闭。"
+      >
+        <div className="design-showcase__row">
+          <Button onClick={() => toast.success('账单已标记为已收款')} variant="secondary">
+            成功提示
+          </Button>
+          <Button onClick={() => toast.error('网络异常，保存失败')} variant="secondary">
+            错误提示
+          </Button>
+          <Button onClick={() => toast.warning('本期账单三天后到期')} variant="secondary">
+            警告提示
+          </Button>
+          <Button onClick={() => toast.info('数据已同步至云端')} variant="secondary">
+            信息提示
+          </Button>
+        </div>
+        <Toaster />
       </ShowcaseSection>
 
       <ShowcaseSection

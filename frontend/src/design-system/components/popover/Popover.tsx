@@ -43,7 +43,7 @@ export interface PopoverRootProps {
   placement?: PopoverPlacement
 }
 
-function PopoverRoot({
+export function PopoverRoot({
   children,
   className,
   defaultOpen = false,
@@ -107,7 +107,7 @@ export interface PopoverTriggerProps {
   children: ReactElement<HTMLAttributes<HTMLElement> & { ref?: Ref<HTMLElement> }>
 }
 
-function PopoverTrigger({ children }: PopoverTriggerProps) {
+export function PopoverTrigger({ children }: PopoverTriggerProps) {
   const { contentId, open, setTrigger, toggle, triggerId } = usePopoverContext()
   const childProps = children.props
 
@@ -128,28 +128,27 @@ export interface PopoverContentProps extends HTMLAttributes<HTMLDivElement> {
   role?: string
 }
 
-const PopoverContent = forwardRef<HTMLDivElement, PopoverContentProps>(function PopoverContent(
-  { children, className, role = 'dialog', ...props },
-  ref,
-) {
-  const { contentId, open, placement, triggerId } = usePopoverContext()
-  if (!open) return null
+export const PopoverContent = forwardRef<HTMLDivElement, PopoverContentProps>(
+  function PopoverContent({ children, className, role = 'dialog', ...props }, ref) {
+    const { contentId, open, placement, triggerId } = usePopoverContext()
+    if (!open) return null
 
-  return (
-    <div
-      {...props}
-      aria-labelledby={triggerId}
-      className={['ods-popover', className].filter(Boolean).join(' ')}
-      data-placement={placement}
-      data-slot="popover"
-      id={contentId}
-      ref={ref}
-      role={role}
-    >
-      {children}
-    </div>
-  )
-})
+    return (
+      <div
+        {...props}
+        aria-labelledby={triggerId}
+        className={['ods-popover', className].filter(Boolean).join(' ')}
+        data-placement={placement}
+        data-slot="popover"
+        id={contentId}
+        ref={ref}
+        role={role}
+      >
+        {children}
+      </div>
+    )
+  },
+)
 
 // Compound component namespaces are intentionally exported as a stable object.
 // eslint-disable-next-line react-refresh/only-export-components
@@ -159,5 +158,6 @@ export const Popover = {
   Trigger: PopoverTrigger,
 }
 
+// A hook shares the same module so Dropdown can consume the root context without exposing it.
 // eslint-disable-next-line react-refresh/only-export-components
 export const usePopoverClose = () => usePopoverContext().close

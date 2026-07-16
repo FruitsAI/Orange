@@ -44,7 +44,7 @@ export interface DrawerRootProps extends Omit<HTMLAttributes<HTMLDivElement>, 't
   size?: DrawerSize
 }
 
-const DrawerRoot = forwardRef<HTMLDivElement, DrawerRootProps>(function DrawerRoot(
+export const DrawerRoot = forwardRef<HTMLDivElement, DrawerRootProps>(function DrawerRoot(
   {
     children,
     className,
@@ -93,7 +93,7 @@ const DrawerRoot = forwardRef<HTMLDivElement, DrawerRootProps>(function DrawerRo
   )
 })
 
-const DrawerHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+export const DrawerHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   function DrawerHeader({ children, className, ...props }, ref) {
     const { titleId } = useDrawerContext()
     return (
@@ -111,21 +111,20 @@ const DrawerHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   },
 )
 
-const DrawerBody = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function DrawerBody(
-  { className, ...props },
-  ref,
-) {
-  return (
-    <div
-      {...props}
-      className={['ods-drawer__body', className].filter(Boolean).join(' ')}
-      data-slot="body"
-      ref={ref}
-    />
-  )
-})
+export const DrawerBody = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+  function DrawerBody({ className, ...props }, ref) {
+    return (
+      <div
+        {...props}
+        className={['ods-drawer__body', className].filter(Boolean).join(' ')}
+        data-slot="body"
+        ref={ref}
+      />
+    )
+  },
+)
 
-const DrawerFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+export const DrawerFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   function DrawerFooter({ className, ...props }, ref) {
     return (
       <div
@@ -142,7 +141,7 @@ export interface DrawerCloseProps extends HTMLAttributes<HTMLButtonElement> {
   label?: string
 }
 
-const DrawerClose = forwardRef<HTMLButtonElement, DrawerCloseProps>(function DrawerClose(
+export const DrawerClose = forwardRef<HTMLButtonElement, DrawerCloseProps>(function DrawerClose(
   { className, label = '关闭', ...props },
   ref,
 ) {

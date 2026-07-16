@@ -44,7 +44,7 @@ export interface ModalRootProps extends Omit<HTMLAttributes<HTMLDivElement>, 'ti
   size?: ModalSize
 }
 
-const ModalRoot = forwardRef<HTMLDivElement, ModalRootProps>(function ModalRoot(
+export const ModalRoot = forwardRef<HTMLDivElement, ModalRootProps>(function ModalRoot(
   {
     children,
     className,
@@ -52,6 +52,7 @@ const ModalRoot = forwardRef<HTMLDivElement, ModalRootProps>(function ModalRoot(
     onClose,
     open,
     placement = 'center',
+    role = 'dialog',
     size = 'md',
     ...props
   },
@@ -82,7 +83,7 @@ const ModalRoot = forwardRef<HTMLDivElement, ModalRootProps>(function ModalRoot(
           data-size={size}
           data-slot="modal"
           ref={mergeRefs(dialogRef, ref)}
-          role="dialog"
+          role={role}
           tabIndex={-1}
         >
           {children}
@@ -93,58 +94,55 @@ const ModalRoot = forwardRef<HTMLDivElement, ModalRootProps>(function ModalRoot(
   )
 })
 
-const ModalHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function ModalHeader(
-  { children, className, ...props },
-  ref,
-) {
-  const { titleId } = useModalContext()
-  return (
-    <header
-      {...props}
-      className={['ods-modal__header', className].filter(Boolean).join(' ')}
-      data-slot="header"
-      ref={ref}
-    >
-      <h2 className="ods-modal__title" id={titleId}>
-        {children}
-      </h2>
-    </header>
-  )
-})
+export const ModalHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+  function ModalHeader({ children, className, ...props }, ref) {
+    const { titleId } = useModalContext()
+    return (
+      <header
+        {...props}
+        className={['ods-modal__header', className].filter(Boolean).join(' ')}
+        data-slot="header"
+        ref={ref}
+      >
+        <h2 className="ods-modal__title" id={titleId}>
+          {children}
+        </h2>
+      </header>
+    )
+  },
+)
 
-const ModalBody = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function ModalBody(
-  { className, ...props },
-  ref,
-) {
-  return (
-    <div
-      {...props}
-      className={['ods-modal__body', className].filter(Boolean).join(' ')}
-      data-slot="body"
-      ref={ref}
-    />
-  )
-})
+export const ModalBody = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+  function ModalBody({ className, ...props }, ref) {
+    return (
+      <div
+        {...props}
+        className={['ods-modal__body', className].filter(Boolean).join(' ')}
+        data-slot="body"
+        ref={ref}
+      />
+    )
+  },
+)
 
-const ModalFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function ModalFooter(
-  { className, ...props },
-  ref,
-) {
-  return (
-    <div
-      {...props}
-      className={['ods-modal__footer', className].filter(Boolean).join(' ')}
-      data-slot="footer"
-      ref={ref}
-    />
-  )
-})
+export const ModalFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+  function ModalFooter({ className, ...props }, ref) {
+    return (
+      <div
+        {...props}
+        className={['ods-modal__footer', className].filter(Boolean).join(' ')}
+        data-slot="footer"
+        ref={ref}
+      />
+    )
+  },
+)
 
 export interface ModalCloseProps extends HTMLAttributes<HTMLButtonElement> {
   label?: string
 }
 
-const ModalClose = forwardRef<HTMLButtonElement, ModalCloseProps>(function ModalClose(
+export const ModalClose = forwardRef<HTMLButtonElement, ModalCloseProps>(function ModalClose(
   { className, label = '关闭', ...props },
   ref,
 ) {

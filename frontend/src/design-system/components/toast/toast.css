@@ -1,0 +1,96 @@
+.ods-toaster {
+  position: fixed;
+  inset-block-start: calc(var(--ods-shell-topbar-height) + var(--ods-space-6));
+  inset-inline-end: var(--ods-space-6);
+  z-index: var(--ods-z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-3);
+  pointer-events: none;
+}
+
+.ods-toast {
+  --ods-toast-color: var(--ods-color-status-info);
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ods-space-3);
+  max-width: 22rem;
+  padding: var(--ods-space-3) var(--ods-space-4);
+  border: var(--ods-material-glass-border-subtle);
+  border-radius: var(--ods-radius-panel);
+  background: var(--ods-color-bg-surface-raised);
+  box-shadow: var(--ods-shadow-panel);
+  backdrop-filter: blur(var(--ods-material-glass-blur))
+    saturate(var(--ods-material-glass-saturation));
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-sm);
+  text-align: start;
+  cursor: pointer;
+  pointer-events: auto;
+  overflow: hidden;
+  animation: ods-toast-in var(--ods-duration-page) var(--ods-ease-spring);
+}
+
+/* Tone bar, matching the Alert ember bar. */
+.ods-toast::before {
+  position: absolute;
+  inset-block: var(--ods-space-2);
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: var(--ods-radius-pill);
+  background: var(--ods-toast-color);
+  content: '';
+}
+
+.ods-toast[data-tone='success'] {
+  --ods-toast-color: var(--ods-color-status-success);
+}
+
+.ods-toast[data-tone='error'] {
+  --ods-toast-color: var(--ods-color-status-danger);
+}
+
+.ods-toast[data-tone='warning'] {
+  --ods-toast-color: var(--ods-color-status-warning);
+}
+
+.ods-toast__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--ods-toast-color);
+  font-size: var(--ods-font-size-lg);
+}
+
+.ods-toast__message {
+  min-width: 0;
+  line-height: var(--ods-line-height-body);
+}
+
+@keyframes ods-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ods-toast {
+    animation: ods-toast-fade var(--ods-duration-fast) var(--ods-ease-standard);
+  }
+
+  @keyframes ods-toast-fade {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ods-toast {
+    background: var(--ods-color-bg-surface);
+    backdrop-filter: none;
+  }
+}

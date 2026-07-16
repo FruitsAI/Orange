@@ -31,7 +31,7 @@ export interface AccordionProps extends Omit<HTMLAttributes<HTMLDivElement>, 'de
   value?: string[]
 }
 
-const AccordionRoot = forwardRef<HTMLDivElement, AccordionProps>(function AccordionRoot(
+export const AccordionRoot = forwardRef<HTMLDivElement, AccordionProps>(function AccordionRoot(
   { children, className, defaultValue = [], multiple = false, onValueChange, value, ...props },
   ref,
 ) {
@@ -81,7 +81,7 @@ export interface AccordionItemProps extends Omit<HTMLAttributes<HTMLDivElement>,
   title: ReactNode
 }
 
-const AccordionItem = forwardRef<HTMLDivElement, AccordionItemProps>(function AccordionItem(
+export const AccordionItem = forwardRef<HTMLDivElement, AccordionItemProps>(function AccordionItem(
   { children, className, itemKey, subtitle, title, ...props },
   ref,
 ) {

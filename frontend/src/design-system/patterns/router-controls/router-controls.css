@@ -1,0 +1,42 @@
+.ods-router-button {
+  vertical-align: middle;
+}
+
+.ods-router-button[aria-disabled='true'] {
+  color: var(--ods-color-fg-disabled);
+  cursor: not-allowed;
+  opacity: 0.58;
+  box-shadow: none;
+  transform: none;
+}
+
+.ods-button.ods-router-button[aria-disabled='true']:is(:hover, :active):not(:disabled) {
+  box-shadow: none;
+  transform: none;
+}
+
+.ods-button.ods-router-button[data-variant='secondary'][aria-disabled='true']:is(:hover, :active) {
+  border-color: var(--ods-color-border-default);
+  background: var(--ods-color-bg-surface-raised);
+}
+
+.ods-button.ods-router-button[data-variant='tertiary'][aria-disabled='true']:is(:hover, :active) {
+  background: var(--ods-color-accent-soft);
+  color: var(--ods-color-accent);
+}
+
+.ods-button.ods-router-button[data-variant='outline'][aria-disabled='true']:is(:hover, :active) {
+  border-color: var(--ods-color-border-strong);
+  background: transparent;
+  color: var(--ods-color-fg-disabled);
+}
+
+.ods-button.ods-router-button[data-variant='ghost'][aria-disabled='true']:is(:hover, :active) {
+  background: transparent;
+  color: var(--ods-color-fg-disabled);
+}
+
+.ods-router-button[data-variant='primary'][aria-disabled='true'],
+.ods-router-button[data-variant='danger'][aria-disabled='true'] {
+  color: var(--ods-color-accent-fg);
+}

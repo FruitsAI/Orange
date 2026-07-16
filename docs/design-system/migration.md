@@ -28,6 +28,20 @@ ODS 采用渐进迁移。目标是减少重复 CSS 和行为分叉，而不是�
 | 多套 pagination                               | `Pagination`                            | 统一 page、pageSize 与 disabled 状态  |
 | `ToastContainer`                              | `Toaster`                               | 保留现有 store，替换 presentation     |
 
+页面结构迁移统一使用以下 patterns：
+
+| 现有实现                      | ODS 目标                       |
+| ----------------------------- | ------------------------------ |
+| 页面内自定义标题栏            | `PageHeader` + `RouterButton`  |
+| 卡片/表单内自定义标题行       | `SectionHeader`                |
+| `.form-grid`、`.form-actions` | `FormGrid`、`FormActions`      |
+| 重复的搜索 input wrapper      | `SearchField`                  |
+| 重复的分页信息与控件 wrapper  | `PaginationBar`                |
+| 页面内空数据占位              | `EmptyState`                   |
+| 原生 `<a>` 包装客户端内部路由 | `RouterLink` 或 `RouterButton` |
+
+这些 pattern 允许页面通过 `className` 做布局 escape hatch，但页面不得重新实现其内部按钮、input、pagination 或 typography 状态。
+
 ## Token 迁移
 
 旧 token 在迁移期由 `compatibility.css` 单向映射。新代码禁止使用旧名称。

@@ -11,7 +11,20 @@ export interface CalendarProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onC
 type CalendarView = 'days' | 'months' | 'years'
 
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
-const MONTHS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+const MONTHS = [
+  '1月',
+  '2月',
+  '3月',
+  '4月',
+  '5月',
+  '6月',
+  '7月',
+  '8月',
+  '9月',
+  '10月',
+  '11月',
+  '12月',
+]
 const ISO_FORMAT = 'YYYY-MM-DD'
 const YEARS_PER_PAGE = 12
 
@@ -75,7 +88,9 @@ export const Calendar = forwardRef<HTMLDivElement, CalendarProps>(function Calen
             onClick={() => setView(view === 'years' ? 'days' : 'years')}
             type="button"
           >
-            {view === 'years' ? `${yearPageStart} – ${yearPageStart + YEARS_PER_PAGE - 1}` : `${visibleMonth.year()} 年`}
+            {view === 'years'
+              ? `${yearPageStart} – ${yearPageStart + YEARS_PER_PAGE - 1}`
+              : `${visibleMonth.year()} 年`}
           </button>
           {view === 'days' ? (
             <button

@@ -35,7 +35,7 @@ export interface CheckboxGroupProps extends Omit<HTMLAttributes<HTMLFieldSetElem
   value: string[]
 }
 
-const CheckboxGroupRoot = forwardRef<HTMLFieldSetElement, CheckboxGroupProps>(
+export const CheckboxGroupRoot = forwardRef<HTMLFieldSetElement, CheckboxGroupProps>(
   function CheckboxGroupRoot(
     {
       children,
@@ -95,7 +95,7 @@ export interface CheckboxGroupItemProps {
   value: string
 }
 
-function CheckboxGroupItem({ children, disabled = false, value }: CheckboxGroupItemProps) {
+export function CheckboxGroupItem({ children, disabled = false, value }: CheckboxGroupItemProps) {
   const context = useCheckboxGroupContext()
   return (
     <Checkbox

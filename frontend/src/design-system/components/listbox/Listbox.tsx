@@ -51,7 +51,7 @@ export interface ListboxProps extends Omit<HTMLAttributes<HTMLUListElement>, 'on
   selectionMode?: 'single' | 'multiple'
 }
 
-const ListboxRoot = forwardRef<HTMLUListElement, ListboxProps>(function ListboxRoot(
+export const ListboxRoot = forwardRef<HTMLUListElement, ListboxProps>(function ListboxRoot(
   { children, className, onSelect, selectedValues = [], selectionMode = 'single', ...props },
   ref,
 ) {
@@ -79,7 +79,7 @@ export interface ListboxItemProps extends Omit<HTMLAttributes<HTMLLIElement>, 'o
   value: string
 }
 
-const ListboxItem = forwardRef<HTMLLIElement, ListboxItemProps>(function ListboxItem(
+export const ListboxItem = forwardRef<HTMLLIElement, ListboxItemProps>(function ListboxItem(
   { children, className, description, disabled = false, startContent, value, ...props },
   ref,
 ) {

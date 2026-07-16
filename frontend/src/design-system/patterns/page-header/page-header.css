@@ -22,6 +22,20 @@
   min-width: 0;
 }
 
+.ods-page-header__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ods-space-2);
+  margin-block-end: var(--ods-space-2);
+  color: var(--ods-color-fg-subtle);
+  font-family: var(--ods-font-family-mono);
+  font-size: var(--ods-font-size-xs);
+  font-weight: var(--ods-font-weight-semibold);
+  letter-spacing: var(--ods-letter-spacing-wide);
+  line-height: var(--ods-line-height-tight);
+  text-transform: uppercase;
+}
+
 .ods-page-header__title {
   margin: 0;
   color: var(--ods-color-fg-default);

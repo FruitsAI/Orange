@@ -6,6 +6,12 @@
   gap: var(--ods-space-4);
 }
 
+.ods-pagination-bar[data-separated='true'] {
+  margin-block-start: var(--ods-space-6);
+  padding-block-start: var(--ods-space-5);
+  border-block-start: 1px solid var(--ods-color-border-default);
+}
+
 .ods-pagination-bar__info {
   color: var(--ods-color-fg-muted);
   font-size: var(--ods-font-size-sm);

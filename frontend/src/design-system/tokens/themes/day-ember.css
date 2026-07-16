@@ -16,9 +16,14 @@
   --ods-color-fg-subtle: rgba(70, 53, 41, 0.48);
   --ods-color-fg-disabled: rgba(70, 53, 41, 0.28);
   --ods-color-fg-inverse: var(--ods-ref-color-white);
+  --ods-color-fg-brand-surface: var(--ods-ref-color-white);
+  --ods-color-fg-brand-surface-muted: rgba(255, 255, 255, 0.95);
+  --ods-color-fg-brand-surface-subtle: rgba(255, 255, 255, 0.93);
+  --ods-color-fg-brand-surface-danger: var(--ods-ref-color-white);
   --ods-color-border-default: rgba(83, 61, 41, 0.11);
   --ods-color-border-strong: rgba(83, 61, 41, 0.17);
   --ods-color-border-focus: var(--ods-ref-color-ember-500);
+  --ods-color-border-brand-surface: rgba(255, 255, 255, 0.34);
   --ods-color-accent: var(--ods-ref-color-ember-500);
   --ods-color-accent-rgb: 244, 123, 22;
   --ods-color-accent-hover: var(--ods-ref-color-ember-400);
@@ -41,8 +46,12 @@
   --ods-shadow-soft: 0 12px 30px rgba(76, 51, 28, 0.09);
   --ods-shadow-panel: 0 24px 60px rgba(76, 51, 28, 0.12), 0 2px 8px rgba(76, 51, 28, 0.06);
   --ods-shadow-modal: 0 30px 90px rgba(76, 51, 28, 0.2), 0 4px 16px rgba(76, 51, 28, 0.1);
+  --ods-shadow-brand-surface: 0 28px 70px rgba(105, 38, 0, 0.26);
   --ods-gradient-glow: linear-gradient(135deg, #f57616 0%, #ffad32 52%, #ed5e0d 100%);
   --ods-gradient-text: linear-gradient(135deg, #d85d08 0%, #f47b16 58%, #df4d3b 100%);
+  --ods-gradient-brand-surface:
+    radial-gradient(circle at 92% 18%, rgba(72, 20, 0, 0.24), transparent 30%),
+    linear-gradient(135deg, #a83800 0%, #bd4900 54%, #8f2f00 100%);
   --ods-material-glass-blur: 36px;
   --ods-material-glass-saturation: 145%;
   --ods-material-glass-brightness: 1.04;

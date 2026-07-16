@@ -1,14 +1,28 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { projectApi, type Project } from '@/api/project'
-import GlassCard from '@/components/common/GlassCard'
-import StatusBadge from '@/components/common/StatusBadge'
+import { ProjectStatusChip } from '@/components/project/ProjectStatusChip'
 import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
-import { useConfirm } from '@/composables/useConfirm'
+import {
+  AlertDialog,
+  Button,
+  ButtonGroup,
+  Card,
+  Dropdown,
+  EmptyState,
+  IconButton,
+  PaginationBar,
+  ProgressBar,
+  RouterButton,
+  RouterLink,
+  SearchField,
+  Select,
+  Table,
+} from '@/design-system'
 import { useToastStore } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, formatDate } from '@/utils/format'
+import '@/styles/project-domain.css'
 
 const filters = [
   { key: 'all', label: '全部项目' },
@@ -19,32 +33,28 @@ const filters = [
   { key: 'archived', label: '已归档' },
 ]
 
-const getStatusLabel = (status: string) => {
-  const map: Record<string, string> = {
-    active: '进行中',
-    archived: '已归档',
-    completed: '已完成',
-    notstarted: '未开始',
-    overdue: '已逾期',
-    pending: '即将交付',
-  }
-  return map[status] || status
-}
+const pageSizeOptions = [
+  { label: '5 条 / 页', value: '5' },
+  { label: '10 条 / 页', value: '10' },
+]
 
 const getProgress = (project: Project) => {
   if (!project.total_amount) return 0
   return Math.round(((project.received_amount || 0) / project.total_amount) * 100)
 }
 
+interface ConfirmationState {
+  action: 'archive' | 'delete'
+  projectId: number
+}
+
 export default function ProjectsView() {
   const navigate = useNavigate()
-  const { confirm } = useConfirm()
   const toastError = useToastStore((state) => state.error)
   const toastInfo = useToastStore((state) => state.info)
   const toastSuccess = useToastStore((state) => state.success)
   const user = useAuthStore((state) => state.user)
   const isAdmin = user?.role === 'admin'
-  const closeTimeout = useRef<number | null>(null)
 
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(false)
@@ -55,7 +65,9 @@ export default function ProjectsView() {
   const [searchKeyword, setSearchKeyword] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null)
-  const [dropdownStyle, setDropdownStyle] = useState({ left: '0px', top: '0px' })
+  const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null)
+  const [confirming, setConfirming] = useState(false)
+  const requestIdRef = useRef(0)
 
   const totalPages = Math.ceil(totalItems / pageSize)
   const colSpan = isAdmin ? 11 : 10
@@ -67,33 +79,8 @@ export default function ProjectsView() {
     return `显示 ${start}-${end} 条，共 ${totalItems} 条`
   }, [currentPage, pageSize, totalItems])
 
-  const visiblePages = useMemo(() => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, index) => index + 1)
-    }
-
-    const pages: Array<number | string> = [1]
-    const delta = 2
-    let start = currentPage - delta
-    let end = currentPage + delta
-
-    if (start <= 2) {
-      start = 2
-      end = Math.min(6, totalPages - 1)
-    } else if (end >= totalPages - 1) {
-      end = totalPages - 1
-      start = Math.max(totalPages - 5, 2)
-    }
-
-    if (start > 2) pages.push('...')
-    for (let page = start; page <= end; page += 1) pages.push(page)
-    if (end < totalPages - 1) pages.push('...')
-    if (totalPages > 1) pages.push(totalPages)
-
-    return pages
-  }, [currentPage, totalPages])
-
   const fetchProjects = useCallback(async () => {
+    const requestId = ++requestIdRef.current
     setLoading(true)
     try {
       const response = await projectApi.list({
@@ -102,12 +89,14 @@ export default function ProjectsView() {
         page_size: pageSize,
         status: activeFilter !== 'all' ? activeFilter : undefined,
       })
-      setProjects(response.data.data.list)
-      setTotalItems(response.data.data.total)
+      if (requestId === requestIdRef.current) {
+        setProjects(response.data.data.list)
+        setTotalItems(response.data.data.total)
+      }
     } catch {
       toastError('获取项目列表失败')
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) setLoading(false)
     }
   }, [activeFilter, currentPage, pageSize, searchKeyword, toastError])
 
@@ -115,31 +104,6 @@ export default function ProjectsView() {
     const timer = window.setTimeout(fetchProjects, 0)
     return () => window.clearTimeout(timer)
   }, [fetchProjects])
-
-  const closeDropdown = () => setActiveDropdownId(null)
-
-  const keepDropdownOpen = () => {
-    if (closeTimeout.current) {
-      window.clearTimeout(closeTimeout.current)
-      closeTimeout.current = null
-    }
-  }
-
-  const hideDropdownWithDelay = () => {
-    if (closeTimeout.current) window.clearTimeout(closeTimeout.current)
-    closeTimeout.current = window.setTimeout(closeDropdown, 200)
-  }
-
-  const showDropdown = (id: number, event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation()
-    keepDropdownOpen()
-    const rect = event.currentTarget.getBoundingClientRect()
-    setDropdownStyle({
-      left: `${rect.right - 140}px`,
-      top: `${rect.bottom + 4}px`,
-    })
-    setActiveDropdownId((current) => (current === id ? null : id))
-  }
 
   const handleSearch = () => {
     setCurrentPage(1)
@@ -151,311 +115,283 @@ export default function ProjectsView() {
     setCurrentPage(1)
   }
 
-  const handleDelete = async (id: number) => {
-    const confirmed = await confirm('确定要删除这个项目吗？此操作不可恢复。')
-    if (!confirmed) return
-
+  const performConfirmedAction = async () => {
+    if (!confirmation) return
+    setConfirming(true)
     try {
-      await projectApi.delete(id)
-      toastSuccess('项目删除成功')
-      await fetchProjects()
+      if (confirmation.action === 'delete') {
+        await projectApi.delete(confirmation.projectId)
+        toastSuccess('项目删除成功')
+      } else {
+        await projectApi.archive(confirmation.projectId)
+        toastSuccess('项目归档成功')
+      }
+      setConfirmation(null)
+      if (projects.length === 1 && currentPage > 1) {
+        setCurrentPage((page) => page - 1)
+      } else {
+        await fetchProjects()
+      }
     } catch {
-      toastError('删除失败')
+      toastError(confirmation.action === 'delete' ? '删除失败' : '归档失败')
+    } finally {
+      setConfirming(false)
     }
   }
 
-  const handleArchive = async (id: number) => {
-    closeDropdown()
-    const confirmed = await confirm('确定要归档这个项目吗？归档后可以在归档列表中查看。')
-    if (!confirmed) return
-
-    try {
-      await projectApi.archive(id)
-      toastSuccess('项目归档成功')
-      await fetchProjects()
-    } catch {
-      toastError('归档失败')
-    }
-  }
-
-  const handleExport = () => {
-    toastInfo('导出功能开发中')
-    closeDropdown()
-  }
-
-  const handlePageSizeChange = (value: number) => {
-    setPageSize(value)
+  const clearSearch = () => {
+    setKeyword('')
+    setSearchKeyword('')
     setCurrentPage(1)
   }
 
   return (
     <div className="projects-view">
       <div className="projects-toolbar">
-        <div className="filter-tabs">
-          {filters.map((filter) => (
-            <button
-              className={`btn btn-sm transition-all ${
-                activeFilter === filter.key ? 'btn-secondary active' : 'btn-ghost'
-              }`}
-              key={filter.key}
-              onClick={() => handleFilterChange(filter.key)}
-              type="button"
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-sm items-center">
-          <div className="search-input-wrapper">
-            <i className="ri-search-line search-icon" />
-            <input
-              autoCapitalize="off"
-              autoComplete="off"
-              autoCorrect="off"
-              className="search-input"
-              onChange={(event) => setKeyword(event.target.value)}
-              onKeyUp={(event) => {
-                if (event.key === 'Enter') handleSearch()
-              }}
-              placeholder="搜索项目..."
-              spellCheck={false}
-              type="text"
-              value={keyword}
-            />
-          </div>
+        <ButtonGroup aria-label="项目状态筛选" className="project-filter-group">
+          {filters.map((filter) => {
+            const selected = activeFilter === filter.key
+            return (
+              <Button
+                aria-pressed={selected}
+                className={selected ? 'active' : undefined}
+                key={filter.key}
+                onClick={() => handleFilterChange(filter.key)}
+                size="sm"
+                variant={selected ? 'tertiary' : 'ghost'}
+              >
+                {filter.label}
+              </Button>
+            )
+          })}
+        </ButtonGroup>
 
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate('/projects/create')}
-            type="button"
-          >
-            <i className="ri-add-line" /> <span className="btn-text">新建项目</span>
-          </button>
+        <div className="project-list-actions">
+          <SearchField
+            aria-label="搜索项目"
+            className="project-search"
+            onClear={clearSearch}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') handleSearch()
+            }}
+            onValueChange={setKeyword}
+            pending={loading}
+            placeholder="搜索项目..."
+            value={keyword}
+          />
+          <RouterButton to="/projects/create">
+            <i aria-hidden="true" className="ri-add-line" />
+            <span className="project-new-label">新建项目</span>
+          </RouterButton>
         </div>
       </div>
 
-      <GlassCard className="p-0">
-        <div className="overflow-auto" style={{ height: 440 }}>
-          <table className="data-table w-full">
-            <thead>
-              <tr>
-                <th className="col-fixed-width-200">项目名称</th>
-                <th>客户</th>
-                <th>开始日期</th>
-                <th>截止日期</th>
-                <th>创建日期</th>
-                {isAdmin ? <th>创建人</th> : null}
-                <th>合同金额</th>
-                <th>已收款</th>
-                <th>收款进度</th>
-                <th>状态</th>
-                <th className="col-fixed-right">操作</th>
-              </tr>
-            </thead>
-            {projects.length > 0 ? (
-              <tbody>
-                {projects.map((project) => {
-                  const progress = getProgress(project)
-                  return (
-                    <tr
-                      className="project-row cursor-pointer hover:bg-white/5 transition-colors"
-                      key={project.id}
-                      onClick={() => navigate(`/projects/${project.id}`)}
-                    >
-                      <td className="font-medium col-fixed-width-200" title={project.name}>
-                        {project.name}
-                      </td>
-                      <td className="text-secondary">{project.company}</td>
-                      <td>{formatDate(project.start_date)}</td>
-                      <td>{formatDate(project.end_date)}</td>
-                      <td>{formatDate(project.create_time)}</td>
-                      {isAdmin ? <td>{project.user?.name || '-'}</td> : null}
-                      <td>{formatCurrency(project.total_amount)}</td>
-                      <td>{formatCurrency(project.received_amount || 0)}</td>
-                      <td>
-                        <div className="flex items-center gap-sm">
-                          <div className="progress-bar" style={{ width: 80 }}>
-                            <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
-                          </div>
-                          <span className="text-sm">{progress}%</span>
-                        </div>
-                      </td>
-                      <td>
-                        <StatusBadge
-                          label={getStatusLabel(project.status)}
-                          status={project.status}
-                        />
-                      </td>
-                      <td className="col-fixed-right">
-                        <div className="flex items-center gap-xs relative">
-                          <button
-                            aria-label="编辑项目"
-                            className="btn btn-ghost btn-icon btn-sm"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              navigate(`/projects/edit/${project.id}`)
-                            }}
-                            title="编辑"
-                            type="button"
-                          >
-                            <i className="ri-edit-line" />
-                          </button>
-                          <button
-                            aria-label="删除项目"
-                            className="btn btn-ghost btn-icon btn-sm text-danger"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              void handleDelete(project.id)
-                            }}
-                            title="删除"
-                            type="button"
-                          >
-                            <i className="ri-delete-bin-line" />
-                          </button>
-                          <div className="relative">
-                            <button
-                              aria-label="更多项目操作"
-                              className="btn btn-ghost btn-icon btn-sm"
-                              onClick={(event) => showDropdown(project.id, event)}
-                              onMouseEnter={keepDropdownOpen}
-                              onMouseLeave={hideDropdownWithDelay}
-                              type="button"
-                            >
-                              <i className="ri-more-line" />
-                            </button>
-
-                            {activeDropdownId === project.id ? (
-                              <div
-                                className="dropdown-menu-fixed"
-                                onClick={(event) => event.stopPropagation()}
-                                onMouseEnter={keepDropdownOpen}
-                                onMouseLeave={hideDropdownWithDelay}
-                                style={dropdownStyle}
-                              >
-                                <button
-                                  className="dropdown-item"
-                                  onClick={handleExport}
-                                  type="button"
-                                >
-                                  <i className="ri-download-2-line" />
-                                  <span>导出项目</span>
-                                </button>
-                                <button
-                                  className="dropdown-item"
-                                  onClick={() => {
-                                    closeDropdown()
-                                    navigate(`/projects/${project.id}/payment/create`)
-                                  }}
-                                  type="button"
-                                >
-                                  <i
-                                    className="ri-money-dollar-box-line"
-                                    style={{ color: '#10b981' }}
-                                  />
-                                  <span>添加收款</span>
-                                </button>
-                                <button
-                                  className="dropdown-item"
-                                  onClick={() => void handleArchive(project.id)}
-                                  type="button"
-                                >
-                                  <i className="ri-archive-line text-warning" />
-                                  <span>归档项目</span>
-                                </button>
-                              </div>
-                            ) : null}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            ) : !loading ? (
-              <tbody>
-                <tr>
-                  <td colSpan={colSpan}>
-                    <div className="flex flex-col items-center justify-center py-xl text-secondary">
-                      <i className="ri-folder-open-line text-4xl mb-sm opacity-50" />
-                      <p>暂无项目数据</p>
-                      {searchKeyword ? (
-                        <button
-                          className="btn btn-ghost btn-sm mt-sm text-primary"
-                          onClick={() => {
-                            setKeyword('')
-                            setSearchKeyword('')
-                            setCurrentPage(1)
-                          }}
-                          type="button"
-                        >
-                          清除搜索
-                        </button>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            ) : null}
-          </table>
-        </div>
-      </GlassCard>
-
-      {projects.length > 0 ? (
-        <div className="projects-pagination">
-          <div className="pagination-inner">
-            <span className="pagination-info">{paginationInfo}</span>
-
-            <div className="pagination-controls">
-              <button
-                aria-label="上一页"
-                className="page-btn"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                type="button"
-              >
-                <i className="ri-arrow-left-s-line" />
-              </button>
-
-              <div className="page-numbers">
-                {visiblePages.map((page, index) => (
-                  <button
-                    className={`page-number ${currentPage === page ? 'active' : ''} ${
-                      page === '...' ? 'cursor-default' : ''
-                    }`}
-                    disabled={currentPage === page || page === '...'}
-                    key={`${page}-${index}`}
-                    onClick={() => typeof page === 'number' && setCurrentPage(page)}
-                    type="button"
+      <Card.Root className="project-table-card" padding="none">
+        <div className="project-table-frame">
+          <Table.Root
+            aria-label="项目列表"
+            className="project-table"
+            stickyHeader
+            wrapperClassName="project-table-scroll"
+          >
+            <Table.Header>
+              <Table.Row>
+                <Table.Column className="project-name-column">项目名称</Table.Column>
+                <Table.Column>客户</Table.Column>
+                <Table.Column>开始日期</Table.Column>
+                <Table.Column>截止日期</Table.Column>
+                <Table.Column>创建日期</Table.Column>
+                {isAdmin ? <Table.Column>创建人</Table.Column> : null}
+                <Table.Column align="end">合同金额</Table.Column>
+                <Table.Column align="end">已收款</Table.Column>
+                <Table.Column>收款进度</Table.Column>
+                <Table.Column>状态</Table.Column>
+                <Table.Column align="end" sticky="end">
+                  操作
+                </Table.Column>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {projects.map((project) => {
+                const progress = getProgress(project)
+                return (
+                  <Table.Row
+                    interactive
+                    key={project.id}
+                    onClick={() => navigate(`/projects/${project.id}`)}
                   >
-                    {page}
-                  </button>
-                ))}
-              </div>
+                    <Table.Cell className="project-name-column" title={project.name}>
+                      <RouterLink
+                        className="project-name-link"
+                        onClick={(event) => event.stopPropagation()}
+                        to={`/projects/${project.id}`}
+                      >
+                        <strong>{project.name}</strong>
+                      </RouterLink>
+                    </Table.Cell>
+                    <Table.Cell>{project.company}</Table.Cell>
+                    <Table.Cell>{formatDate(project.start_date)}</Table.Cell>
+                    <Table.Cell>{formatDate(project.end_date)}</Table.Cell>
+                    <Table.Cell>{formatDate(project.create_time)}</Table.Cell>
+                    {isAdmin ? <Table.Cell>{project.user?.name || '-'}</Table.Cell> : null}
+                    <Table.Cell align="end">{formatCurrency(project.total_amount)}</Table.Cell>
+                    <Table.Cell align="end">
+                      {formatCurrency(project.received_amount || 0)}
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="project-progress-cell">
+                        <ProgressBar
+                          className="project-table-progress"
+                          label={`${project.name} 收款进度`}
+                          size="sm"
+                          value={progress}
+                          valueLabel={`${progress}%`}
+                        />
+                        <span>{progress}%</span>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <ProjectStatusChip status={project.status} />
+                    </Table.Cell>
+                    <Table.Cell align="end" sticky="end">
+                      <div className="project-row-actions">
+                        <IconButton
+                          label={`${project.name}：编辑项目`}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            navigate(`/projects/edit/${project.id}`)
+                          }}
+                          size="sm"
+                          title="编辑"
+                          variant="ghost"
+                        >
+                          <i aria-hidden="true" className="ri-edit-line" />
+                        </IconButton>
+                        <IconButton
+                          label={`${project.name}：删除项目`}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setConfirmation({ action: 'delete', projectId: project.id })
+                          }}
+                          size="sm"
+                          title="删除"
+                          variant="ghost"
+                        >
+                          <i aria-hidden="true" className="ri-delete-bin-line" />
+                        </IconButton>
+                        <Dropdown
+                          onOpenChange={(open) => setActiveDropdownId(open ? project.id : null)}
+                          open={activeDropdownId === project.id}
+                          placement="bottom-end"
+                        >
+                          <Dropdown.Trigger>
+                            <IconButton
+                              aria-haspopup="menu"
+                              label={`${project.name}：更多项目操作`}
+                              onClick={(event) => event.stopPropagation()}
+                              size="sm"
+                              variant="ghost"
+                            >
+                              <i aria-hidden="true" className="ri-more-line" />
+                            </IconButton>
+                          </Dropdown.Trigger>
+                          <Dropdown.Menu
+                            label={`${project.name} 的更多操作`}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <Dropdown.Item
+                              onSelect={() => {
+                                toastInfo('导出功能开发中')
+                                setActiveDropdownId(null)
+                              }}
+                              startContent={<i className="ri-download-2-line" />}
+                            >
+                              导出项目
+                            </Dropdown.Item>
+                            <Dropdown.Item
+                              onSelect={() => navigate(`/projects/${project.id}/payment/create`)}
+                              startContent={<i className="ri-money-dollar-box-line" />}
+                            >
+                              添加收款
+                            </Dropdown.Item>
+                            <Dropdown.Item
+                              onSelect={() => {
+                                setActiveDropdownId(null)
+                                setConfirmation({ action: 'archive', projectId: project.id })
+                              }}
+                              startContent={<i className="ri-archive-line" />}
+                            >
+                              归档项目
+                            </Dropdown.Item>
+                          </Dropdown.Menu>
+                        </Dropdown>
+                      </div>
+                    </Table.Cell>
+                  </Table.Row>
+                )
+              })}
 
-              <button
-                aria-label="下一页"
-                className="page-btn"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                type="button"
-              >
-                <i className="ri-arrow-right-s-line" />
-              </button>
-            </div>
-
-            <div className="page-size">
-              <select
-                className="page-select"
-                onChange={(event) => handlePageSizeChange(Number(event.target.value))}
-                value={pageSize}
-              >
-                <option value={5}>5条/页</option>
-                <option value={10}>10条/页</option>
-              </select>
-            </div>
-          </div>
+              {projects.length === 0 && !loading ? (
+                <Table.Row>
+                  <Table.Cell colSpan={colSpan}>
+                    <EmptyState
+                      action={
+                        searchKeyword ? (
+                          <Button onClick={clearSearch} size="sm" variant="ghost">
+                            清除搜索
+                          </Button>
+                        ) : null
+                      }
+                      description={searchKeyword ? '换个关键词试试，或清除当前搜索。' : undefined}
+                      icon={<i className="ri-folder-open-line" />}
+                      title="暂无项目数据"
+                    />
+                  </Table.Cell>
+                </Table.Row>
+              ) : null}
+            </Table.Body>
+          </Table.Root>
         </div>
+      </Card.Root>
+
+      {totalItems > 0 && totalPages > 0 ? (
+        <PaginationBar
+          info={paginationInfo}
+          onPageChange={setCurrentPage}
+          page={currentPage}
+          pageCount={totalPages}
+          paginationLabel="项目分页"
+          separated
+          trailing={
+            <Select
+              aria-label="每页条数"
+              className="project-page-size"
+              onValueChange={(value) => {
+                setPageSize(Number(value))
+                setCurrentPage(1)
+              }}
+              options={pageSizeOptions}
+              size="sm"
+              value={String(pageSize)}
+            />
+          }
+        />
       ) : null}
+
+      <AlertDialog
+        action={confirmation?.action === 'archive' ? '确认归档' : '确认删除'}
+        actionVariant={confirmation?.action === 'archive' ? 'primary' : 'danger'}
+        description={
+          confirmation?.action === 'archive'
+            ? '归档后仍可在归档项目筛选中查看。'
+            : '删除后无法恢复，相关项目数据也将不可访问。'
+        }
+        onAction={() => void performConfirmedAction()}
+        onClose={() => setConfirmation(null)}
+        open={confirmation !== null}
+        pending={confirming}
+        title={confirmation?.action === 'archive' ? '归档项目？' : '删除项目？'}
+      />
     </div>
   )
 }

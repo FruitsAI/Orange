@@ -1,0 +1,267 @@
+.project-form-page {
+  width: min(100%, 68rem);
+  margin-inline: auto;
+}
+
+.project-form-page > .ods-page-header,
+.project-detail-view > .ods-page-header {
+  margin-bottom: var(--ods-space-6);
+}
+
+.project-form-card {
+  overflow: visible;
+}
+
+.project-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-8);
+}
+
+.project-form .ods-field,
+.payment-form .ods-field {
+  min-width: 0;
+}
+
+.project-form .ods-popover-root,
+.project-form .ods-select,
+.project-form .ods-date-picker,
+.project-form .ods-number-input,
+.payment-form .ods-popover-root,
+.payment-form .ods-select,
+.payment-form .ods-date-picker {
+  width: 100%;
+}
+
+.payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-8);
+}
+
+.payment-project-selector {
+  width: min(19rem, 40vw);
+}
+
+.payment-plan-editor__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-4);
+}
+
+.payment-plan-editor__item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--ods-space-4);
+}
+
+.payment-plan-editor__sequence {
+  color: var(--ods-color-accent);
+  font-size: var(--ods-font-size-sm);
+  font-weight: var(--ods-font-weight-semibold);
+}
+
+.payment-plan-editor__remark {
+  grid-column: 1 / -1;
+}
+
+.projects-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ods-space-4);
+  margin-bottom: var(--ods-space-6);
+}
+
+.project-filter-group {
+  flex-wrap: wrap;
+}
+
+.project-list-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ods-space-3);
+}
+
+.project-search {
+  width: min(18rem, 32vw);
+}
+
+.project-table-card {
+  overflow: hidden;
+}
+
+.project-table-frame {
+  height: 27.5rem;
+}
+
+.project-table-scroll {
+  height: 100%;
+}
+
+.project-table {
+  min-width: 72rem;
+}
+
+.project-name-column {
+  width: 12.5rem;
+  max-width: 12.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-name-link {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.project-row-actions,
+.project-progress-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--ods-space-2);
+}
+
+.project-row-actions {
+  justify-content: flex-end;
+}
+
+.project-table-progress {
+  width: 5rem;
+}
+
+.project-page-size {
+  min-width: 7rem;
+}
+
+.project-detail-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ods-space-3);
+}
+
+.project-detail-actions {
+  gap: var(--ods-space-1);
+}
+
+.project-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-6);
+  animation: project-content-in var(--ods-duration-page) var(--ods-ease-emphasized);
+}
+
+.project-detail-card {
+  overflow: hidden;
+}
+
+.project-overview-progress {
+  flex: 0 0 auto;
+}
+
+.project-payment-progress {
+  margin-top: var(--ods-space-5);
+}
+
+.project-payment-progress__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--ods-space-2);
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-sm);
+}
+
+.project-description {
+  margin: 0;
+  color: var(--ods-color-fg-muted);
+  line-height: var(--ods-line-height-body);
+}
+
+.project-detail-view .payments-header-card h3,
+.project-detail-view .payments-header-card p {
+  margin: 0;
+}
+
+.project-detail-view .payments-header-card p,
+.project-detail-view .payment-date {
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-sm);
+}
+
+.project-detail-view .payment-icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+}
+
+.project-detail-view .payment-item {
+  justify-content: space-between;
+}
+
+.project-detail-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-5);
+}
+
+@keyframes project-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (max-width: 800px) {
+  .projects-toolbar,
+  .project-list-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .project-search,
+  .payment-project-selector {
+    width: 100%;
+  }
+
+  .project-filter-group {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .project-new-label {
+    display: inline;
+  }
+}
+
+@media (max-width: 640px) {
+  .project-form-card {
+    --ods-card-padding: var(--ods-space-4);
+  }
+
+  .payment-plan-editor__remark {
+    grid-column: auto;
+  }
+
+  .project-detail-meta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .project-detail-view .payment-item[data-orientation='horizontal'] {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-detail-content {
+    animation: none;
+  }
+}

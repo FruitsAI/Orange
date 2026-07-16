@@ -12,10 +12,12 @@ describe('PaginationBar', () => {
         onPageChange={onPageChange}
         page={1}
         pageCount={3}
+        separated
       />,
     )
 
     expect(screen.getByRole('status')).toHaveTextContent('显示 1-10 条，共 24 条')
+    expect(screen.getByRole('status').parentElement).toHaveAttribute('data-separated', 'true')
     await userEvent.click(screen.getByRole('button', { name: '下一页' }))
     expect(onPageChange).toHaveBeenCalledWith(2)
   })

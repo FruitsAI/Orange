@@ -1,43 +1,16 @@
 .stat-card-icon {
-  position: relative;
   display: flex;
   width: 52px;
   height: 52px;
   align-items: center;
   justify-content: center;
-  margin-bottom: var(--spacing-md);
-  border-radius: var(--radius-md);
-  backdrop-filter: blur(12px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: var(--ods-space-5);
   font-size: 26px;
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.stat-card-icon--primary {
-  background: linear-gradient(145deg, rgba(255, 159, 10, 0.25), rgba(255, 179, 64, 0.15));
-  color: var(--color-primary);
-}
-
-.stat-card-icon--success {
-  background: linear-gradient(145deg, rgba(52, 199, 89, 0.25), rgba(48, 209, 88, 0.15));
-  color: var(--color-success);
-}
-
-.stat-card-icon--warning {
-  background: linear-gradient(145deg, rgba(255, 149, 0, 0.25), rgba(255, 159, 10, 0.15));
-  color: var(--color-warning);
-}
-
-.stat-card-icon--danger {
-  background: linear-gradient(145deg, rgba(255, 59, 48, 0.25), rgba(255, 69, 58, 0.15));
-  color: var(--color-danger);
 }
 
 .stat-card-value {
-  color: var(--text-primary);
-  font-family: var(--font-display);
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-display);
   font-size: 32px;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -45,44 +18,26 @@
 }
 
 .stat-card-label {
-  margin-top: var(--spacing-xs);
-  color: var(--text-secondary);
+  margin-top: var(--ods-space-1);
+  color: var(--ods-color-fg-muted);
   font-size: 14px;
   letter-spacing: -0.01em;
 }
 
 .stat-card-trend {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: var(--spacing-sm);
-  padding: 5px 10px;
-  border-radius: var(--radius-full);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.stat-card-trend--up {
-  background: rgba(52, 199, 89, 0.12);
-  color: var(--color-success);
-}
-
-.stat-card-trend--down {
-  background: rgba(255, 59, 48, 0.12);
-  color: var(--color-danger);
+  margin-top: var(--ods-space-3);
 }
 
 @media (max-width: 1024px) {
   .stat-card {
     align-items: center;
-    padding: var(--spacing-md);
     text-align: center;
   }
 
   .stat-card-icon {
     width: 40px;
     height: 40px;
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--ods-space-3);
     font-size: 20px;
   }
 
@@ -92,10 +47,5 @@
 
   .stat-card-label {
     font-size: 12px;
-  }
-
-  .stat-card-trend {
-    padding: 4px 8px;
-    font-size: 11px;
   }
 }

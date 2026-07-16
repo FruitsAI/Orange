@@ -29,11 +29,13 @@ import {
   Modal,
   NativeSelect,
   NumberInput,
+  PageHeader,
   Pagination,
   ProgressBar,
   Radio,
   RadioGroup,
   ScrollShadow,
+  SectionHeader,
   Select,
   Skeleton,
   Slider,
@@ -46,7 +48,6 @@ import {
   TextArea,
   Tooltip,
   User,
-  Toaster,
   toast,
 } from '@/design-system'
 
@@ -63,10 +64,7 @@ interface ShowcaseSectionProps {
 function ShowcaseSection({ children, description, title }: ShowcaseSectionProps) {
   return (
     <Surface className="design-showcase__section" padding="lg" variant="raised">
-      <header className="design-showcase__section-header">
-        <h2 className="design-showcase__section-title">{title}</h2>
-        <p className="design-showcase__section-description">{description}</p>
-      </header>
+      <SectionHeader description={description} title={title} />
       <div className="design-showcase__section-body">{children}</div>
     </Surface>
   )
@@ -89,19 +87,26 @@ export default function DesignSystemView() {
 
   return (
     <div className="design-showcase">
-      <header className="design-showcase__header">
-        <p className="design-showcase__eyebrow">
-          <span aria-hidden="true" className="design-showcase__pulse" />
-          Ember Orbit · Design System
-        </p>
-        <h1 className="design-showcase__title">
-          <span className="design-showcase__title-accent">Orange</span> 设计系统
-        </h1>
-        <p className="design-showcase__subtitle">
-          组件与视觉基础的实时预览，所有组件来自 <code>@/design-system</code>
-          ，随主题在昼夜之间切换。
-        </p>
-      </header>
+      <PageHeader
+        className="design-showcase__header"
+        description={
+          <>
+            组件与视觉基础的实时预览，所有组件来自 <Code>@/design-system</Code>
+            ，随主题在昼夜之间切换。
+          </>
+        }
+        eyebrow={
+          <>
+            <span aria-hidden="true" className="design-showcase__pulse" />
+            Ember Orbit · Design System
+          </>
+        }
+        title={
+          <>
+            <span className="design-showcase__title-accent">Orange</span> 设计系统
+          </>
+        }
+      />
 
       <ShowcaseSection
         title="按钮 Button"
@@ -118,6 +123,9 @@ export default function DesignSystemView() {
           <Button size="sm">小尺寸</Button>
           <Button size="md">中尺寸</Button>
           <Button size="lg">大尺寸</Button>
+          <Button tone="danger" variant="ghost">
+            危险语气
+          </Button>
           <Button pending>提交中</Button>
           <Button disabled>已禁用</Button>
         </div>
@@ -345,7 +353,6 @@ export default function DesignSystemView() {
             信息提示
           </Button>
         </div>
-        <Toaster />
       </ShowcaseSection>
 
       <ShowcaseSection
@@ -384,12 +391,17 @@ export default function DesignSystemView() {
         <ScrollShadow style={{ maxHeight: 160 }}>
           <div className="design-showcase__stack" style={{ paddingRight: 8 }}>
             {Array.from({ length: 10 }, (_, index) => (
-              <div className="design-showcase__scroll-item" key={index}>
+              <Surface
+                className="design-showcase__scroll-item"
+                key={index}
+                padding="sm"
+                variant="base"
+              >
                 <span>收款计划 {index + 1}</span>
                 <Chip size="sm" tone={index % 3 === 0 ? 'success' : 'neutral'}>
                   {index % 3 === 0 ? '已回款' : '待处理'}
                 </Chip>
-              </div>
+              </Surface>
             ))}
           </div>
         </ScrollShadow>
@@ -569,12 +581,23 @@ export default function DesignSystemView() {
         </Table.Root>
       </ShowcaseSection>
 
-      <ShowcaseSection title="表面 Surface" description="四种层级变体，承载不同深度的内容区块。">
+      <ShowcaseSection
+        title="表面 Surface"
+        description="五种层级与品牌变体，承载不同深度的内容区块。"
+      >
         <div className="design-showcase__grid">
-          {(['base', 'raised', 'glass', 'inset'] as const).map((variant) => (
+          {(['base', 'raised', 'glass', 'inset', 'brand'] as const).map((variant) => (
             <Surface key={variant} padding="md" variant={variant}>
               <strong>{variant}</strong>
               <p className="design-showcase__surface-note">variant=&quot;{variant}&quot;</p>
+            </Surface>
+          ))}
+        </div>
+        <div className="design-showcase__grid">
+          {(['accent', 'success', 'warning', 'danger', 'info'] as const).map((tone) => (
+            <Surface key={tone} padding="md" tone={tone} variant="inset">
+              <strong>{tone}</strong>
+              <p className="design-showcase__surface-note">tone=&quot;{tone}&quot;</p>
             </Surface>
           ))}
         </div>

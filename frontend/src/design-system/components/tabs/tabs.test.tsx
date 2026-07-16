@@ -54,4 +54,49 @@ describe('Tabs', () => {
     await user.keyboard('{ArrowLeft}')
     expect(activity).toHaveFocus()
   })
+
+  it('uses ArrowUp and ArrowDown for a vertical tab list', async () => {
+    const user = userEvent.setup()
+    const onValueChange = vi.fn()
+    render(
+      <Tabs.Root onValueChange={onValueChange} value="overview">
+        <Tabs.List aria-label="设置分类" orientation="vertical">
+          <Tabs.Tab value="overview">概览</Tabs.Tab>
+          <Tabs.Tab value="activity">动态</Tabs.Tab>
+          <Tabs.Tab disabled value="archive">
+            归档
+          </Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="overview">概览内容</Tabs.Panel>
+        <Tabs.Panel value="activity">动态内容</Tabs.Panel>
+      </Tabs.Root>,
+    )
+    const overview = screen.getByRole('tab', { name: '概览' })
+    const activity = screen.getByRole('tab', { name: '动态' })
+
+    overview.focus()
+    await user.keyboard('{ArrowDown}')
+    expect(activity).toHaveFocus()
+    expect(onValueChange).toHaveBeenLastCalledWith('activity')
+
+    await user.keyboard('{ArrowUp}')
+    expect(overview).toHaveFocus()
+    expect(onValueChange).toHaveBeenLastCalledWith('overview')
+  })
+
+  it('exposes a shared navigation-list treatment for settings sidebars', () => {
+    render(
+      <Tabs.Root onValueChange={() => {}} value="profile">
+        <Tabs.List aria-label="设置分类" orientation="vertical" variant="navigation">
+          <Tabs.Tab value="profile">个人信息</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="profile">个人信息内容</Tabs.Panel>
+      </Tabs.Root>,
+    )
+
+    expect(screen.getByRole('tablist', { name: '设置分类' })).toHaveAttribute(
+      'data-variant',
+      'navigation',
+    )
+  })
 })

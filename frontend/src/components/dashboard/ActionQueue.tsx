@@ -1,7 +1,5 @@
-import { Link } from 'react-router-dom'
 import EmberPanel from '@/components/common/EmberPanel'
-import EmptyState from '@/components/common/EmptyState'
-import PanelHeader from '@/components/common/PanelHeader'
+import { DataList, EmptyState, RouterButton, SectionHeader } from '@/design-system'
 import { formatCurrency } from '@/utils/format'
 import type { PaymentDisplayItem } from '@/views/dashboard/dashboardModel'
 
@@ -23,51 +21,57 @@ export default function ActionQueue({ payments, limit = 5 }: ActionQueueProps) {
 
   return (
     <EmberPanel>
-      <PanelHeader
-        action={
+      <SectionHeader
+        actions={
           payments.length > 0 ? (
-            <Link className="btn btn-ghost btn-sm" to="/calendar">
+            <RouterButton size="sm" to="/calendar" variant="ghost">
               查看全部
-            </Link>
+            </RouterButton>
           ) : undefined
         }
+        density="compact"
+        description="按到期紧迫度排序"
         headingLevel={2}
-        subtitle="按到期紧迫度排序"
         title="待处理收款"
       />
 
       {visiblePayments.length === 0 ? (
         <EmptyState
           action={
-            <Link className="btn btn-ghost btn-sm" to="/calendar">
+            <RouterButton size="sm" to="/calendar" variant="ghost">
               查看收款日历
-            </Link>
+            </RouterButton>
           }
           description="可以前往收款日历查看更远日期的计划。"
           icon={<i className="ri-checkbox-circle-line" />}
           title="未来七天暂无待处理收款"
         />
       ) : (
-        <ol className="action-queue__list">
+        <DataList.Root as="ol">
           {visiblePayments.map((item) => (
-            <li key={item.id}>
-              <Link
-                className={`action-queue__item action-queue__item--${item.days_left < 0 ? 'overdue' : item.days_left === 0 ? 'today' : 'upcoming'}`}
+            <DataList.Item key={item.id}>
+              <DataList.Link
+                density="comfortable"
+                icon={<i className="ri-arrow-right-s-line" />}
+                markerTone={
+                  item.days_left < 0 ? 'danger' : item.days_left === 0 ? 'accent' : 'neutral'
+                }
                 to={`/projects/${item.project_id}?tab=payments&payment=${item.id}`}
               >
-                <span className="action-queue__copy">
-                  <strong>{item.project_name}</strong>
-                  <span>{item.client_name}</span>
-                </span>
-                <span className="action-queue__meta">
-                  <strong>{formatCurrency(item.amount)}</strong>
-                  <span>{dueLabel(item.days_left)}</span>
-                </span>
-                <i aria-hidden="true" className="ri-arrow-right-s-line action-queue__arrow" />
-              </Link>
-            </li>
+                <DataList.Identity>
+                  <DataList.Primary>{item.project_name}</DataList.Primary>
+                  <DataList.Secondary>{item.client_name}</DataList.Secondary>
+                </DataList.Identity>
+                <DataList.Meta align="end" numeric>
+                  <DataList.Primary>{formatCurrency(item.amount)}</DataList.Primary>
+                  <DataList.Secondary tone={item.days_left < 0 ? 'danger' : 'neutral'}>
+                    {dueLabel(item.days_left)}
+                  </DataList.Secondary>
+                </DataList.Meta>
+              </DataList.Link>
+            </DataList.Item>
           ))}
-        </ol>
+        </DataList.Root>
       )}
     </EmberPanel>
   )

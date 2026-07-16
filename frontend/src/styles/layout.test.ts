@@ -40,34 +40,54 @@ describe('topbar window interaction boundaries', () => {
         rule.selectorText.includes('true'),
     )
 
-    expect(scrolledRule?.style.transform).toBe('')
+    expect(scrolledRule).toBeUndefined()
   })
 
-  test('marks portal content and full-window overlays as non-draggable', () => {
+  test('marks portal content as non-draggable without a bespoke full-window overlay', () => {
     expect(findStyleRule('.app-topbar-portal')?.style.getPropertyValue('--wails-draggable')).toBe(
       'no-drag',
     )
-    expect(findStyleRule('.app-topbar__overlay')?.style.getPropertyValue('--wails-draggable')).toBe(
-      'no-drag',
-    )
+    expect(findStyleRule('.app-topbar__overlay')).toBeUndefined()
   })
 
-  test('keeps the theme selector portal above the overlay and inside compact windows', () => {
-    const menuRule = findStyleRule('.theme-selector__menu')
+  test('keeps the ODS theme popover non-draggable and compact-window safe', () => {
+    const popoverRule = findStyleRule('.theme-selector__popover')
 
-    expect(menuRule?.style.position).toBe('fixed')
-    expect(Number(menuRule?.style.zIndex)).toBeGreaterThan(999)
-    expect(menuRule?.style.maxWidth).toContain('100vw')
-    expect(menuRule?.style.getPropertyValue('--wails-draggable')).toBe('no-drag')
-    expect(findStyleRule('.theme-selector__label')?.style.justifySelf).toBe('start')
-    expect(findStyleRule('.theme-selector__check')?.style.justifySelf).toBe('end')
-    expect(findStyleRule('.theme-selector__option > :last-child')).toBeUndefined()
+    expect(popoverRule?.style.width).toBe('196px')
+    expect(popoverRule?.style.maxWidth).toContain('100vw')
+    expect(popoverRule?.style.getPropertyValue('--wails-draggable')).toBe('no-drag')
+    expect(findStyleRule('.theme-selector__menu')).toBeUndefined()
+    expect(findStyleRule('.theme-selector__option')).toBeUndefined()
+  })
+
+  test('does not recreate button visuals with shell-level native element selectors', () => {
+    const visualProperties = [
+      'background',
+      'border',
+      'box-shadow',
+      'color',
+      'cursor',
+      'font-size',
+      'padding',
+      'width',
+    ]
+    const bespokeButtonRules = rules.filter(
+      (rule): rule is CSSStyleRule =>
+        rule instanceof CSSStyleRule &&
+        rule.selectorText.startsWith('.app-topbar') &&
+        /(?:^|\s|>)button(?:$|\s|:|\.)/.test(rule.selectorText) &&
+        visualProperties.some((property) => rule.style.getPropertyValue(property) !== ''),
+    )
+
+    expect(bespokeButtonRules.map((rule) => rule.selectorText)).toEqual([])
   })
 
   test('uses one tokenized warm ambient light for the shell', () => {
-    expect(findStyleRule('.app-background')?.style.background).toContain('var(--color-bg)')
+    expect(findStyleRule('.app-background')?.style.background).toContain(
+      'var(--ods-color-bg-canvas)',
+    )
     expect(findStyleRule('.app-background::before')?.style.background).toContain(
-      'var(--color-ambient-glow)',
+      'var(--ods-color-ambient-glow)',
     )
     expect(findStyleRule('.app-background::after')?.style.content).toBe('none')
   })

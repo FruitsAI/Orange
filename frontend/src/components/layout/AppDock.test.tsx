@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 import { render, screen, within } from '@/test/render'
+import routerControlsCss from '@/design-system/patterns/router-controls/router-controls.css?raw'
 import '@/styles/layout.css'
 import layoutCss from '@/styles/layout.css?raw'
 import AppDock from './AppDock'
@@ -62,6 +63,11 @@ describe('AppDock', () => {
   test('exposes accessible routes and marks only the matching route as current', () => {
     render(<AppDock />, { initialEntries: ['/projects/42'] })
 
+    const dock = getNavigation('快捷导航')
+    expect(dock).toHaveClass('ods-surface')
+    expect(dock).toHaveAttribute('data-radius', 'shell')
+    expect(dock).toHaveAttribute('data-variant', 'glass')
+
     for (const item of expectedNavigation) {
       expect(screen.getByRole('link', { hidden: true, name: item.label })).toHaveAttribute(
         'href',
@@ -103,7 +109,6 @@ describe('AppDock', () => {
       )
 
     const dockRule = findStyleRule('.app-dock')
-    const focusRule = findStyleRule('.app-dock__link:focus-visible')
     const responsiveRule = rules.find(
       (rule): rule is CSSMediaRule =>
         rule instanceof CSSMediaRule && rule.conditionText.includes('max-width: 768px'),
@@ -116,9 +121,12 @@ describe('AppDock', () => {
       )
 
     expect(dockRule?.style.display).toBe('none')
+    expect(dockRule?.style.gridTemplateColumns).toContain('repeat(5')
     expect(dockRule?.style.getPropertyValue('--wails-draggable')).toBe('no-drag')
     expect(dockRule?.style.bottom).toContain('env(safe-area-inset-bottom)')
-    expect(focusRule?.style.outline).not.toBe('')
+    expect(routerControlsCss).toMatch(
+      /\.ods-router-nav-link\[data-appearance='dock'\]:focus-visible\s*\{/,
+    )
     expect(findResponsiveStyle('.app-topbar__nav')?.style.display).toBe('none')
     expect(findResponsiveStyle('.app-dock')?.style.display).not.toBe('none')
     expect(findResponsiveStyle('.app-view-content')?.style.paddingBottom).toContain(
@@ -156,15 +164,17 @@ describe('AppDock', () => {
       findCompactStyle('.app-topbar')?.style.getPropertyValue(
         '--app-topbar-notification-trailing-offset',
       ),
-    ).toBe('80px')
+    ).toBe('')
     expect(findCompactStyle('.app-topbar__utilities')?.style.gap).toBe('3px')
     expect(findCompactStyle('.app-topbar__icon-button')?.style.width).toBe('34px')
     expect(findCompactStyle('.app-topbar__user-button')?.style.width).toBe('34px')
     expect(
-      findCompactStyle('.app-topbar__notification-wrapper .app-topbar__notification-menu')?.style
-        .right,
-    ).toContain('--app-topbar-notification-trailing-offset')
-    expect(compactCss).toContain('width: min(340px, calc(100vw - 28px));')
+      findCompactStyle('.app-topbar__notification-wrapper .app-topbar__notification-menu'),
+    ).toBeUndefined()
+    expect(layoutCss).toMatch(
+      /\.app-topbar__notification-menu\s*\{[\s\S]*width:\s*min\(340px, calc\(100vw - 28px\)\)/,
+    )
+    expect(compactCss).not.toContain('--app-topbar-notification-trailing-offset')
     expect(notificationListRule?.style.maxHeight).toBe('320px')
     expect(notificationListRule?.style.height).toBe('')
     expect(notificationListRule?.style.minHeight).toBe('')

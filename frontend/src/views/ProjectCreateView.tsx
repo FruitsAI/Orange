@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   paymentApi,
@@ -7,19 +7,26 @@ import {
   type PaymentRequest,
   type ProjectRequest,
 } from '@/api/project'
-import DatePicker from '@/components/common/DatePicker'
-import GlassCard from '@/components/common/GlassCard'
+import { PaymentPlanEditor } from '@/components/project/PaymentPlanEditor'
+import { createPaymentPlanItem, type PaymentPlanItem } from '@/components/project/paymentPlan'
+import {
+  Button,
+  Card,
+  DatePicker,
+  Field,
+  FormActions,
+  FormGrid,
+  FormSection,
+  IconButton,
+  Input,
+  NumberInput,
+  PageHeader,
+  Select,
+  TextArea,
+  type SelectOption,
+} from '@/design-system'
 import { useToastStore } from '@/composables/useToast'
-
-interface PaymentItem {
-  id?: number
-  amount: string
-  method: string
-  planDate: string
-  remark: string
-  stage: string
-  status: string
-}
+import '@/styles/project-domain.css'
 
 const emptyForm: ProjectRequest = {
   company: '',
@@ -35,14 +42,14 @@ const emptyForm: ProjectRequest = {
   type: '',
 }
 
-const projectTypeOptions = [
+const projectTypeOptions: SelectOption[] = [
   { label: '软件开发', value: 'software' },
   { label: '技术咨询', value: 'consulting' },
   { label: '运营服务', value: 'service' },
   { label: '其他', value: 'other' },
 ]
 
-const projectStatusOptions = [
+const projectStatusOptions: SelectOption[] = [
   { label: '进行中', value: 'active' },
   { label: '已完成', value: 'completed' },
   { label: '即将交付', value: 'pending' },
@@ -50,36 +57,31 @@ const projectStatusOptions = [
   { label: '已归档', value: 'archived' },
 ]
 
-const paymentMethods = ['一次性付款', '分期付款']
+const paymentMethodOptions: SelectOption[] = [
+  { label: '一次性付款', value: '一次性付款' },
+  { label: '分期付款', value: '分期付款' },
+]
 
-const collectionStageOptions = [
-  { label: '全款', value: 'all' },
+const installmentStageOptions: SelectOption[] = [
   { label: '预付款', value: 'deposit' },
   { label: '阶段款', value: 'milestone' },
   { label: '尾款', value: 'final' },
 ]
 
-const collectionMethodOptions = [
-  { label: '银行转账', value: 'bank_transfer' },
-  { label: '支付宝', value: 'alipay' },
-  { label: '微信', value: 'wechat' },
-  { label: '现金', value: 'cash' },
+const oneTimeStageOptions: SelectOption[] = [
+  { label: '全款', value: 'all' },
+  ...installmentStageOptions,
 ]
 
-const paymentStatuses = [
-  { label: '待收款', value: 'pending' },
-  { label: '已收款', value: 'paid' },
-  { label: '已逾期', value: 'overdue' },
-]
-
-const createPaymentItem = (payment?: Payment): PaymentItem => ({
-  amount: payment ? String(payment.amount) : '',
-  id: payment?.id,
-  method: payment?.method || 'bank_transfer',
-  planDate: payment?.plan_date || '',
-  remark: payment?.remark || '',
-  stage: payment?.stage || 'all',
-  status: payment?.status || 'pending',
+const toPaymentPlanItem = (payment: Payment): PaymentPlanItem => ({
+  ...createPaymentPlanItem(payment.stage !== 'all'),
+  amount: String(payment.amount),
+  id: payment.id,
+  method: payment.method || 'bank_transfer',
+  planDate: payment.plan_date || '',
+  remark: payment.remark || '',
+  stage: payment.stage || 'all',
+  status: payment.status || 'pending',
 })
 
 export default function ProjectCreateView() {
@@ -88,91 +90,116 @@ export default function ProjectCreateView() {
   const toastError = useToastStore((state) => state.error)
   const toastSuccess = useToastStore((state) => state.success)
   const [form, setForm] = useState<ProjectRequest>(emptyForm)
-  const [paymentItems, setPaymentItems] = useState<PaymentItem[]>([createPaymentItem()])
+  const [paymentItems, setPaymentItems] = useState<PaymentPlanItem[]>([createPaymentPlanItem()])
   const originalPaymentIds = useRef<number[]>([])
   const [saving, setSaving] = useState(false)
-  const isEdit = Boolean(id)
+  const isMountedRef = useRef(false)
+  const loadGenerationRef = useRef(0)
+  const projectId = id ? Number(id) : null
+  const activeProjectIdRef = useRef<number | null>(projectId)
+  const isEdit = projectId !== null
+  const isInstallment = form.payment_method === '分期付款'
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      loadGenerationRef.current += 1
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    activeProjectIdRef.current = projectId
+  }, [projectId])
 
   const updateForm = (patch: Partial<ProjectRequest>) =>
     setForm((current) => ({ ...current, ...patch }))
 
-  const isInstallment = form.payment_method === '分期付款'
+  const ensurePaymentItems = (paymentMethod: string) => {
+    setPaymentItems((current) => {
+      if (paymentMethod === '一次性付款') {
+        const first = current[0] || createPaymentPlanItem()
+        return [{ ...first, stage: 'all' }]
+      }
+      return current.length
+        ? current.map((item) => (item.stage === 'all' ? { ...item, stage: 'deposit' } : item))
+        : [createPaymentPlanItem(true)]
+    })
+  }
 
-  const defaultStageOptions = useMemo(() => {
-    if (isInstallment) return collectionStageOptions.filter((stage) => stage.value !== 'all')
-    return collectionStageOptions
-  }, [isInstallment])
+  const loadProject = useCallback(
+    async (requestedProjectId: number) => {
+      if (!isMountedRef.current || activeProjectIdRef.current !== requestedProjectId) return
 
-  const ensurePaymentItems = useCallback(
-    (paymentMethod = form.payment_method) => {
-      setPaymentItems((current) => {
-        if (paymentMethod === '一次性付款') {
-          const first = current[0] || createPaymentItem()
-          return [{ ...first, stage: 'all' }]
+      const loadGeneration = ++loadGenerationRef.current
+      setSaving(true)
+      try {
+        const [projectRes, paymentsRes] = await Promise.all([
+          projectApi.get(requestedProjectId),
+          projectApi.getPayments(requestedProjectId),
+        ])
+        if (
+          !isMountedRef.current ||
+          loadGeneration !== loadGenerationRef.current ||
+          activeProjectIdRef.current !== requestedProjectId
+        ) {
+          return
         }
-        return current.length
-          ? current.map((item) => (item.stage === 'all' ? { ...item, stage: 'deposit' } : item))
-          : [{ ...createPaymentItem(), stage: 'deposit' }]
-      })
+        const project = projectRes.data.data
+        setForm({
+          company: project.company,
+          contract_date: project.contract_date || '',
+          contract_number: project.contract_number || '',
+          description: project.description || '',
+          end_date: project.end_date || '',
+          name: project.name,
+          payment_method: project.payment_method || '一次性付款',
+          start_date: project.start_date || '',
+          status: project.status,
+          total_amount: project.total_amount,
+          type: project.type || '',
+        })
+
+        originalPaymentIds.current = paymentsRes.data.data.map((payment) => payment.id)
+        setPaymentItems(
+          paymentsRes.data.data.length
+            ? paymentsRes.data.data.map(toPaymentPlanItem)
+            : [createPaymentPlanItem()],
+        )
+      } catch {
+        if (
+          !isMountedRef.current ||
+          loadGeneration !== loadGenerationRef.current ||
+          activeProjectIdRef.current !== requestedProjectId
+        ) {
+          return
+        }
+        toastError('获取项目详情失败')
+      } finally {
+        if (
+          isMountedRef.current &&
+          loadGeneration === loadGenerationRef.current &&
+          activeProjectIdRef.current === requestedProjectId
+        ) {
+          setSaving(false)
+        }
+      }
     },
-    [form.payment_method],
+    [toastError],
   )
 
-  const loadProject = useCallback(async () => {
-    if (!id) return
-    setSaving(true)
-    try {
-      const [projectRes, paymentsRes] = await Promise.all([
-        projectApi.get(Number(id)),
-        projectApi.getPayments(Number(id)),
-      ])
-      const project = projectRes.data.data
-      setForm({
-        company: project.company,
-        contract_date: project.contract_date || '',
-        contract_number: project.contract_number || '',
-        description: project.description || '',
-        end_date: project.end_date || '',
-        name: project.name,
-        payment_method: project.payment_method || '一次性付款',
-        start_date: project.start_date || '',
-        status: project.status,
-        total_amount: project.total_amount,
-        type: project.type || '',
-      })
-
-      originalPaymentIds.current = paymentsRes.data.data.map((payment) => payment.id)
-      setPaymentItems(
-        paymentsRes.data.data.length
-          ? paymentsRes.data.data.map(createPaymentItem)
-          : [createPaymentItem()],
-      )
-    } catch {
-      toastError('获取项目详情失败')
-    } finally {
-      setSaving(false)
-    }
-  }, [id, toastError])
-
   useEffect(() => {
-    const timer = window.setTimeout(loadProject, 0)
-    return () => window.clearTimeout(timer)
-  }, [loadProject])
+    const routeGeneration = ++loadGenerationRef.current
+    if (projectId === null) return
 
-  const updatePaymentItem = (index: number, patch: Partial<PaymentItem>) => {
-    setPaymentItems((current) =>
-      current.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
-    )
-  }
-
-  const addPaymentItem = () => {
-    setPaymentItems((current) => [...current, { ...createPaymentItem(), stage: 'deposit' }])
-  }
-
-  const removePaymentItem = (index: number) => {
-    if (!isInstallment) return
-    setPaymentItems((current) => current.filter((_, itemIndex) => itemIndex !== index))
-  }
+    const timer = window.setTimeout(() => {
+      if (routeGeneration === loadGenerationRef.current) void loadProject(projectId)
+    }, 0)
+    return () => {
+      window.clearTimeout(timer)
+      loadGenerationRef.current += 1
+    }
+  }, [loadProject, projectId])
 
   const savePayments = async (projectId: number) => {
     const currentIds = new Set(
@@ -182,8 +209,8 @@ export default function ProjectCreateView() {
 
     await Promise.all(removedIds.map((paymentId) => paymentApi.delete(paymentId)))
 
-    for (const item of paymentItems) {
-      if (!item.amount || !item.planDate) continue
+    const writes = paymentItems.flatMap((item) => {
+      if (!item.amount || !item.planDate) return []
 
       const payload: PaymentRequest = {
         amount: Number(item.amount) || 0,
@@ -195,22 +222,39 @@ export default function ProjectCreateView() {
         status: item.status,
       }
 
-      if (item.id) {
-        await paymentApi.update(item.id, payload)
-      } else {
-        await paymentApi.create(payload)
-      }
-    }
+      return [item.id ? paymentApi.update(item.id, payload) : paymentApi.create(payload)]
+    })
+
+    await Promise.all(writes)
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (!form.type) {
+      toastError('请选择项目类型')
+      return
+    }
+    if (!form.start_date || !form.end_date) {
+      toastError('请选择项目开始和截止日期')
+      return
+    }
+    if (!form.contract_date) {
+      toastError('请选择合同日期')
+      return
+    }
+    if (paymentItems.some((item) => !item.amount || !item.planDate)) {
+      toastError('请完整填写收款金额和收款日期')
+      return
+    }
+
     setSaving(true)
     try {
       const response =
-        isEdit && id ? await projectApi.update(Number(id), form) : await projectApi.create(form)
-      const projectId = isEdit && id ? Number(id) : response.data.data.id
-      await savePayments(projectId)
+        isEdit && projectId
+          ? await projectApi.update(projectId, form)
+          : await projectApi.create(form)
+      const savedProjectId = isEdit && projectId ? projectId : response.data.data.id
+      await savePayments(savedProjectId)
       toastSuccess(isEdit ? '项目与收款已更新' : '项目已创建')
       navigate('/projects')
     } catch (error) {
@@ -221,387 +265,173 @@ export default function ProjectCreateView() {
   }
 
   return (
-    <div className="project-create-view">
-      <div style={{ marginBottom: 12, marginTop: -12 }}>
-        <button
-          aria-label="返回上一页"
-          className="btn btn-ghost btn-sm pl-0 hover:bg-transparent"
-          onClick={() => navigate(-1)}
-          type="button"
-        >
-          <i className="ri-arrow-left-line text-2xl text-primary" />
-        </button>
-      </div>
+    <div className="project-create-view project-form-page">
+      <PageHeader
+        description={isEdit ? '更新项目档案与收款计划。' : '建立项目档案并规划回款节点。'}
+        leading={
+          <IconButton label="返回上一页" onClick={() => navigate(-1)} variant="ghost">
+            <i aria-hidden="true" className="ri-arrow-left-line" />
+          </IconButton>
+        }
+        title={isEdit ? '编辑项目' : '创建项目'}
+      />
 
-      <GlassCard className="w-full">
+      <Card.Root className="project-form-card" padding="lg">
         <form className="project-form" onSubmit={handleSubmit}>
-          <h3 className="section-title">基本信息</h3>
-          <div className="form-grid">
-            <div className="input-group">
-              <label>
-                项目名称 <span className="text-red-500">*</span>
-              </label>
-              <div className="input-wrapper">
-                <input
+          <FormSection description="项目基础信息与当前履约状态。" title="基本信息">
+            <FormGrid columns={2}>
+              <Field.Root required>
+                <Field.Label>项目名称</Field.Label>
+                <Input
                   autoCapitalize="off"
                   autoComplete="off"
                   autoCorrect="off"
-                  onChange={(event) => updateForm({ name: event.target.value })}
+                  onChange={(event) => updateForm({ name: event.currentTarget.value })}
                   placeholder="请输入项目名称"
-                  required
                   spellCheck={false}
                   type="text"
                   value={form.name}
                 />
-              </div>
-            </div>
+              </Field.Root>
 
-            <div className="input-group">
-              <label>
-                客户名称 <span className="text-red-500">*</span>
-              </label>
-              <div className="input-wrapper">
-                <input
+              <Field.Root required>
+                <Field.Label>客户名称</Field.Label>
+                <Input
                   autoCapitalize="off"
                   autoComplete="off"
                   autoCorrect="off"
-                  onChange={(event) => updateForm({ company: event.target.value })}
+                  onChange={(event) => updateForm({ company: event.currentTarget.value })}
                   placeholder="请输入客户名称"
-                  required
                   spellCheck={false}
                   type="text"
                   value={form.company}
                 />
-              </div>
-            </div>
+              </Field.Root>
 
-            <div className="input-group">
-              <label>
-                项目类型 <span className="text-red-500">*</span>
-              </label>
-              <div className="input-wrapper">
-                <select
-                  className="form-select"
-                  onChange={(event) => updateForm({ type: event.target.value })}
+              <Field.Root required>
+                <Field.Label>项目类型</Field.Label>
+                <Select
+                  aria-label="项目类型"
+                  onValueChange={(value) => updateForm({ type: value })}
+                  options={projectTypeOptions}
+                  placeholder="请选择项目类型"
                   value={form.type}
-                >
-                  <option value="">请选择项目类型</option>
-                  {projectTypeOptions.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-                <i className="ri-arrow-down-s-line select-arrow" />
-              </div>
-            </div>
+                />
+              </Field.Root>
 
-            <div className="input-group">
-              <label>
-                项目状态 <span className="text-red-500">*</span>
-              </label>
-              <div className="input-wrapper">
-                <select
-                  className="form-select"
-                  onChange={(event) => updateForm({ status: event.target.value })}
+              <Field.Root required>
+                <Field.Label>项目状态</Field.Label>
+                <Select
+                  aria-label="项目状态"
+                  onValueChange={(value) => updateForm({ status: value })}
+                  options={projectStatusOptions}
                   value={form.status}
-                >
-                  {projectStatusOptions.map((status) => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
-                    </option>
-                  ))}
-                </select>
-                <i className="ri-arrow-down-s-line select-arrow" />
-              </div>
-            </div>
+                />
+              </Field.Root>
 
-            <div className="input-group">
-              <label>
-                开始日期 <span className="text-red-500">*</span>
-              </label>
-              <div className="input-wrapper">
+              <Field.Root required>
+                <Field.Label>开始日期</Field.Label>
                 <DatePicker
+                  aria-label="开始日期"
+                  onValueChange={(value) => updateForm({ start_date: value })}
                   placeholder="请选择开始日期"
-                  required
                   value={form.start_date}
-                  onChange={(value) => updateForm({ start_date: value })}
                 />
-              </div>
-            </div>
+              </Field.Root>
 
-            <div className="input-group">
-              <label>
-                截止日期 <span className="text-red-500">*</span>
-              </label>
-              <div className="input-wrapper">
+              <Field.Root required>
+                <Field.Label>截止日期</Field.Label>
                 <DatePicker
+                  aria-label="截止日期"
+                  min={form.start_date || undefined}
+                  onValueChange={(value) => updateForm({ end_date: value })}
                   placeholder="请选择截止日期"
-                  required
                   value={form.end_date}
-                  onChange={(value) => updateForm({ end_date: value })}
                 />
-              </div>
-            </div>
-          </div>
+              </Field.Root>
+            </FormGrid>
+          </FormSection>
 
-          <h3 className="section-title mt-md">财务信息</h3>
-          <div className="form-grid">
-            <div className="input-group">
-              <label>
-                合同总金额 (¥) <span className="text-red-500">*</span>
-              </label>
-              <div className="input-wrapper">
-                <input
-                  autoCapitalize="off"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  min="0"
-                  onChange={(event) => updateForm({ total_amount: Number(event.target.value) })}
-                  placeholder="0.00"
-                  required
-                  spellCheck={false}
-                  step="0.01"
-                  type="number"
+          <FormSection description="合同信息及约定的付款方式。" title="财务信息">
+            <FormGrid columns={2}>
+              <Field.Root required>
+                <Field.Label>合同总金额 (¥)</Field.Label>
+                <NumberInput
+                  min={0}
+                  onValueChange={(value) => updateForm({ total_amount: value })}
+                  step={0.01}
                   value={form.total_amount}
                 />
-              </div>
-            </div>
+              </Field.Root>
 
-            <div className="input-group">
-              <label>
-                合同日期 <span className="text-red-500">*</span>
-              </label>
-              <div className="input-wrapper">
+              <Field.Root required>
+                <Field.Label>合同日期</Field.Label>
                 <DatePicker
+                  aria-label="合同日期"
+                  onValueChange={(value) => updateForm({ contract_date: value })}
                   placeholder="请选择合同日期"
                   value={form.contract_date || ''}
-                  onChange={(value) => updateForm({ contract_date: value })}
                 />
-              </div>
-            </div>
+              </Field.Root>
 
-            <div className="input-group">
-              <label>
-                合同编号 <span className="text-red-500">*</span>
-              </label>
-              <div className="input-wrapper">
-                <input
+              <Field.Root>
+                <Field.Label>合同编号</Field.Label>
+                <Input
                   autoCapitalize="off"
                   autoComplete="off"
                   autoCorrect="off"
-                  onChange={(event) => updateForm({ contract_number: event.target.value })}
+                  onChange={(event) => updateForm({ contract_number: event.currentTarget.value })}
                   placeholder="选择合同日期后自动生成"
                   spellCheck={false}
                   type="text"
-                  value={form.contract_number}
+                  value={form.contract_number || ''}
                 />
-              </div>
-            </div>
+              </Field.Root>
 
-            <div className="input-group">
-              <label>
-                付款模式 <span className="text-red-500">*</span>
-              </label>
-              <div className="input-wrapper">
-                <select
-                  className="form-select"
-                  onChange={(event) => {
-                    updateForm({ payment_method: event.target.value })
-                    ensurePaymentItems(event.target.value)
+              <Field.Root required>
+                <Field.Label>付款模式</Field.Label>
+                <Select
+                  aria-label="付款模式"
+                  onValueChange={(value) => {
+                    updateForm({ payment_method: value })
+                    ensurePaymentItems(value)
                   }}
+                  options={paymentMethodOptions}
                   value={form.payment_method}
-                >
-                  {paymentMethods.map((method) => (
-                    <option key={method} value={method}>
-                      {method}
-                    </option>
-                  ))}
-                </select>
-                <i className="ri-arrow-down-s-line select-arrow" />
-              </div>
-            </div>
-          </div>
+                />
+              </Field.Root>
+            </FormGrid>
+          </FormSection>
 
-          <div className="installments-section mt-md mb-md">
-            <div className="flex justify-between items-center mb-sm">
-              <h3 className="section-title text-base mb-0 border-none pb-0 pl-0">收款计划</h3>
-              {isInstallment ? (
-                <button className="btn btn-sm btn-primary" onClick={addPaymentItem} type="button">
-                  <i className="ri-add-line mr-1" />
-                  添加分期
-                </button>
-              ) : null}
-            </div>
+          <PaymentPlanEditor
+            installment={isInstallment}
+            items={paymentItems}
+            onItemsChange={setPaymentItems}
+            stageOptions={isInstallment ? installmentStageOptions : oneTimeStageOptions}
+          />
 
-            {paymentItems.map((item, index) => (
-              <div
-                className="installment-item glass-panel p-md mb-md rounded-lg"
-                key={item.id ?? index}
-                style={{ border: '1px solid var(--color-primary)' }}
-              >
-                {isInstallment ? (
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-sm font-bold text-primary">第 {index + 1} 期</span>
-                    <button
-                      className="text-xs text-danger hover:underline"
-                      onClick={() => removePaymentItem(index)}
-                      type="button"
-                    >
-                      删除
-                    </button>
-                  </div>
-                ) : null}
-
-                <div className="form-grid">
-                  <div className="input-group">
-                    <label>
-                      收款金额 (¥) <span className="text-red-500">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                      <input
-                        autoCapitalize="off"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        onChange={(event) =>
-                          updatePaymentItem(index, { amount: event.target.value })
-                        }
-                        placeholder="0.00"
-                        required
-                        spellCheck={false}
-                        type="number"
-                        value={item.amount}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="input-group">
-                    <label>
-                      收款日期 <span className="text-red-500">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                      <DatePicker
-                        placeholder="请选择收款日期"
-                        required
-                        value={item.planDate}
-                        onChange={(value) => updatePaymentItem(index, { planDate: value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="input-group">
-                    <label>
-                      款项阶段 <span className="text-red-500">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                      <select
-                        className="form-select"
-                        disabled={!isInstallment}
-                        onChange={(event) =>
-                          updatePaymentItem(index, { stage: event.target.value })
-                        }
-                        value={item.stage}
-                      >
-                        {defaultStageOptions.map((stage) => (
-                          <option key={stage.value} value={stage.value}>
-                            {stage.label}
-                          </option>
-                        ))}
-                      </select>
-                      <i className="ri-arrow-down-s-line select-arrow" />
-                    </div>
-                  </div>
-
-                  <div className="input-group">
-                    <label>
-                      收款方式 <span className="text-red-500">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                      <select
-                        className="form-select"
-                        onChange={(event) =>
-                          updatePaymentItem(index, { method: event.target.value })
-                        }
-                        value={item.method}
-                      >
-                        {collectionMethodOptions.map((method) => (
-                          <option key={method.value} value={method.value}>
-                            {method.label}
-                          </option>
-                        ))}
-                      </select>
-                      <i className="ri-arrow-down-s-line select-arrow" />
-                    </div>
-                  </div>
-
-                  <div className="input-group">
-                    <label>
-                      状态 <span className="text-red-500">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                      <select
-                        className="form-select"
-                        onChange={(event) =>
-                          updatePaymentItem(index, { status: event.target.value })
-                        }
-                        value={item.status}
-                      >
-                        {paymentStatuses.map((status) => (
-                          <option key={status.value} value={status.value}>
-                            {status.label}
-                          </option>
-                        ))}
-                      </select>
-                      <i className="ri-arrow-down-s-line select-arrow" />
-                    </div>
-                  </div>
-
-                  <div className="input-group span-2">
-                    <label>备注</label>
-                    <div className="input-wrapper">
-                      <textarea
-                        autoCapitalize="off"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        className="form-textarea"
-                        onChange={(event) =>
-                          updatePaymentItem(index, { remark: event.target.value })
-                        }
-                        placeholder="请输入备注信息（选填）"
-                        rows={2}
-                        spellCheck={false}
-                        value={item.remark}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="input-group span-2">
-            <label>项目描述</label>
-            <div className="input-wrapper">
-              <textarea
-                className="form-textarea"
-                onChange={(event) => updateForm({ description: event.target.value })}
+          <FormSection title="补充说明">
+            <Field.Root>
+              <Field.Label>项目描述</Field.Label>
+              <TextArea
+                onChange={(event) => updateForm({ description: event.currentTarget.value })}
                 placeholder="请输入项目描述（选填）"
                 rows={3}
-                value={form.description}
+                value={form.description || ''}
               />
-            </div>
-          </div>
+            </Field.Root>
+          </FormSection>
 
-          <div className="form-actions mt-xl">
-            <button className="btn btn-ghost" onClick={() => navigate(-1)} type="button">
+          <FormActions>
+            <Button onClick={() => navigate(-1)} type="button" variant="ghost">
               取消
-            </button>
-            <button className="btn btn-primary" disabled={saving} type="submit">
+            </Button>
+            <Button pending={saving} type="submit">
               {saving ? '保存中...' : '确认保存'}
-            </button>
-          </div>
+            </Button>
+          </FormActions>
         </form>
-      </GlassCard>
+      </Card.Root>
     </div>
   )
 }

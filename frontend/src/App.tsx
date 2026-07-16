@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
-import ToastContainer from '@/components/common/ToastContainer'
+import { ConfirmProvider } from '@/components/common/ConfirmProvider'
+import { Toaster } from '@/design-system'
 import { useThemeStore } from '@/stores/theme'
 
 export default function App() {
@@ -9,9 +10,9 @@ export default function App() {
   useEffect(() => initializeTheme(), [initializeTheme])
 
   return (
-    <>
+    <ConfirmProvider>
       <Outlet />
-      <ToastContainer />
-    </>
+      <Toaster />
+    </ConfirmProvider>
   )
 }

@@ -59,10 +59,11 @@ export const TabsRoot = forwardRef<HTMLDivElement, TabsRootProps>(function TabsR
 
 export interface TabsListProps extends HTMLAttributes<HTMLDivElement> {
   orientation?: 'horizontal' | 'vertical'
+  variant?: 'navigation' | 'pill'
 }
 
 export const TabsList = forwardRef<HTMLDivElement, TabsListProps>(function TabsList(
-  { className, orientation = 'horizontal', ...props },
+  { className, orientation = 'horizontal', variant = 'pill', ...props },
   ref,
 ) {
   return (
@@ -72,6 +73,7 @@ export const TabsList = forwardRef<HTMLDivElement, TabsListProps>(function TabsL
       className={['ods-tabs__list', className].filter(Boolean).join(' ')}
       data-orientation={orientation}
       data-slot="list"
+      data-variant={variant}
       ref={ref}
       role="tablist"
     />
@@ -98,12 +100,17 @@ export const TabsTab = forwardRef<HTMLButtonElement, TabsTabProps>(function Tabs
     const tabs = Array.from(list.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)'))
     const currentIndex = tabs.indexOf(event.currentTarget)
     if (currentIndex < 0 || tabs.length === 0) return
+    const vertical = list.getAttribute('aria-orientation') === 'vertical'
 
     let nextIndex: number | null = null
     if (event.key === 'Home') nextIndex = 0
     if (event.key === 'End') nextIndex = tabs.length - 1
-    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length
-    if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length
+    if ((!vertical && event.key === 'ArrowRight') || (vertical && event.key === 'ArrowDown')) {
+      nextIndex = (currentIndex + 1) % tabs.length
+    }
+    if ((!vertical && event.key === 'ArrowLeft') || (vertical && event.key === 'ArrowUp')) {
+      nextIndex = (currentIndex - 1 + tabs.length) % tabs.length
+    }
     if (nextIndex === null) return
 
     event.preventDefault()

@@ -46,6 +46,7 @@
 @import './components/toast/toast.css';
 @import './components/tooltip/tooltip.css';
 @import './components/user/user.css';
+@import './patterns/data-list/data-list.css';
 @import './patterns/form-layout/form-layout.css';
 @import './patterns/page-header/page-header.css';
 @import './patterns/pagination-bar/pagination-bar.css';

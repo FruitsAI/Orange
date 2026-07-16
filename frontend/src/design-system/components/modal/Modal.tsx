@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { useDialogFocus } from '@/hooks/useDialogFocus'
+import { OverlayLayerProvider } from '@/hooks/overlayStack'
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'full'
 export type ModalPlacement = 'center' | 'top'
@@ -60,36 +61,54 @@ export const ModalRoot = forwardRef<HTMLDivElement, ModalRootProps>(function Mod
 ) {
   const titleId = useId().replaceAll(':', '')
   const dialogRef = useRef<HTMLDivElement>(null)
-  useDialogFocus({ dialogRef, onClose, open })
+  const scrimPressStartedRef = useRef(false)
+  const { overlayToken, zIndex } = useDialogFocus({
+    closeOnEscape: dismissable,
+    dialogRef,
+    onClose,
+    open,
+  })
 
   if (!open || typeof document === 'undefined') return null
 
   return createPortal(
-    <ModalContext.Provider value={{ onClose, titleId }}>
-      <div
-        className="ods-modal__scrim"
-        data-placement={placement}
-        data-slot="scrim"
-        onMouseDown={(event) => {
-          if (dismissable && event.target === event.currentTarget) onClose()
-        }}
-        role="presentation"
-      >
+    <OverlayLayerProvider value={overlayToken}>
+      <ModalContext.Provider value={{ onClose, titleId }}>
         <div
-          {...props}
-          aria-labelledby={titleId}
-          aria-modal="true"
-          className={['ods-modal', className].filter(Boolean).join(' ')}
-          data-size={size}
-          data-slot="modal"
-          ref={mergeRefs(dialogRef, ref)}
-          role={role}
-          tabIndex={-1}
+          className="ods-modal__scrim"
+          data-placement={placement}
+          data-slot="scrim"
+          onPointerCancel={() => {
+            scrimPressStartedRef.current = false
+          }}
+          onPointerDown={(event) => {
+            scrimPressStartedRef.current = event.target === event.currentTarget
+          }}
+          onPointerUp={(event) => {
+            const shouldDismiss =
+              dismissable && scrimPressStartedRef.current && event.target === event.currentTarget
+            scrimPressStartedRef.current = false
+            if (shouldDismiss) onClose()
+          }}
+          role="presentation"
+          style={{ zIndex }}
         >
-          {children}
+          <div
+            {...props}
+            aria-labelledby={titleId}
+            aria-modal="true"
+            className={['ods-modal', className].filter(Boolean).join(' ')}
+            data-size={size}
+            data-slot="modal"
+            ref={mergeRefs(dialogRef, ref)}
+            role={role}
+            tabIndex={-1}
+          >
+            {children}
+          </div>
         </div>
-      </div>
-    </ModalContext.Provider>,
+      </ModalContext.Provider>
+    </OverlayLayerProvider>,
     document.body,
   )
 })
@@ -143,7 +162,7 @@ export interface ModalCloseProps extends HTMLAttributes<HTMLButtonElement> {
 }
 
 export const ModalClose = forwardRef<HTMLButtonElement, ModalCloseProps>(function ModalClose(
-  { className, label = '关闭', ...props },
+  { className, label = '关闭', onClick, ...props },
   ref,
 ) {
   const { onClose } = useModalContext()
@@ -153,7 +172,10 @@ export const ModalClose = forwardRef<HTMLButtonElement, ModalCloseProps>(functio
       aria-label={label}
       className={['ods-modal__close', className].filter(Boolean).join(' ')}
       data-slot="close"
-      onClick={onClose}
+      onClick={(event) => {
+        onClick?.(event)
+        if (!event.defaultPrevented) onClose()
+      }}
       ref={ref}
       type="button"
     >

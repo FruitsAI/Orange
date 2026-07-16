@@ -2,6 +2,23 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { tokenApi, type PersonalAccessToken } from '@/api/token'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToastStore } from '@/composables/useToast'
+import {
+  Alert,
+  Button,
+  Card,
+  Chip,
+  EmptyState,
+  Field,
+  FormActions,
+  Input,
+  Modal,
+  Radio,
+  RadioGroup,
+  SectionHeader,
+  Snippet,
+  Spinner,
+  Surface,
+} from '@/design-system'
 import { formatRelativeTime } from '@/utils/format'
 
 const expiryOptions = [
@@ -80,6 +97,7 @@ export default function TokenManagement() {
   }
 
   const handleCreateToken = async () => {
+    if (creating) return
     if (!createForm.name.trim()) {
       toastWarning('请填写令牌名称')
       return
@@ -105,6 +123,8 @@ export default function TokenManagement() {
 
   const handleRevoke = async (token: PersonalAccessToken) => {
     const confirmed = await confirm({
+      actionLabel: '撤销令牌',
+      actionVariant: 'danger',
       message: `确定要撤销令牌 "${token.name}" 吗？撤销后该令牌将立即失效，无法恢复使用。`,
       title: '撤销令牌',
     })
@@ -121,6 +141,8 @@ export default function TokenManagement() {
 
   const handleDelete = async (token: PersonalAccessToken) => {
     const confirmed = await confirm({
+      actionLabel: '删除令牌',
+      actionVariant: 'danger',
       message: `确定要彻底删除令牌 "${token.name}" 吗？此操作不可恢复，令牌将从系统中永久移除。`,
       title: '删除令牌',
     })
@@ -135,85 +157,69 @@ export default function TokenManagement() {
     }
   }
 
-  const copyToken = async () => {
-    try {
-      await navigator.clipboard.writeText(newTokenValue)
-      toastSuccess('令牌已复制到剪贴板')
-    } catch {
-      toastError('复制失败，请手动复制')
-    }
-  }
-
   return (
     <div className="developer-settings">
-      <div className="dev-header">
-        <div className="dev-header-content">
-          <div className="dev-title-section">
-            <div className="dev-icon-wrapper">
-              <i className="ri-terminal-box-line" />
-            </div>
-            <div className="dev-title-info">
-              <h2 className="dev-title">开发设置</h2>
-              <p className="dev-subtitle">管理个人访问令牌 (PAT) 用于 API 认证</p>
-            </div>
-          </div>
-          <button className="dev-create-btn" onClick={openCreateModal} type="button">
-            <i className="ri-add-line" />
-            <span>生成新令牌</span>
-          </button>
-        </div>
+      <div className="settings-panel-header">
+        <SectionHeader
+          actions={
+            <Button onClick={openCreateModal}>
+              <i className="ri-add-line" />
+              <span>生成新令牌</span>
+            </Button>
+          }
+          description="管理个人访问令牌 (PAT) 用于 API 认证"
+          icon={<i className="ri-terminal-box-line" />}
+          size="lg"
+          title="开发设置"
+        />
 
         <div className="dev-stats">
-          <div className="dev-stat-card">
-            <div className="dev-stat-icon active">
+          <Card.Root className="dev-stat-card" gap="sm" orientation="horizontal" padding="sm">
+            <Surface className="dev-stat-icon" padding="none" radius="control" tone="success">
               <i className="ri-shield-check-line" />
-            </div>
+            </Surface>
             <div className="dev-stat-info">
               <span className="dev-stat-value">{activeTokens.length}</span>
               <span className="dev-stat-label">有效令牌</span>
             </div>
-          </div>
-          <div className="dev-stat-card">
-            <div className="dev-stat-icon revoked">
+          </Card.Root>
+          <Card.Root className="dev-stat-card" gap="sm" orientation="horizontal" padding="sm">
+            <Surface className="dev-stat-icon" padding="none" radius="control" tone="danger">
               <i className="ri-forbid-line" />
-            </div>
+            </Surface>
             <div className="dev-stat-info">
               <span className="dev-stat-value">{revokedTokens.length}</span>
               <span className="dev-stat-label">已撤销</span>
             </div>
-          </div>
-          <div className="dev-stat-card">
-            <div className="dev-stat-icon total">
+          </Card.Root>
+          <Card.Root className="dev-stat-card" gap="sm" orientation="horizontal" padding="sm">
+            <Surface className="dev-stat-icon" padding="none" radius="control" tone="info">
               <i className="ri-key-2-line" />
-            </div>
+            </Surface>
             <div className="dev-stat-info">
               <span className="dev-stat-value">{tokens.length}</span>
               <span className="dev-stat-label">总计</span>
             </div>
-          </div>
+          </Card.Root>
         </div>
       </div>
 
       <div className="dev-content">
         {loading ? (
-          <div className="dev-loading">
-            <div className="dev-loading-spinner">
-              <i className="ri-loader-4-line animate-spin" />
-            </div>
-            <span>正在加载令牌列表...</span>
-          </div>
+          <Spinner className="dev-loading" label="正在加载令牌列表" size="lg" />
         ) : tokens.length === 0 ? (
-          <div className="dev-empty">
-            <div className="dev-empty-icon">
-              <i className="ri-key-2-line" />
-            </div>
-            <h3 className="dev-empty-title">暂无访问令牌</h3>
-            <p className="dev-empty-desc">生成您的第一个个人访问令牌，开始集成 API</p>
-            <button className="dev-empty-btn" onClick={openCreateModal} type="button">
-              <i className="ri-add-line" />
-              生成令牌
-            </button>
-          </div>
+          <EmptyState
+            action={
+              <Button onClick={openCreateModal}>
+                <i className="ri-add-line" />
+                生成令牌
+              </Button>
+            }
+            className="dev-empty"
+            description="生成您的第一个个人访问令牌，开始集成 API"
+            icon={<i className="ri-key-2-line" />}
+            title="暂无访问令牌"
+          />
         ) : (
           <div className="dev-token-list">
             {activeTokens.length > 0 ? (
@@ -221,17 +227,27 @@ export default function TokenManagement() {
                 <h3 className="dev-section-title">
                   <i className="ri-shield-check-line" />
                   有效令牌
-                  <span className="dev-section-badge">{activeTokens.length}</span>
+                  <Chip size="sm" tone="success">
+                    {activeTokens.length}
+                  </Chip>
                 </h3>
                 <div className="dev-token-grid">
                   {activeTokens.map((token) => (
-                    <div className="dev-token-card active" key={token.id}>
+                    <Card.Root
+                      className="dev-token-card"
+                      gap="sm"
+                      key={token.id}
+                      padding="sm"
+                      tone="success"
+                    >
                       <div className="dev-token-header">
                         <div className="dev-token-name">
                           <i className="ri-key-line" />
                           <span>{token.name}</span>
                         </div>
-                        <span className="dev-token-status active">有效</span>
+                        <Chip size="sm" tone="success">
+                          有效
+                        </Chip>
                       </div>
 
                       <div className="dev-token-meta">
@@ -248,24 +264,20 @@ export default function TokenManagement() {
                       </div>
 
                       <div className="dev-token-actions">
-                        <button
-                          className="dev-action-btn revoke"
+                        <Button
                           onClick={() => void handleRevoke(token)}
-                          type="button"
+                          size="sm"
+                          variant="secondary"
                         >
                           <i className="ri-forbid-line" />
                           撤销
-                        </button>
-                        <button
-                          className="dev-action-btn delete"
-                          onClick={() => void handleDelete(token)}
-                          type="button"
-                        >
+                        </Button>
+                        <Button onClick={() => void handleDelete(token)} size="sm" variant="danger">
                           <i className="ri-delete-bin-line" />
                           删除
-                        </button>
+                        </Button>
                       </div>
-                    </div>
+                    </Card.Root>
                   ))}
                 </div>
               </div>
@@ -276,17 +288,25 @@ export default function TokenManagement() {
                 <h3 className="dev-section-title revoked">
                   <i className="ri-forbid-line" />
                   已撤销令牌
-                  <span className="dev-section-badge">{revokedTokens.length}</span>
+                  <Chip size="sm">{revokedTokens.length}</Chip>
                 </h3>
                 <div className="dev-token-grid">
                   {revokedTokens.map((token) => (
-                    <div className="dev-token-card revoked" key={token.id}>
+                    <Card.Root
+                      className="dev-token-card"
+                      gap="sm"
+                      key={token.id}
+                      padding="sm"
+                      tone="danger"
+                    >
                       <div className="dev-token-header">
                         <div className="dev-token-name">
                           <i className="ri-key-line" />
                           <span>{token.name}</span>
                         </div>
-                        <span className="dev-token-status revoked">已撤销</span>
+                        <Chip size="sm" tone="danger">
+                          已撤销
+                        </Chip>
                       </div>
 
                       <div className="dev-token-meta">
@@ -301,16 +321,12 @@ export default function TokenManagement() {
                       </div>
 
                       <div className="dev-token-actions">
-                        <button
-                          className="dev-action-btn delete"
-                          onClick={() => void handleDelete(token)}
-                          type="button"
-                        >
+                        <Button onClick={() => void handleDelete(token)} size="sm" variant="danger">
                           <i className="ri-delete-bin-line" />
                           彻底删除
-                        </button>
+                        </Button>
                       </div>
-                    </div>
+                    </Card.Root>
                   ))}
                 </div>
               </div>
@@ -319,163 +335,123 @@ export default function TokenManagement() {
         )}
       </div>
 
-      {showCreateModal ? (
-        <div
-          className="dev-modal-overlay"
-          onClick={() => setShowCreateModal(false)}
-          role="presentation"
-        >
-          <div
-            className="dev-modal"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
+      <Modal.Root
+        dismissable={!creating}
+        onClose={() => {
+          if (!creating) setShowCreateModal(false)
+        }}
+        open={showCreateModal}
+      >
+        <Modal.Header>生成新令牌</Modal.Header>
+        {!creating ? <Modal.Close label="关闭生成令牌弹窗" /> : null}
+        <Modal.Body className="settings-modal-body">
+          <Field.Root required>
+            <Field.Label>令牌名称</Field.Label>
+            <Input
+              disabled={creating}
+              onChange={(event) =>
+                setCreateForm((current) => ({ ...current, name: event.target.value }))
+              }
+              onKeyUp={(event) => {
+                if (event.key === 'Enter') void handleCreateToken()
+              }}
+              placeholder="例如：CI/CD 部署、移动应用、测试环境"
+              value={createForm.name}
+            />
+            <Field.Description>给令牌起个有意义的名字，方便日后识别用途</Field.Description>
+          </Field.Root>
+
+          <RadioGroup
+            aria-label="过期时间"
+            columns={2}
+            disabled={creating}
+            onValueChange={(value) =>
+              setCreateForm((current) => ({ ...current, expires_in: Number(value) }))
+            }
+            value={String(createForm.expires_in)}
           >
-            <div className="dev-modal-header">
-              <div className="dev-modal-title">
-                <i className="ri-add-circle-line" />
-                <span>生成新令牌</span>
-              </div>
-              <button
-                aria-label="关闭生成令牌弹窗"
-                className="dev-modal-close"
-                onClick={() => setShowCreateModal(false)}
-                type="button"
-              >
-                <i className="ri-close-line" />
-              </button>
+            <RadioGroup.Legend>过期时间</RadioGroup.Legend>
+            {expiryOptions.map((option) => (
+              <Radio key={option.value} value={String(option.value)} variant="card">
+                <span className="dev-expiry-content">
+                  <span className="dev-expiry-label">{option.label}</span>
+                  <span className="dev-expiry-desc">{option.desc}</span>
+                </span>
+              </Radio>
+            ))}
+          </RadioGroup>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <FormActions>
+            <Button
+              disabled={creating}
+              onClick={() => setShowCreateModal(false)}
+              variant="secondary"
+            >
+              取消
+            </Button>
+            <Button
+              disabled={!createForm.name.trim()}
+              onClick={() => void handleCreateToken()}
+              pending={creating}
+            >
+              {creating ? '生成中...' : '生成令牌'}
+            </Button>
+          </FormActions>
+        </Modal.Footer>
+      </Modal.Root>
+
+      <Modal.Root dismissable={false} onClose={() => undefined} open={showSuccessModal}>
+        <Modal.Header>令牌生成成功</Modal.Header>
+        <Modal.Body className="settings-modal-body">
+          <Alert
+            icon={<i className="ri-shield-keyhole-line" />}
+            title="请立即保存您的令牌"
+            tone="success"
+          />
+
+          <p className="dev-success-desc">
+            这是您<strong>唯一一次</strong>
+            能看到该令牌的完整内容。出于安全考虑，令牌只显示一次，请立即复制并保存在安全的地方。
+          </p>
+
+          <Snippet
+            className="dev-token-display"
+            copyLabel="复制令牌"
+            copyValue={newTokenValue}
+            hideSymbol
+            onCopyError={() => toastError('复制失败，请手动复制')}
+            onCopySuccess={() => toastSuccess('令牌已复制到剪贴板')}
+            size="lg"
+          >
+            {newTokenValue}
+          </Snippet>
+
+          <div className="dev-security-tips">
+            <div className="dev-tip">
+              <i className="ri-lock-line" />
+              <span>不要分享或公开您的令牌</span>
             </div>
-
-            <div className="dev-modal-body">
-              <div className="dev-form-group">
-                <label className="dev-form-label">
-                  令牌名称
-                  <span className="dev-required">*</span>
-                </label>
-                <input
-                  className="dev-form-input"
-                  onChange={(event) =>
-                    setCreateForm((current) => ({ ...current, name: event.target.value }))
-                  }
-                  onKeyUp={(event) => {
-                    if (event.key === 'Enter') void handleCreateToken()
-                  }}
-                  placeholder="例如：CI/CD 部署、移动应用、测试环境"
-                  type="text"
-                  value={createForm.name}
-                />
-                <span className="dev-form-hint">给令牌起个有意义的名字，方便日后识别用途</span>
-              </div>
-
-              <div className="dev-form-group">
-                <label className="dev-form-label">过期时间</label>
-                <div className="dev-expiry-options">
-                  {expiryOptions.map((option) => (
-                    <button
-                      className={`dev-expiry-option ${createForm.expires_in === option.value ? 'active' : ''}`}
-                      key={option.value}
-                      onClick={() =>
-                        setCreateForm((current) => ({ ...current, expires_in: option.value }))
-                      }
-                      type="button"
-                    >
-                      <span className="dev-expiry-label">{option.label}</span>
-                      <span className="dev-expiry-desc">{option.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="dev-modal-footer">
-              <button
-                className="dev-btn secondary"
-                onClick={() => setShowCreateModal(false)}
-                type="button"
-              >
-                取消
-              </button>
-              <button
-                className="dev-btn primary"
-                disabled={creating || !createForm.name.trim()}
-                onClick={() => void handleCreateToken()}
-                type="button"
-              >
-                {creating ? <i className="ri-loader-4-line animate-spin" /> : null}
-                <span>{creating ? '生成中...' : '生成令牌'}</span>
-              </button>
+            <div className="dev-tip">
+              <i className="ri-shield-star-line" />
+              <span>建议存储在密码管理器中</span>
             </div>
           </div>
-        </div>
-      ) : null}
+        </Modal.Body>
 
-      {showSuccessModal ? (
-        <div
-          className="dev-modal-overlay"
-          onClick={() => setShowSuccessModal(false)}
-          role="presentation"
-        >
-          <div
-            aria-modal="true"
-            className="dev-modal success"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
+        <Modal.Footer>
+          <Button
+            onClick={() => {
+              setShowSuccessModal(false)
+              setNewTokenValue('')
+            }}
           >
-            <div className="dev-modal-header success">
-              <div className="dev-modal-title">
-                <i className="ri-checkbox-circle-fill" />
-                <span>令牌生成成功</span>
-              </div>
-            </div>
-
-            <div className="dev-modal-body">
-              <div className="dev-success-banner">
-                <i className="ri-shield-keyhole-line" />
-                <span>请立即保存您的令牌</span>
-              </div>
-
-              <p className="dev-success-desc">
-                这是您<strong>唯一一次</strong>
-                能看到该令牌的完整内容。出于安全考虑，令牌只显示一次，请立即复制并保存在安全的地方。
-              </p>
-
-              <div className="dev-token-display">
-                <code className="dev-token-code">{newTokenValue}</code>
-                <button
-                  className="dev-copy-token-btn"
-                  onClick={() => void copyToken()}
-                  type="button"
-                >
-                  <i className="ri-file-copy-line" />
-                  <span>复制令牌</span>
-                </button>
-              </div>
-
-              <div className="dev-security-tips">
-                <div className="dev-tip">
-                  <i className="ri-lock-line" />
-                  <span>不要分享或公开您的令牌</span>
-                </div>
-                <div className="dev-tip">
-                  <i className="ri-shield-star-line" />
-                  <span>建议存储在密码管理器中</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="dev-modal-footer">
-              <button
-                className="dev-btn primary"
-                onClick={() => setShowSuccessModal(false)}
-                type="button"
-              >
-                <i className="ri-check-line" />
-                <span>我已保存</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+            <i className="ri-check-line" />
+            <span>我已保存</span>
+          </Button>
+        </Modal.Footer>
+      </Modal.Root>
     </div>
   )
 }

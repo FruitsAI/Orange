@@ -1,8 +1,25 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { notificationApi, type Notification, type UserBrief } from '@/api/notification'
 import NotificationDetailModal from '@/components/notification/NotificationDetailModal'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToastStore } from '@/composables/useToast'
+import {
+  Button,
+  Card,
+  Chip,
+  EmptyState,
+  Field,
+  FormActions,
+  IconButton,
+  Input,
+  Modal,
+  PaginationBar,
+  SectionHeader,
+  Select,
+  Spinner,
+  Surface,
+  TextArea,
+} from '@/design-system'
 
 interface NotificationManagementProps {
   isAdmin?: boolean
@@ -20,30 +37,6 @@ const emptyNotification: NotificationForm = {
   target_user_id: 0,
   title: '',
   type: 'system',
-}
-
-const getVisiblePages = (currentPage: number, totalPages: number) => {
-  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1)
-
-  const pages: Array<number | string> = [1]
-  const delta = 2
-  let start = currentPage - delta
-  let end = currentPage + delta
-
-  if (start <= 2) {
-    start = 2
-    end = Math.min(6, totalPages - 1)
-  } else if (end >= totalPages - 1) {
-    end = totalPages - 1
-    start = Math.max(totalPages - 5, 2)
-  }
-
-  if (start > 2) pages.push('...')
-  for (let page = start; page <= end; page += 1) pages.push(page)
-  if (end < totalPages - 1) pages.push('...')
-  if (totalPages > 1) pages.push(totalPages)
-
-  return pages
 }
 
 const getNotificationTypeName = (type: number) => {
@@ -79,6 +72,9 @@ export default function NotificationManagement({ isAdmin = false }: Notification
   const [showNotificationDetailModal, setShowNotificationDetailModal] = useState(false)
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
   const [isEditingNotification, setIsEditingNotification] = useState(false)
+  const notificationsRequestRef = useRef(0)
+  const targetUsersRequestRef = useRef(0)
+  const mutationInFlightRef = useRef(false)
 
   const unreadNotifications = useMemo(
     () => notifications.filter((notification) => !notification.is_read).length,
@@ -89,10 +85,6 @@ export default function NotificationManagement({ isAdmin = false }: Notification
     [notifications],
   )
   const notificationTotalPages = Math.ceil(notificationTotal / notificationPageSize)
-  const visibleNotificationPages = useMemo(
-    () => getVisiblePages(notificationCurrentPage, notificationTotalPages),
-    [notificationCurrentPage, notificationTotalPages],
-  )
   const notificationPaginationInfo = useMemo(() => {
     if (notificationTotal === 0) return '暂无数据'
     const start = (notificationCurrentPage - 1) * notificationPageSize + 1
@@ -101,49 +93,47 @@ export default function NotificationManagement({ isAdmin = false }: Notification
   }, [notificationCurrentPage, notificationPageSize, notificationTotal])
 
   const loadNotifications = useCallback(async () => {
+    const requestId = ++notificationsRequestRef.current
     setNotificationLoading(true)
     try {
       const response = await notificationApi.list(notificationCurrentPage, notificationPageSize)
-      setNotifications(response.data.data.list)
-      setNotificationTotal(response.data.data.total)
+      if (requestId === notificationsRequestRef.current) {
+        setNotifications(response.data.data.list)
+        setNotificationTotal(response.data.data.total)
+      }
     } catch {
-      toastError('获取通知失败')
+      if (requestId === notificationsRequestRef.current) toastError('获取通知失败')
     } finally {
-      setNotificationLoading(false)
+      if (requestId === notificationsRequestRef.current) setNotificationLoading(false)
     }
   }, [notificationCurrentPage, notificationPageSize, toastError])
 
   const loadTargetUsers = useCallback(async () => {
+    const requestId = ++targetUsersRequestRef.current
     try {
       const response = await notificationApi.getUsers()
-      setTargetUsers(response.data.data)
+      if (requestId === targetUsersRequestRef.current) setTargetUsers(response.data.data)
     } catch {
-      toastError('获取用户列表失败')
+      if (requestId === targetUsersRequestRef.current) toastError('获取用户列表失败')
     }
   }, [toastError])
 
   useEffect(() => {
     const timer = window.setTimeout(loadNotifications, 0)
-    return () => window.clearTimeout(timer)
+    return () => {
+      window.clearTimeout(timer)
+      notificationsRequestRef.current += 1
+    }
   }, [loadNotifications])
 
   useEffect(() => {
     if (!isAdmin) return undefined
     const timer = window.setTimeout(loadTargetUsers, 0)
-    return () => window.clearTimeout(timer)
+    return () => {
+      window.clearTimeout(timer)
+      targetUsersRequestRef.current += 1
+    }
   }, [isAdmin, loadTargetUsers])
-
-  const notificationPrevPage = () => {
-    setNotificationCurrentPage((page) => Math.max(1, page - 1))
-  }
-
-  const notificationNextPage = () => {
-    setNotificationCurrentPage((page) => Math.min(notificationTotalPages, page + 1))
-  }
-
-  const notificationGoToPage = (page: number) => {
-    setNotificationCurrentPage(page)
-  }
 
   const openCreateModal = () => {
     setIsEditingNotification(false)
@@ -153,11 +143,13 @@ export default function NotificationManagement({ isAdmin = false }: Notification
   }
 
   const handleCreateNotification = async () => {
+    if (mutationInFlightRef.current) return
     if (!newNotification.title || !newNotification.content) {
       toastError('请填写标题和内容')
       return
     }
 
+    mutationInFlightRef.current = true
     setCreatingNotification(true)
     try {
       await notificationApi.create(newNotification)
@@ -168,12 +160,18 @@ export default function NotificationManagement({ isAdmin = false }: Notification
     } catch {
       toastError('发送失败')
     } finally {
+      mutationInFlightRef.current = false
       setCreatingNotification(false)
     }
   }
 
   const handleDeleteNotification = async (id: number) => {
-    const confirmed = await confirm({ message: '确定要删除这条通知吗？', title: '确认删除' })
+    const confirmed = await confirm({
+      actionLabel: '删除通知',
+      actionVariant: 'danger',
+      message: '确定要删除这条通知吗？',
+      title: '确认删除',
+    })
     if (!confirmed) return
 
     try {
@@ -193,6 +191,7 @@ export default function NotificationManagement({ isAdmin = false }: Notification
     if (!notification.is_read) {
       try {
         await notificationApi.markAsRead(notification.id)
+        notificationsRequestRef.current += 1
         setNotifications((current) =>
           current.map((item) => (item.id === notification.id ? { ...item, is_read: true } : item)),
         )
@@ -215,12 +214,13 @@ export default function NotificationManagement({ isAdmin = false }: Notification
   }
 
   const handleUpdateNotification = async () => {
-    if (!selectedNotification) return
+    if (!selectedNotification || mutationInFlightRef.current) return
     if (!newNotification.title || !newNotification.content) {
       toastError('请填写标题和内容')
       return
     }
 
+    mutationInFlightRef.current = true
     setCreatingNotification(true)
     try {
       await notificationApi.update(selectedNotification.id, newNotification)
@@ -230,105 +230,116 @@ export default function NotificationManagement({ isAdmin = false }: Notification
     } catch {
       toastError('更新失败')
     } finally {
+      mutationInFlightRef.current = false
       setCreatingNotification(false)
     }
   }
 
   return (
     <div className="notification-management">
-      <div className="dev-header">
-        <div className="dev-header-content">
-          <div className="dev-title-section">
-            <div className="dev-icon-wrapper notif-icon">
-              <i className="ri-notification-3-line" />
-            </div>
-            <div className="dev-title-info">
-              <h2 className="dev-title">通知管理</h2>
-              <p className="dev-subtitle">查看系统消息{isAdmin ? '，管理员可发送通知' : ''}</p>
-            </div>
-          </div>
-          {isAdmin ? (
-            <button className="dev-create-btn" onClick={openCreateModal} type="button">
-              <i className="ri-add-line" />
-              <span>发送通知</span>
-            </button>
-          ) : null}
-        </div>
+      <div className="settings-panel-header">
+        <SectionHeader
+          actions={
+            isAdmin ? (
+              <Button onClick={openCreateModal}>
+                <i className="ri-add-line" />
+                <span>发送通知</span>
+              </Button>
+            ) : null
+          }
+          description={`查看系统消息${isAdmin ? '，管理员可发送通知' : ''}`}
+          icon={<i className="ri-notification-3-line" />}
+          iconTone="warning"
+          size="lg"
+          title="通知管理"
+        />
 
         <div className="dev-stats">
-          <div className="dev-stat-card">
-            <div className="dev-stat-icon total">
+          <Card.Root className="dev-stat-card" gap="sm" orientation="horizontal" padding="sm">
+            <Surface className="dev-stat-icon" padding="none" radius="control" tone="info">
               <i className="ri-mail-line" />
-            </div>
+            </Surface>
             <div className="dev-stat-info">
               <span className="dev-stat-value">{notificationTotal}</span>
               <span className="dev-stat-label">总通知</span>
             </div>
-          </div>
-          <div className="dev-stat-card">
-            <div className="dev-stat-icon unread">
+          </Card.Root>
+          <Card.Root className="dev-stat-card" gap="sm" orientation="horizontal" padding="sm">
+            <Surface className="dev-stat-icon" padding="none" radius="control" tone="warning">
               <i className="ri-mail-unread-line" />
-            </div>
+            </Surface>
             <div className="dev-stat-info">
               <span className="dev-stat-value">{unreadNotifications}</span>
               <span className="dev-stat-label">未读</span>
             </div>
-          </div>
-          <div className="dev-stat-card">
-            <div className="dev-stat-icon system">
+          </Card.Root>
+          <Card.Root className="dev-stat-card" gap="sm" orientation="horizontal" padding="sm">
+            <Surface className="dev-stat-icon" padding="none" radius="control" tone="info">
               <i className="ri-computer-line" />
-            </div>
+            </Surface>
             <div className="dev-stat-info">
               <span className="dev-stat-value">{systemNotifications}</span>
               <span className="dev-stat-label">系统</span>
             </div>
-          </div>
+          </Card.Root>
         </div>
       </div>
 
       <div className="dev-content">
         {notificationLoading ? (
-          <div className="dev-loading">
-            <div className="dev-loading-spinner">
-              <i className="ri-loader-4-line animate-spin" />
-            </div>
-            <span>正在加载通知列表...</span>
-          </div>
+          <Spinner className="dev-loading" label="正在加载通知列表" size="lg" />
         ) : notifications.length === 0 ? (
-          <div className="dev-empty">
-            <div className="dev-empty-icon notif-empty-icon">
-              <i className="ri-notification-off-line" />
-            </div>
-            <h3 className="dev-empty-title">暂无通知</h3>
-            <p className="dev-empty-desc">目前没有收到任何系统消息</p>
-          </div>
+          <EmptyState
+            className="dev-empty"
+            description="目前没有收到任何系统消息"
+            icon={<i className="ri-notification-off-line" />}
+            title="暂无通知"
+          />
         ) : (
           <div className="notification-list">
             {notifications.map((notification) => (
-              <div
-                className={`notification-card ${!notification.is_read ? 'unread' : ''} type-${notification.type}`}
+              <Card.Root
+                className="notification-card"
+                gap="none"
                 key={notification.id}
-                onClick={() => void viewNotificationDetail(notification)}
-                role="button"
-                tabIndex={0}
-                onKeyUp={(event) => {
-                  if (event.key === 'Enter') void viewNotificationDetail(notification)
-                }}
+                padding="none"
+                tone={!notification.is_read ? 'warning' : 'neutral'}
               >
                 <div className="notification-inner">
-                  <div className={`notification-type-icon type-${notification.type}`}>
+                  <Surface
+                    className="notification-type-icon"
+                    padding="none"
+                    radius="control"
+                    tone={
+                      notification.type === 2
+                        ? 'danger'
+                        : notification.type === 3
+                          ? 'accent'
+                          : 'neutral'
+                    }
+                    variant="inset"
+                  >
                     <i className={getNotificationIcon(notification.type)} />
-                  </div>
+                  </Surface>
 
                   <div className="notification-body">
                     <div className="notification-header-row">
                       <div className="notification-tags">
-                        <span className={`notification-tag tag-${notification.type}`}>
+                        <Chip
+                          size="sm"
+                          tone={
+                            notification.type === 2
+                              ? 'danger'
+                              : notification.type === 3
+                                ? 'accent'
+                                : 'neutral'
+                          }
+                        >
                           {getNotificationTypeName(notification.type)}
-                        </span>
-                        <span className="notification-scope">
+                        </Chip>
+                        <Chip size="sm" variant="outline">
                           {notification.is_global === 1 ? '全员' : '私信'}
-                        </span>
+                        </Chip>
                       </div>
                     </div>
 
@@ -348,32 +359,34 @@ export default function NotificationManagement({ isAdmin = false }: Notification
                   </div>
 
                   <div className="notification-right">
+                    <Button
+                      aria-label={`查看通知：${notification.title}`}
+                      onClick={() => void viewNotificationDetail(notification)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      查看
+                    </Button>
                     {isAdmin ? (
                       <div className="notification-actions">
-                        <button
-                          aria-label="编辑通知"
-                          className="action-btn"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            editNotification(notification)
-                          }}
+                        <IconButton
+                          label="编辑通知"
+                          onClick={() => editNotification(notification)}
+                          size="sm"
                           title="编辑"
-                          type="button"
+                          variant="ghost"
                         >
                           <i className="ri-edit-line" />
-                        </button>
-                        <button
-                          aria-label="删除通知"
-                          className="action-btn delete"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            void handleDeleteNotification(notification.id)
-                          }}
+                        </IconButton>
+                        <IconButton
+                          label="删除通知"
+                          onClick={() => void handleDeleteNotification(notification.id)}
+                          size="sm"
                           title="删除"
-                          type="button"
+                          variant="danger"
                         >
                           <i className="ri-delete-bin-line" />
-                        </button>
+                        </IconButton>
                       </div>
                     ) : null}
                     <span className="notification-time">
@@ -381,186 +394,120 @@ export default function NotificationManagement({ isAdmin = false }: Notification
                     </span>
                   </div>
                 </div>
-              </div>
+              </Card.Root>
             ))}
           </div>
         )}
 
         {notifications.length > 0 ? (
-          <div className="notification-pagination">
-            <div className="pagination-inner">
-              <span className="pagination-info">{notificationPaginationInfo}</span>
-
-              <div className="pagination-controls">
-                <button
-                  aria-label="上一页"
-                  className="page-btn"
-                  disabled={notificationCurrentPage === 1}
-                  onClick={notificationPrevPage}
-                  type="button"
-                >
-                  <i className="ri-arrow-left-s-line" />
-                </button>
-
-                <div className="page-numbers">
-                  {visibleNotificationPages.map((page, index) => (
-                    <button
-                      className={`page-number ${notificationCurrentPage === page ? 'active' : ''} ${
-                        page === '...' ? 'cursor-default' : ''
-                      }`}
-                      disabled={notificationCurrentPage === page || page === '...'}
-                      key={`${page}-${index}`}
-                      onClick={() => typeof page === 'number' && notificationGoToPage(page)}
-                      type="button"
-                    >
-                      {page}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  aria-label="下一页"
-                  className="page-btn"
-                  disabled={notificationCurrentPage === notificationTotalPages}
-                  onClick={notificationNextPage}
-                  type="button"
-                >
-                  <i className="ri-arrow-right-s-line" />
-                </button>
-              </div>
-
-              <div className="page-size">
-                <select
-                  className="page-select"
-                  onChange={(event) => {
-                    setNotificationPageSize(Number(event.target.value))
-                    setNotificationCurrentPage(1)
-                  }}
-                  value={notificationPageSize}
-                >
-                  <option value={5}>5条/页</option>
-                  <option value={10}>10条/页</option>
-                </select>
-              </div>
-            </div>
-          </div>
+          <PaginationBar
+            info={notificationPaginationInfo}
+            onPageChange={setNotificationCurrentPage}
+            page={notificationCurrentPage}
+            pageCount={notificationTotalPages}
+            separated
+            trailing={
+              <Select
+                aria-label="每页通知数"
+                onValueChange={(value) => {
+                  setNotificationPageSize(Number(value))
+                  setNotificationCurrentPage(1)
+                }}
+                options={[
+                  { label: '5条/页', value: '5' },
+                  { label: '10条/页', value: '10' },
+                ]}
+                size="sm"
+                value={String(notificationPageSize)}
+              />
+            }
+          />
         ) : null}
       </div>
 
-      {showCreateNotificationModal ? (
-        <div
-          className="modal-overlay open"
-          onClick={() => setShowCreateNotificationModal(false)}
-          role="presentation"
-        >
-          <div
-            className="modal"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="modal-header">
-              <h3 className="modal-title">{isEditingNotification ? '编辑通知' : '发送通知'}</h3>
-              <button
-                aria-label={isEditingNotification ? '关闭编辑通知弹窗' : '关闭发送通知弹窗'}
-                className="modal-close"
-                onClick={() => setShowCreateNotificationModal(false)}
-                type="button"
-              >
-                <i className="ri-close-line" />
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label className="form-label">通知标题</label>
-                <input
-                  className="form-input"
-                  onChange={(event) =>
-                    setNewNotification((current) => ({ ...current, title: event.target.value }))
-                  }
-                  placeholder="请输入通知标题"
-                  type="text"
-                  value={newNotification.title}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">通知内容</label>
-                <textarea
-                  className="form-input"
-                  onChange={(event) =>
-                    setNewNotification((current) => ({ ...current, content: event.target.value }))
-                  }
-                  placeholder="请输入通知内容"
-                  rows={4}
-                  value={newNotification.content}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">通知类型</label>
-                <div className="input-wrapper">
-                  <select
-                    className="form-select"
-                    onChange={(event) =>
-                      setNewNotification((current) => ({ ...current, type: event.target.value }))
-                    }
-                    value={newNotification.type}
-                  >
-                    <option value="system">系统通知</option>
-                    <option value="activity">活动通知</option>
-                  </select>
-                  <i className="ri-arrow-down-s-line select-arrow" />
-                </div>
-              </div>
-              {isAdmin ? (
-                <div className="form-group">
-                  <label className="form-label">发送对象</label>
-                  <div className="input-wrapper">
-                    <select
-                      className="form-select"
-                      onChange={(event) =>
-                        setNewNotification((current) => ({
-                          ...current,
-                          target_user_id: Number(event.target.value),
-                        }))
-                      }
-                      value={newNotification.target_user_id}
-                    >
-                      <option value={0}>全员通知</option>
-                      {targetUsers.map((targetUser) => (
-                        <option key={targetUser.id} value={targetUser.id}>
-                          {targetUser.name} ({targetUser.username})
-                        </option>
-                      ))}
-                    </select>
-                    <i className="ri-arrow-down-s-line select-arrow" />
-                  </div>
-                </div>
-              ) : null}
-            </div>
-            <div className="modal-footer">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowCreateNotificationModal(false)}
-                type="button"
-              >
-                取消
-              </button>
-              <button
-                className="btn btn-primary"
-                disabled={creatingNotification}
-                onClick={() =>
-                  void (isEditingNotification
-                    ? handleUpdateNotification()
-                    : handleCreateNotification())
+      <Modal.Root
+        onClose={() => setShowCreateNotificationModal(false)}
+        open={showCreateNotificationModal}
+      >
+        <Modal.Header>{isEditingNotification ? '编辑通知' : '发送通知'}</Modal.Header>
+        <Modal.Close label={isEditingNotification ? '关闭编辑通知弹窗' : '关闭发送通知弹窗'} />
+        <Modal.Body className="settings-modal-body">
+          <Field.Root required>
+            <Field.Label>通知标题</Field.Label>
+            <Input
+              onChange={(event) =>
+                setNewNotification((current) => ({ ...current, title: event.target.value }))
+              }
+              placeholder="请输入通知标题"
+              value={newNotification.title}
+            />
+          </Field.Root>
+          <Field.Root required>
+            <Field.Label>通知内容</Field.Label>
+            <TextArea
+              onChange={(event) =>
+                setNewNotification((current) => ({ ...current, content: event.target.value }))
+              }
+              placeholder="请输入通知内容"
+              rows={4}
+              value={newNotification.content}
+            />
+          </Field.Root>
+          <Field.Root>
+            <Field.Label>通知类型</Field.Label>
+            <Select
+              aria-label="通知类型"
+              onValueChange={(value) =>
+                setNewNotification((current) => ({ ...current, type: value }))
+              }
+              options={[
+                { label: '系统通知', value: 'system' },
+                { label: '活动通知', value: 'activity' },
+              ]}
+              value={newNotification.type}
+            />
+          </Field.Root>
+          {isAdmin ? (
+            <Field.Root>
+              <Field.Label>发送对象</Field.Label>
+              <Select
+                aria-label="发送对象"
+                onValueChange={(value) =>
+                  setNewNotification((current) => ({
+                    ...current,
+                    target_user_id: Number(value),
+                  }))
                 }
-                type="button"
-              >
-                {creatingNotification ? '提交中...' : isEditingNotification ? '更新' : '发送'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+                options={[
+                  { label: '全员通知', value: '0' },
+                  ...targetUsers.map((targetUser) => ({
+                    label: `${targetUser.name} (${targetUser.username})`,
+                    value: String(targetUser.id),
+                  })),
+                ]}
+                value={String(newNotification.target_user_id)}
+              />
+            </Field.Root>
+          ) : null}
+        </Modal.Body>
+        <Modal.Footer>
+          <FormActions>
+            <Button onClick={() => setShowCreateNotificationModal(false)} variant="secondary">
+              取消
+            </Button>
+            <Button
+              onClick={() =>
+                void (isEditingNotification
+                  ? handleUpdateNotification()
+                  : handleCreateNotification())
+              }
+              pending={creatingNotification}
+            >
+              {creatingNotification ? '提交中...' : isEditingNotification ? '更新' : '发送'}
+            </Button>
+          </FormActions>
+        </Modal.Footer>
+      </Modal.Root>
 
       <NotificationDetailModal
         notification={selectedNotification}

@@ -1,24 +1,26 @@
-/**
- * @file composables/useConfirm.ts
- * @description Temporary React-compatible confirm API.
- */
-interface ConfirmOptions {
-  title?: string
+import { createContext, useContext } from 'react'
+import type { ButtonVariant } from '@/design-system'
+
+export interface ConfirmOptions {
+  actionLabel?: string
+  actionVariant?: ButtonVariant
+  cancelLabel?: string
   message: string
+  title?: string
 }
 
-const formatMessage = (options: ConfirmOptions | string) => {
-  if (typeof options === 'string') return options
-  return options.title ? `${options.title}\n\n${options.message}` : options.message
+export type ConfirmRequest = ConfirmOptions | string
+
+export interface ConfirmApi {
+  confirm: (request: ConfirmRequest) => Promise<boolean>
 }
+
+export const ConfirmContext = createContext<ConfirmApi | null>(null)
 
 export const useConfirm = () => {
-  const confirm = async (options: ConfirmOptions | string): Promise<boolean> => {
-    if (typeof window === 'undefined') return false
-    return window.confirm(formatMessage(options))
-  }
-
-  return { confirm }
+  const context = useContext(ConfirmContext)
+  if (!context) throw new Error('useConfirm must be used inside ConfirmProvider')
+  return context
 }
 
 export default useConfirm

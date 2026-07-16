@@ -30,7 +30,12 @@ describe('FinancialHero', () => {
       'data-motion',
       'entrance',
     )
-    expect(screen.getByRole('region', { name: '财务概览' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '财务概览' })).toHaveClass('ods-surface')
+    expect(screen.getByRole('region', { name: '财务概览' })).toHaveAttribute(
+      'data-variant',
+      'brand',
+    )
+    expect(screen.getByRole('region', { name: '财务概览' })).toHaveAttribute('data-radius', 'shell')
     expect(document.querySelector('.financial-hero__pulse')).toHaveAttribute(
       'data-motion',
       'continuous',
@@ -78,6 +83,8 @@ describe('FinancialHero', () => {
 
     const action = screen.getByRole('link', { name: '处理待收款' })
     expect(action).toHaveAttribute('href', '/projects/42')
+    expect(action).toHaveAttribute('data-size', 'lg')
+    expect(action).toHaveAttribute('data-variant', 'primary')
     expect(screen.getAllByRole('link')).toHaveLength(1)
   })
 

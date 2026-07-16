@@ -22,6 +22,7 @@ describe('Orange Design System foundations', () => {
     expect(motion).toContain('@media (prefers-reduced-motion: reduce)')
     expect(motion).toMatch(/\.ods-motion-ambient[\s\S]*animation\s*:\s*none/)
     expect(motion).toMatch(/scroll-behavior\s*:\s*auto/)
+    expect(motion).toMatch(/:root\.theme-transitioning[\s\S]*var\(--ods-ease-standard\)/)
   })
 
   it('provides screen-reader-only and forced-colors support', () => {
@@ -38,5 +39,7 @@ describe('Orange Design System foundations', () => {
     expect(source).toContain('var(--ods-font-family-body)')
     expect(source).toContain('var(--ods-color-bg-canvas)')
     expect(source).not.toMatch(/var\(--(?:font-text|color-bg|text-primary|spacing-|radius-)/)
+    expect(source).toMatch(/::selection[\s\S]*var\(--ods-color-selection\)/)
+    expect(source).toMatch(/::-webkit-scrollbar-thumb[\s\S]*var\(--ods-color-border-strong\)/)
   })
 })

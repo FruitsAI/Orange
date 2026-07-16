@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { Badge } from './Badge'
+import badgeCss from './badge.css?raw'
 
 describe('Badge', () => {
   it('renders the count mark anchored to its child', () => {
@@ -14,5 +15,11 @@ describe('Badge', () => {
     const mark = screen.getByText('5')
     expect(mark).toHaveAttribute('data-tone', 'danger')
     expect(mark).toHaveAttribute('data-placement', 'top-right')
+  })
+
+  it('preserves placement while using a subtle invisible-state scale', () => {
+    expect(badgeCss).toContain('--ods-badge-scale: 0.92')
+    expect(badgeCss).toContain('--ods-badge-x: 40%')
+    expect(badgeCss).not.toContain('scale(0)')
   })
 })

@@ -7,6 +7,8 @@
 html {
   min-height: 100%;
   font-size: 16px;
+  scrollbar-color: var(--ods-color-border-strong) transparent;
+  scrollbar-width: thin;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -16,6 +18,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  overflow-x: hidden;
   background: var(--ods-color-bg-canvas);
   color: var(--ods-color-fg-default);
   font-family: var(--ods-font-family-body);
@@ -51,4 +54,27 @@ table {
 
 [hidden] {
   display: none !important;
+}
+
+::selection {
+  background: var(--ods-color-selection);
+  color: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: var(--ods-radius-pill);
+  background: var(--ods-color-border-strong);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ods-color-fg-subtle);
 }

@@ -25,7 +25,6 @@ export default function LoginView() {
   const effectiveTheme = useThemeStore((state) => state.effectiveTheme)
   const login = useAuthStore((state) => state.login)
   const loading = useAuthStore((state) => state.loading)
-  const error = useAuthStore((state) => state.error)
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
   const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState(getLastUsername)
@@ -52,7 +51,7 @@ export default function LoginView() {
       return
     }
 
-    setLoginError(error || '登录失败')
+    setLoginError(useAuthStore.getState().error || '登录失败')
   }
 
   return (
@@ -76,11 +75,12 @@ export default function LoginView() {
       </IconButton>
 
       <div className="login-container">
-        <Card.Root className="login-card" padding="lg" variant="default">
+        <Card.Root className="login-card" padding="lg" variant="tertiary">
           <div className="login-logo">
             <div className="login-logo-icon">
               <Image
                 alt="Orange Logo"
+                background="transparent"
                 className="login-logo-image"
                 radius="full"
                 showSkeleton={false}

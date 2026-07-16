@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes, useNavigate } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -56,12 +56,25 @@ const laterPayment = { ...payment, id: 8, stage: '尾款' } satisfies Payment
 
 const apiResponse = <T,>(data: T) => ({ data: { data } })
 
+const createDeferred = <T,>() => {
+  let resolve!: (value: T | PromiseLike<T>) => void
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve
+  })
+  return { promise, resolve }
+}
+
 function OpenPaymentDeepLink() {
   const navigate = useNavigate()
   return (
-    <button onClick={() => navigate('/projects/42?tab=payments&payment=8')} type="button">
-      打开收款深链
-    </button>
+    <>
+      <button onClick={() => navigate('/projects/42?tab=payments&payment=8')} type="button">
+        打开收款深链
+      </button>
+      <button onClick={() => navigate('/projects/43')} type="button">
+        打开其他项目
+      </button>
+    </>
   )
 }
 
@@ -97,7 +110,7 @@ describe('ProjectDetailView payment deep links', () => {
     renderProjectDetail('/projects/42?tab=payments&payment=7')
 
     await waitFor(() => expect(screen.getByText('收款记录')).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: '收款计划' })).toHaveClass('active')
+    expect(screen.getByRole('tab', { name: '收款计划' })).toHaveClass('active')
     expect(screen.getByText('中期款')).toBeInTheDocument()
   })
 
@@ -113,9 +126,9 @@ describe('ProjectDetailView payment deep links', () => {
       'aria-label',
       '编辑项目',
     )
-    expect(screen.getByRole('button', { name: '导出项目' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: '导出项目：星轨项目' })).toHaveAttribute(
       'aria-label',
-      '导出项目',
+      '导出项目：星轨项目',
     )
   })
 
@@ -124,19 +137,22 @@ describe('ProjectDetailView payment deep links', () => {
     renderProjectDetail('/projects/42')
 
     await waitFor(() => expect(screen.getByText('项目整体进度')).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: '项目概览' })).toHaveClass('active')
+    expect(screen.getByRole('tab', { name: '项目概览' })).toHaveClass('active')
 
     await user.click(screen.getByRole('button', { name: '打开收款深链' }))
 
     expect(await screen.findByText('收款记录')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '收款计划' })).toHaveClass('active')
+    expect(screen.getByRole('tab', { name: '收款计划' })).toHaveClass('active')
   })
 
   it('highlights, scrolls to, and focuses the requested payment after loading', async () => {
     renderProjectDetail('/projects/42?tab=payments&payment=7')
 
     const target = await screen.findByTestId('payment-7')
-    await waitFor(() => expect(target).toHaveClass('payment-item--highlighted'))
+    await waitFor(() => expect(target).toHaveAttribute('data-tone', 'accent'))
+    expect(target).toHaveAttribute('data-orientation', 'horizontal')
+    expect(target.querySelector('.payment-icon')).toHaveAttribute('data-radius', 'pill')
+    expect(target.querySelector('.payment-icon')).toHaveAttribute('data-tone', 'accent')
     expect(target).toHaveAttribute('id', 'payment-7')
     expect(target).toHaveAttribute('tabindex', '-1')
     expect(target.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' })
@@ -148,14 +164,14 @@ describe('ProjectDetailView payment deep links', () => {
     renderProjectDetail('/projects/42?tab=payments&payment=7')
 
     await waitFor(() =>
-      expect(screen.getByTestId('payment-7')).toHaveClass('payment-item--highlighted'),
+      expect(screen.getByTestId('payment-7')).toHaveAttribute('data-tone', 'accent'),
     )
     await user.click(screen.getByRole('button', { name: '打开收款深链' }))
 
     await waitFor(() =>
-      expect(screen.getByTestId('payment-8')).toHaveClass('payment-item--highlighted'),
+      expect(screen.getByTestId('payment-8')).toHaveAttribute('data-tone', 'accent'),
     )
-    expect(screen.getByTestId('payment-7')).not.toHaveClass('payment-item--highlighted')
+    expect(screen.getByTestId('payment-7')).toHaveAttribute('data-tone', 'neutral')
     expect(projectApi.getPayments).toHaveBeenCalledTimes(1)
   })
 
@@ -166,7 +182,7 @@ describe('ProjectDetailView payment deep links', () => {
 
     const target = await screen.findByTestId('payment-7')
     await waitFor(() => expect(target.scrollIntoView).toHaveBeenCalledTimes(1))
-    await user.click(screen.getAllByRole('button', { name: '确认收款' })[0])
+    await user.click(screen.getByRole('button', { name: '中期款：确认收款' }))
     await waitFor(() => expect(projectApi.getPayments).toHaveBeenCalledTimes(2))
 
     expect(target.scrollIntoView).toHaveBeenCalledTimes(1)
@@ -181,5 +197,34 @@ describe('ProjectDetailView payment deep links', () => {
 
     await waitFor(() => expect(screen.getByText('收款记录')).toBeInTheDocument())
     expect(screen.queryByTestId('payment-999')).not.toBeInTheDocument()
+  })
+
+  it('does not let an older project request overwrite a newer route parameter', async () => {
+    const user = userEvent.setup()
+    const oldProject = createDeferred<Awaited<ReturnType<typeof projectApi.get>>>()
+    const oldPayments = createDeferred<Awaited<ReturnType<typeof projectApi.getPayments>>>()
+    const nextProject = { ...project, company: '新客户', id: 43, name: '新项目' }
+
+    vi.mocked(projectApi.get).mockImplementation((projectId) =>
+      projectId === 42 ? oldProject.promise : Promise.resolve(apiResponse(nextProject) as never),
+    )
+    vi.mocked(projectApi.getPayments).mockImplementation((projectId) =>
+      projectId === 42 ? oldPayments.promise : Promise.resolve(apiResponse([]) as never),
+    )
+
+    renderProjectDetail('/projects/42')
+    await waitFor(() => expect(projectApi.get).toHaveBeenCalledWith(42))
+    await user.click(screen.getByRole('button', { name: '打开其他项目' }))
+
+    expect(await screen.findByRole('heading', { name: '新项目' })).toBeInTheDocument()
+
+    await act(async () => {
+      oldProject.resolve(apiResponse(project) as never)
+      oldPayments.resolve(apiResponse([payment]) as never)
+      await Promise.all([oldProject.promise, oldPayments.promise])
+    })
+
+    expect(screen.getByRole('heading', { name: '新项目' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '星轨项目' })).not.toBeInTheDocument()
   })
 })

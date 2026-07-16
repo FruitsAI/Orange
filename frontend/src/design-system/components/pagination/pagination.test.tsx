@@ -28,4 +28,15 @@ describe('Pagination', () => {
     expect(screen.getByRole('button', { name: '下一页' })).toBeDisabled()
     expect(screen.queryByRole('button', { name: /第 \d+ 页/ })).not.toBeInTheDocument()
   })
+
+  it('keeps large page sets windowed around the current page', () => {
+    render(<Pagination onPageChange={() => {}} page={50} pageCount={100} />)
+
+    const pageButtons = screen.getAllByRole('button', { name: /第 \d+ 页/ })
+    expect(pageButtons).toHaveLength(7)
+    expect(screen.getByRole('button', { name: '第 1 页' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '第 50 页' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: '第 100 页' })).toBeInTheDocument()
+    expect(screen.getAllByText('…')).toHaveLength(2)
+  })
 })

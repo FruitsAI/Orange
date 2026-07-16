@@ -15,9 +15,14 @@
   --ods-color-fg-subtle: rgba(255, 247, 237, 0.46);
   --ods-color-fg-disabled: rgba(255, 247, 237, 0.28);
   --ods-color-fg-inverse: var(--ods-ref-color-warm-950);
+  --ods-color-fg-brand-surface: var(--ods-ref-color-warm-25);
+  --ods-color-fg-brand-surface-muted: rgba(255, 247, 237, 0.72);
+  --ods-color-fg-brand-surface-subtle: rgba(255, 247, 237, 0.46);
+  --ods-color-fg-brand-surface-danger: var(--ods-ref-color-red-400);
   --ods-color-border-default: rgba(255, 244, 229, 0.1);
   --ods-color-border-strong: rgba(255, 244, 229, 0.16);
   --ods-color-border-focus: #ff9f0a;
+  --ods-color-border-brand-surface: rgba(255, 244, 229, 0.16);
   --ods-color-accent: #ff9f0a;
   --ods-color-accent-rgb: 255, 159, 10;
   --ods-color-accent-hover: #ffb340;
@@ -40,8 +45,16 @@
   --ods-shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.24);
   --ods-shadow-panel: 0 24px 70px rgba(0, 0, 0, 0.42);
   --ods-shadow-modal: 0 30px 90px rgba(0, 0, 0, 0.58), 0 4px 18px rgba(0, 0, 0, 0.34);
+  --ods-shadow-brand-surface: var(--ods-shadow-panel);
   --ods-gradient-glow: linear-gradient(135deg, #ff8a00 0%, #ffc247 52%, #ff6b00 100%);
   --ods-gradient-text: linear-gradient(135deg, #ffc15c 0%, #ff7a18 58%, #ff5c45 100%);
+  --ods-gradient-brand-surface:
+    radial-gradient(circle at 78% 20%, rgba(var(--ods-color-accent-rgb), 0.2), transparent 34%),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--ods-color-bg-surface) 94%, var(--ods-color-accent) 6%),
+      var(--ods-color-bg-surface)
+    );
   --ods-material-glass-blur: 44px;
   --ods-material-glass-saturation: 165%;
   --ods-material-glass-brightness: 1.12;

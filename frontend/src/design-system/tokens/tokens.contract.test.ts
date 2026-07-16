@@ -32,9 +32,14 @@ const themeContract = [
   '--ods-color-fg-subtle',
   '--ods-color-fg-disabled',
   '--ods-color-fg-inverse',
+  '--ods-color-fg-brand-surface',
+  '--ods-color-fg-brand-surface-muted',
+  '--ods-color-fg-brand-surface-subtle',
+  '--ods-color-fg-brand-surface-danger',
   '--ods-color-border-default',
   '--ods-color-border-strong',
   '--ods-color-border-focus',
+  '--ods-color-border-brand-surface',
   '--ods-color-accent',
   '--ods-color-accent-hover',
   '--ods-color-accent-pressed',
@@ -54,8 +59,10 @@ const themeContract = [
   '--ods-shadow-soft',
   '--ods-shadow-panel',
   '--ods-shadow-modal',
+  '--ods-shadow-brand-surface',
   '--ods-gradient-glow',
   '--ods-gradient-text',
+  '--ods-gradient-brand-surface',
   '--ods-material-glass-blur',
   '--ods-material-glass-saturation',
   '--ods-material-glass-brightness',
@@ -112,17 +119,18 @@ describe('Orange Design System token contracts', () => {
     }
   })
 
-  it('keeps compatibility aliases strictly old-to-new', () => {
-    const compatibility = readDesignSystemFile('tokens/compatibility.css')
-    const declarations = Array.from(
-      compatibility.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g),
-      (match) => ({ name: match[1], value: match[2].trim() }),
-    )
+  it('keeps the retired compatibility layer removed and feature CSS on ODS tokens', () => {
+    expect(existsSync(resolve('src/design-system/tokens/compatibility.css'))).toBe(false)
 
-    expect(declarations.length).toBeGreaterThan(40)
-    for (const declaration of declarations) {
-      expect(declaration.name).not.toMatch(/^--ods-/)
-      expect(declaration.value).toMatch(/^var\(--ods-/)
+    const featureCss = [
+      ...collectCssFiles(resolve('src/styles')),
+      ...collectCssFiles(resolve('src/assets')),
+    ]
+
+    for (const path of featureCss) {
+      expect(readFileSync(path, 'utf8'), `${path} still consumes a legacy token`).not.toMatch(
+        forbiddenLegacyReference,
+      )
     }
   })
 

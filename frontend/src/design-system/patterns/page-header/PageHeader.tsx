@@ -3,12 +3,13 @@ import { forwardRef, type HTMLAttributes, type ReactNode } from 'react'
 export interface PageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   actions?: ReactNode
   description?: ReactNode
+  eyebrow?: ReactNode
   leading?: ReactNode
   title: ReactNode
 }
 
 export const PageHeader = forwardRef<HTMLElement, PageHeaderProps>(function PageHeader(
-  { actions, className, description, leading, title, ...props },
+  { actions, className, description, eyebrow, leading, title, ...props },
   ref,
 ) {
   return (
@@ -24,6 +25,11 @@ export const PageHeader = forwardRef<HTMLElement, PageHeaderProps>(function Page
         </div>
       ) : null}
       <div className="ods-page-header__content" data-slot="content">
+        {eyebrow ? (
+          <div className="ods-page-header__eyebrow" data-slot="eyebrow">
+            {eyebrow}
+          </div>
+        ) : null}
         <h1 className="ods-page-header__title" data-slot="title">
           {title}
         </h1>

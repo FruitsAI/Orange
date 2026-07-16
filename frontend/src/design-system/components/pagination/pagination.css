@@ -10,6 +10,15 @@
   gap: var(--ods-space-1);
 }
 
+.ods-pagination__ellipsis {
+  display: inline-grid;
+  min-width: var(--ods-control-height-sm);
+  height: var(--ods-control-height-sm);
+  place-items: center;
+  color: var(--ods-color-fg-subtle);
+  font-size: var(--ods-font-size-sm);
+}
+
 .ods-pagination__button {
   align-items: center;
   background: var(--ods-color-bg-surface);

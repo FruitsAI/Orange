@@ -5,10 +5,9 @@
 
 /* Anchored to the trigger; scales from that origin (apple-design §7). */
 .ods-popover {
-  position: absolute;
+  position: fixed;
   z-index: var(--ods-z-dropdown);
   min-width: 12rem;
-  padding: var(--ods-space-2);
   border: var(--ods-material-glass-border-subtle);
   border-radius: var(--ods-radius-panel);
   background: var(--ods-color-bg-surface-raised);
@@ -19,21 +18,27 @@
   animation: ods-popover-in var(--ods-duration-fast) var(--ods-ease-spring);
 }
 
+.ods-popover[data-padding='none'] {
+  padding: var(--ods-space-0);
+}
+
+.ods-popover[data-padding='sm'] {
+  padding: var(--ods-space-2);
+}
+
+.ods-popover[data-padding='md'] {
+  padding: var(--ods-space-4);
+}
+
 .ods-popover[data-placement='bottom-start'] {
-  inset-block-start: calc(100% + var(--ods-space-2));
-  inset-inline-start: 0;
   transform-origin: top left;
 }
 
 .ods-popover[data-placement='bottom-end'] {
-  inset-block-start: calc(100% + var(--ods-space-2));
-  inset-inline-end: 0;
   transform-origin: top right;
 }
 
 .ods-popover[data-placement='top-start'] {
-  inset-block-end: calc(100% + var(--ods-space-2));
-  inset-inline-start: 0;
   transform-origin: bottom left;
 }
 

@@ -41,8 +41,10 @@ describe('NotificationDetailModal', () => {
     const dialog = screen.getByRole('dialog', { name: '通知详情' })
     expect(dialog).toHaveAttribute('aria-modal', 'true')
     expect(dialog).not.toHaveAttribute('title')
+    expect(dialog).toHaveClass('ods-modal', 'notification-detail-modal')
     const close = screen.getByRole('button', { name: '关闭通知详情' })
-    expect(close.querySelector('i')).toHaveAttribute('aria-hidden', 'true')
+    expect(close).toHaveClass('ods-modal__close')
+    expect(close.querySelector('[aria-hidden="true"]')).toBeInTheDocument()
     await waitFor(() => expect(close).toHaveFocus())
   })
 

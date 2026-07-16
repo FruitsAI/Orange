@@ -1,6 +1,11 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import './motion.css'
+
+const designSystemMotion = readFileSync(resolve('src/design-system/foundations/motion.css'), 'utf8')
+const featureMotion = readFileSync(resolve('src/styles/motion.css'), 'utf8')
 
 describe('reduced motion foundations', () => {
   const reducedMotionRule = Array.from(document.styleSheets)
@@ -10,35 +15,29 @@ describe('reduced motion foundations', () => {
         rule instanceof CSSMediaRule && rule.conditionText === '(prefers-reduced-motion: reduce)',
     )
 
-  it('compresses legacy animations and limits them to one iteration', () => {
-    expect(reducedMotionRule?.cssText).toContain('animation-duration: 1ms')
-    expect(reducedMotionRule?.cssText).toContain('animation-iteration-count: 1')
+  it('delegates global motion compression to the design-system foundation', () => {
+    expect(designSystemMotion).toContain('animation-duration: 0.01ms')
+    expect(designSystemMotion).toContain('animation-iteration-count: 1')
+    expect(featureMotion).not.toMatch(/\*,\s*\*::before,\s*\*::after/)
   })
 
-  it('hides legacy shine and freezes the pointer glow', () => {
+  it('freezes the pointer glow without retaining legacy liquid-glass selectors', () => {
     const rules = Array.from(reducedMotionRule?.cssRules ?? [])
-    const shineRule = rules.find(
-      (rule): rule is CSSStyleRule =>
-        rule instanceof CSSStyleRule && rule.selectorText.includes('.liquid-glass--shine::after'),
-    )
     const backgroundRule = rules.find(
       (rule): rule is CSSStyleRule =>
         rule instanceof CSSStyleRule && rule.selectorText === '.app-background',
     )
 
-    expect(shineRule?.style.animation).toBe('none')
-    expect(shineRule?.style.getPropertyPriority('animation')).toBe('important')
-    expect(shineRule?.style.opacity).toBe('0')
-    expect(shineRule?.style.getPropertyPriority('opacity')).toBe('important')
     expect(backgroundRule?.style.getPropertyValue('--light-x')).toBe('50%')
     expect(backgroundRule?.style.getPropertyPriority('--light-x')).toBe('important')
     expect(backgroundRule?.style.getPropertyValue('--light-y')).toBe('50%')
     expect(backgroundRule?.style.getPropertyPriority('--light-y')).toBe('important')
+    expect(reducedMotionRule?.cssText).not.toContain('liquid-glass')
   })
 
   it('uses near-instant transitions instead of removing state and focus feedback', () => {
-    expect(reducedMotionRule?.cssText).toContain('transition-duration: 1ms')
-    expect(reducedMotionRule?.cssText).not.toContain('transition: none')
+    expect(designSystemMotion).toContain('transition-duration: 0.01ms')
+    expect(`${designSystemMotion}\n${featureMotion}`).not.toContain('transition: none')
   })
 
   it('neutralizes ambient and entrance transforms while retaining a fade response', () => {

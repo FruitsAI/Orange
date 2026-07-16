@@ -18,7 +18,12 @@ describe('SummaryMetric', () => {
     expect(screen.getByText('¥8,000.00')).toBeInTheDocument()
     expect(screen.getByRole('article')).toHaveAttribute('data-motion', 'entrance')
     expect(screen.getByRole('article')).toHaveAttribute('data-motion-item')
-    expect(container.querySelector('.ri-checkbox-circle-line')).toBeInTheDocument()
+    expect(screen.getByRole('article')).toHaveClass('ods-card')
+    expect(screen.getByRole('article')).toHaveAttribute('data-variant', 'secondary')
+    expect(container.querySelector('.ri-checkbox-circle-line')?.parentElement).toHaveClass(
+      'ods-surface',
+    )
+    expect(container.querySelector('.summary-metric__icon')).toHaveAttribute('data-tone', 'accent')
     expect(screen.queryByText(/较上期/)).not.toBeInTheDocument()
   })
 
@@ -39,7 +44,11 @@ describe('SummaryMetric', () => {
     )
 
     expect(screen.getByText('较上期 4.00%')).toBeInTheDocument()
-    expect(screen.getByLabelText('较上期下降 4.00%，表现改善')).toBeInTheDocument()
+    expect(screen.getByLabelText('较上期下降 4.00%，表现改善')).toHaveClass('ods-chip')
+    expect(screen.getByLabelText('较上期下降 4.00%，表现改善')).toHaveAttribute(
+      'data-tone',
+      'success',
+    )
   })
 
   it('distinguishes loading and error from an empty metric value', () => {

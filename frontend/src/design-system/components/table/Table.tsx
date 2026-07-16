@@ -9,14 +9,19 @@ const cx = (...classes: Array<string | false | undefined>) => classes.filter(Boo
 
 export interface TableProps extends HTMLAttributes<HTMLTableElement> {
   stickyHeader?: boolean
+  visuallyHidden?: boolean
+  wrapperClassName?: string
 }
 
 export const TableRoot = forwardRef<HTMLTableElement, TableProps>(function TableRoot(
-  { children, className, stickyHeader = false, ...props },
+  { children, className, stickyHeader = false, visuallyHidden = false, wrapperClassName, ...props },
   ref,
 ) {
   return (
-    <div className="ods-table__scroll" data-slot="scroll">
+    <div
+      className={cx('ods-table__scroll', visuallyHidden && 'ods-sr-only', wrapperClassName)}
+      data-slot="scroll"
+    >
       <table
         {...props}
         className={cx('ods-table', className)}
@@ -49,11 +54,12 @@ export const TableBody = forwardRef<
 })
 
 export interface TableRowProps extends HTMLAttributes<HTMLTableRowElement> {
+  interactive?: boolean
   selected?: boolean
 }
 
 export const TableRow = forwardRef<HTMLTableRowElement, TableRowProps>(function TableRow(
-  { className, selected = false, ...props },
+  { className, interactive = false, selected = false, ...props },
   ref,
 ) {
   return (
@@ -61,6 +67,7 @@ export const TableRow = forwardRef<HTMLTableRowElement, TableRowProps>(function 
       {...props}
       aria-selected={selected || undefined}
       className={cx('ods-table__row', className)}
+      data-interactive={interactive || undefined}
       data-selected={selected || undefined}
       data-slot="row"
       ref={ref}
@@ -68,12 +75,15 @@ export const TableRow = forwardRef<HTMLTableRowElement, TableRowProps>(function 
   )
 })
 
+export type TableStickySide = 'start' | 'end'
+
 export interface TableColumnProps extends Omit<ThHTMLAttributes<HTMLTableCellElement>, 'align'> {
   align?: 'start' | 'center' | 'end'
+  sticky?: TableStickySide
 }
 
 export const TableColumn = forwardRef<HTMLTableCellElement, TableColumnProps>(function TableColumn(
-  { align = 'start', className, scope = 'col', ...props },
+  { align = 'start', className, scope = 'col', sticky, ...props },
   ref,
 ) {
   return (
@@ -82,6 +92,7 @@ export const TableColumn = forwardRef<HTMLTableCellElement, TableColumnProps>(fu
       className={cx('ods-table__column', className)}
       data-align={align}
       data-slot="column"
+      data-sticky={sticky}
       ref={ref}
       scope={scope}
     />
@@ -90,10 +101,11 @@ export const TableColumn = forwardRef<HTMLTableCellElement, TableColumnProps>(fu
 
 export interface TableCellProps extends Omit<TdHTMLAttributes<HTMLTableCellElement>, 'align'> {
   align?: 'start' | 'center' | 'end'
+  sticky?: TableStickySide
 }
 
 export const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(function TableCell(
-  { align = 'start', className, ...props },
+  { align = 'start', className, sticky, ...props },
   ref,
 ) {
   return (
@@ -102,6 +114,7 @@ export const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(functi
       className={cx('ods-table__cell', className)}
       data-align={align}
       data-slot="cell"
+      data-sticky={sticky}
       ref={ref}
     />
   )

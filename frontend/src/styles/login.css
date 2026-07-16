@@ -1,3 +1,135 @@
+.login-wrapper {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  overflow: hidden;
+  padding: var(--ods-space-10) var(--ods-space-5);
+  isolation: isolate;
+}
+
+.login-wrapper .login-background {
+  position: fixed;
+  z-index: -2;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 18% 82%,
+      color-mix(in srgb, var(--ods-color-accent) 24%, transparent),
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 82% 18%,
+      color-mix(in srgb, var(--ods-color-status-warning) 18%, transparent),
+      transparent 38%
+    ),
+    linear-gradient(145deg, var(--ods-color-bg-canvas), var(--ods-color-bg-canvas-subtle));
+}
+
+.login-wrapper .login-background::after {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--ods-color-fg-default) 8%, transparent) 0.55px,
+    transparent 0.55px
+  );
+  background-size: 5px 5px;
+  content: '';
+  opacity: 0.24;
+  pointer-events: none;
+}
+
+.login-wrapper .floating-shapes {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.login-wrapper .shape {
+  position: absolute;
+  border: 1px solid color-mix(in srgb, var(--ods-color-fg-default) 12%, transparent);
+  border-radius: var(--ods-radius-pill);
+  background: color-mix(in srgb, var(--ods-color-bg-surface-glass) 76%, transparent);
+  box-shadow: var(--ods-shadow-soft);
+  opacity: 0.42;
+  will-change: transform;
+}
+
+.login-wrapper .shape:nth-child(1) {
+  width: 22rem;
+  height: 22rem;
+  top: -9rem;
+  left: -8rem;
+  animation: login-drift-a 22s var(--ods-ease-emphasized) infinite alternate;
+}
+
+.login-wrapper .shape:nth-child(2) {
+  width: 15rem;
+  height: 15rem;
+  top: 30%;
+  right: -6rem;
+  animation: login-drift-b 18s var(--ods-ease-emphasized) infinite alternate;
+}
+
+.login-wrapper .shape:nth-child(3) {
+  width: 11rem;
+  height: 11rem;
+  bottom: -4rem;
+  left: 24%;
+  animation: login-drift-a 20s var(--ods-ease-emphasized) -6s infinite alternate-reverse;
+}
+
+.login-wrapper .shape:nth-child(4) {
+  width: 7rem;
+  height: 7rem;
+  top: 18%;
+  left: 8%;
+  animation: login-drift-b 16s var(--ods-ease-emphasized) -4s infinite alternate-reverse;
+}
+
+.login-wrapper .login-container {
+  z-index: 1;
+  width: min(100%, 27.5rem);
+  animation: login-content-in var(--ods-duration-hero) var(--ods-ease-emphasized) both;
+}
+
+.login-wrapper .login-logo {
+  position: relative;
+  z-index: 1;
+  margin-bottom: var(--ods-space-6);
+  text-align: center;
+}
+
+.login-wrapper .login-logo-icon {
+  display: grid;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin: 0 auto var(--ods-space-4);
+  place-items: center;
+}
+
+.login-wrapper .login-logo h1 {
+  margin: 0 0 var(--ods-space-1);
+  background: linear-gradient(135deg, var(--ods-color-fg-default), var(--ods-color-accent));
+  background-clip: text;
+  color: transparent;
+  font-size: var(--ods-font-size-3xl);
+  font-weight: var(--ods-font-weight-bold);
+  letter-spacing: var(--ods-letter-spacing-tight);
+}
+
+.login-wrapper .login-logo p {
+  margin: 0;
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-md);
+}
+
+.login-wrapper .form-panel {
+  animation: login-form-in var(--ods-duration-page) var(--ods-ease-standard) both;
+}
+
 .login-wrapper .login-theme-toggle {
   position: fixed;
   z-index: 100;
@@ -9,7 +141,6 @@
   width: 72px;
   height: 72px;
   overflow: visible;
-  background: transparent;
 }
 
 .login-wrapper .login-form {
@@ -23,24 +154,55 @@
   justify-content: space-between;
 }
 
-.login-wrapper .login-form .ods-input[type='password'] {
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
-  letter-spacing: 0.12em;
-}
-
 .login-wrapper .login-alert {
   min-width: 0;
 }
 
+@keyframes login-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.97);
+  }
+}
+
+@keyframes login-form-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+@keyframes login-drift-a {
+  to {
+    transform: translate3d(2rem, 1.25rem, 0) rotate(7deg);
+  }
+}
+
+@keyframes login-drift-b {
+  to {
+    transform: translate3d(-1.5rem, 2rem, 0) rotate(-6deg);
+  }
+}
+
 @media (max-width: 480px) {
+  .login-wrapper {
+    padding: var(--ods-space-8) var(--ods-space-4);
+  }
+
   .login-wrapper .login-theme-toggle {
     top: 16px;
     right: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-wrapper .login-container,
+  .login-wrapper .form-panel {
+    animation: none;
+  }
+
+  .login-wrapper .shape {
+    animation: none;
+    will-change: auto;
   }
 }

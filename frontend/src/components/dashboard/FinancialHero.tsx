@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { RouterButton, Surface } from '@/design-system'
 
 type ExpectedDisplay =
   | { status: 'error' }
@@ -111,11 +111,15 @@ export default function FinancialHero({
   periodLabel,
 }: FinancialHeroProps) {
   return (
-    <section
+    <Surface
+      as="section"
       aria-busy={busy}
       aria-label="财务概览"
       className="financial-hero"
       data-motion="entrance"
+      padding="none"
+      radius="shell"
+      variant="brand"
     >
       <div className="financial-hero__content">
         <div className="financial-hero__eyebrow">
@@ -136,10 +140,10 @@ export default function FinancialHero({
         </div>
       </div>
 
-      <Link className="financial-hero__cta" to={cta.to}>
+      <RouterButton className="financial-hero__cta" size="lg" to={cta.to} variant="primary">
         {cta.label}
         <i aria-hidden="true" className="ri-arrow-right-up-line" />
-      </Link>
-    </section>
+      </RouterButton>
+    </Surface>
   )
 }

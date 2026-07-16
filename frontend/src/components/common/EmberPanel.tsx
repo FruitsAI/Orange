@@ -1,8 +1,20 @@
 import type { ComponentProps } from 'react'
-import GlassCard from './GlassCard'
+import { Card } from '@/design-system'
 
-export type EmberPanelProps = Omit<ComponentProps<typeof GlassCard>, 'flat' | 'hover'>
+export type EmberPanelProps = ComponentProps<typeof Card.Root>
 
-export default function EmberPanel({ className = '', ...props }: EmberPanelProps) {
-  return <GlassCard className={`ember-panel ${className}`.trim()} {...props} />
+export default function EmberPanel({
+  className = '',
+  gap = 'md',
+  variant = 'secondary',
+  ...props
+}: EmberPanelProps) {
+  return (
+    <Card.Root
+      className={`ember-panel ${className}`.trim()}
+      gap={gap}
+      variant={variant}
+      {...props}
+    />
+  )
 }

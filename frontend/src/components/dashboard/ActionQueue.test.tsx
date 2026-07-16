@@ -21,7 +21,9 @@ const payment = (
 
 describe('ActionQueue', () => {
   it('sorts overdue, today, and upcoming payments by urgency', () => {
-    render(<ActionQueue payments={[payment(1, 5), payment(2, 0), payment(3, -2), payment(4, 2)]} />)
+    const { container } = render(
+      <ActionQueue payments={[payment(1, 5), payment(2, 0), payment(3, -2), payment(4, 2)]} />,
+    )
 
     expect(screen.getByRole('heading', { level: 2, name: '待处理收款' })).toBeInTheDocument()
     const links = screen.getAllByRole('link', { name: /项目/ })
@@ -34,6 +36,13 @@ describe('ActionQueue', () => {
     expect(screen.getByText('逾期2天')).toBeInTheDocument()
     expect(screen.getByText('今日到期')).toBeInTheDocument()
     expect(screen.getByText('2天后')).toBeInTheDocument()
+    expect(container.querySelector('.ods-data-list')).toBeInTheDocument()
+    expect(links.map((link) => link.dataset.markerTone)).toEqual([
+      'danger',
+      'accent',
+      'neutral',
+      'neutral',
+    ])
   })
 
   it('shows project, client, formatted amount, and a payment deep link', () => {

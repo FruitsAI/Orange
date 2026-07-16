@@ -3,18 +3,11 @@
  * @description Global toast store for React components.
  */
 import { create } from 'zustand'
+import { dismissToast, toast as odsToast } from '@/design-system'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
-export interface Toast {
-  id: number
-  message: string
-  type: ToastType
-  duration?: number
-}
-
 interface ToastState {
-  toasts: Toast[]
   add: (message: string, type?: ToastType, duration?: number) => number
   remove: (id: number) => void
   success: (message: string, duration?: number) => number
@@ -23,26 +16,13 @@ interface ToastState {
   info: (message: string, duration?: number) => number
 }
 
-let nextId = 0
-
-export const useToastStore = create<ToastState>((set, get) => ({
-  toasts: [],
-
+export const useToastStore = create<ToastState>((_set, get) => ({
   add(message, type = 'info', duration = 3000) {
-    const id = nextId++
-    const toast = { id, message, type, duration }
-
-    set((state) => ({ toasts: [...state.toasts, toast] }))
-
-    if (duration > 0) {
-      window.setTimeout(() => get().remove(id), duration)
-    }
-
-    return id
+    return odsToast[type](message, duration)
   },
 
   remove(id) {
-    set((state) => ({ toasts: state.toasts.filter((toast) => toast.id !== id) }))
+    dismissToast(id)
   },
 
   success(message, duration) {

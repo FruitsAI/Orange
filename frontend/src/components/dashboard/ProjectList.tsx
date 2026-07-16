@@ -1,9 +1,7 @@
-import { Link } from 'react-router-dom'
 import type { Project } from '@/api/project'
 import EmberPanel from '@/components/common/EmberPanel'
-import EmptyState from '@/components/common/EmptyState'
-import PanelHeader from '@/components/common/PanelHeader'
-import StatusBadge from '@/components/common/StatusBadge'
+import { ProjectStatusChip } from '@/components/project/ProjectStatusChip'
+import { DataList, EmptyState, ProgressBar, RouterButton, SectionHeader } from '@/design-system'
 import { formatCurrency } from '@/utils/format'
 
 interface ProjectListProps {
@@ -21,55 +19,62 @@ export default function ProjectList({ projects }: ProjectListProps) {
 
   return (
     <EmberPanel>
-      <PanelHeader
-        action={
-          <Link className="btn btn-ghost btn-sm" to="/projects">
+      <SectionHeader
+        actions={
+          <RouterButton size="sm" to="/projects" variant="ghost">
             查看全部 <i aria-hidden="true" className="ri-arrow-right-line" />
-          </Link>
+          </RouterButton>
         }
+        density="compact"
+        description="最近创建的项目"
         headingLevel={2}
-        subtitle="最近创建的项目"
         title="近期项目"
       />
 
       {visibleProjects.length === 0 ? (
         <EmptyState
           action={
-            <Link className="btn btn-secondary btn-sm" to="/projects/create">
+            <RouterButton size="sm" to="/projects/create" variant="secondary">
               新建项目
-            </Link>
+            </RouterButton>
           }
           description="创建第一个项目，开始追踪合同与回款进度。"
           icon={<i className="ri-folder-add-line" />}
           title="还没有近期项目"
         />
       ) : (
-        <ul className="project-list__items">
+        <DataList.Root>
           {visibleProjects.map((project) => {
             const progress = getProgress(project)
             return (
-              <li key={project.id}>
-                <Link className="project-list__item" to={`/projects/${project.id}`}>
-                  <span className="project-list__identity">
-                    <strong title={project.name}>{project.name}</strong>
-                    <span>{project.company}</span>
-                  </span>
-                  <span className="project-list__amount">
+              <DataList.Item key={project.id}>
+                <DataList.Link
+                  icon={<i className="ri-arrow-right-s-line" />}
+                  to={`/projects/${project.id}`}
+                >
+                  <DataList.Identity>
+                    <DataList.Primary title={project.name}>{project.name}</DataList.Primary>
+                    <DataList.Secondary>{project.company}</DataList.Secondary>
+                  </DataList.Identity>
+                  <DataList.Cell emphasis="strong" hideBelow="sm" numeric width="sm">
                     {formatCurrency(project.total_amount)}
-                  </span>
-                  <span aria-label={`回款进度${progress}%`} className="project-list__progress">
-                    <span aria-hidden="true" className="project-list__progress-track">
-                      <span style={{ width: `${progress}%` }} />
-                    </span>
-                    <span>回款 {progress}%</span>
-                  </span>
-                  <StatusBadge status={project.status} />
-                  <i aria-hidden="true" className="ri-arrow-right-s-line project-list__arrow" />
-                </Link>
-              </li>
+                  </DataList.Cell>
+                  <DataList.Cell hideBelow="sm" layout="meter" width="md">
+                    <ProgressBar
+                      label={`回款进度${progress}%`}
+                      motion="reveal"
+                      size="sm"
+                      value={progress}
+                      valueLabel={`${progress}%`}
+                    />
+                    <DataList.Secondary>回款 {progress}%</DataList.Secondary>
+                  </DataList.Cell>
+                  <ProjectStatusChip status={project.status} />
+                </DataList.Link>
+              </DataList.Item>
             )
           })}
-        </ul>
+        </DataList.Root>
       )}
     </EmberPanel>
   )

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Browser } from '@wailsio/runtime'
 import api, { type ApiResponse } from '@/api'
-import GlassCard from '@/components/common/GlassCard'
+import type { User } from '@/api/auth'
 import DataSyncPanel from '@/components/settings/DataSyncPanel'
 import DictionaryManagement from '@/components/settings/DictionaryManagement'
 import NotificationManagement from '@/components/settings/NotificationManagement'
@@ -10,8 +10,23 @@ import TokenManagement from '@/components/settings/TokenManagement'
 import UserManagement from '@/components/settings/UserManagement'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToastStore } from '@/composables/useToast'
+import {
+  Button,
+  Card,
+  Chip,
+  Field,
+  FormGrid,
+  Image,
+  Input,
+  Radio,
+  RadioGroup,
+  SectionHeader,
+  Surface,
+  Tabs,
+} from '@/design-system'
 import { useAuthStore } from '@/stores/auth'
 import { THEME_OPTIONS, useThemeStore } from '@/stores/theme'
+import '@/styles/settings.css'
 import pkg from '../../package.json'
 
 const techStack = [
@@ -24,6 +39,46 @@ const techStack = [
 interface ReleaseInfo {
   html_url: string
   tag_name: string
+}
+
+interface ProfileFields {
+  department: string
+  email: string
+  name: string
+  phone: string
+  position: string
+}
+
+interface ProfileFormState {
+  baseline: ProfileFields
+  draft: ProfileFields
+  identity: string | null
+}
+
+const profileFromUser = (user: User | null): ProfileFields => ({
+  department: user?.department || '',
+  email: user?.email || '',
+  name: user?.name || '',
+  phone: user?.phone || '',
+  position: user?.position || '',
+})
+
+const userIdentity = (user: User | null) => (user ? `${user.id}:${user.username}` : null)
+
+const profilesMatch = (first: ProfileFields, second: ProfileFields) =>
+  first.department === second.department &&
+  first.email === second.email &&
+  first.name === second.name &&
+  first.phone === second.phone &&
+  first.position === second.position
+
+const createProfileFormState = (user: User | null): ProfileFormState => {
+  const profile = profileFromUser(user)
+  return {
+    baseline: profile,
+    draft: profile,
+    identity: userIdentity(user),
+  }
 }
 
 export default function SettingsView() {
@@ -40,15 +95,9 @@ export default function SettingsView() {
   const theme = useThemeStore((state) => state.theme)
   const setTheme = useThemeStore((state) => state.setTheme)
   const isAdmin = user?.role === 'admin'
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile')
-  const [profile, setProfile] = useState({
-    department: user?.department || '',
-    email: user?.email || '',
-    name: user?.name || '',
-    phone: user?.phone || '',
-    position: user?.position || '',
-  })
-  const [originalProfile, setOriginalProfile] = useState(profile)
+  const [profileForm, setProfileForm] = useState(() => createProfileFormState(user))
+  const profile = profileForm.draft
+  const originalProfile = profileForm.baseline
   const [securityForm, setSecurityForm] = useState({
     confirmPassword: '',
     newPassword: '',
@@ -65,22 +114,24 @@ export default function SettingsView() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const nextProfile = {
-        department: user?.department || '',
-        email: user?.email || '',
-        name: user?.name || '',
-        phone: user?.phone || '',
-        position: user?.position || '',
-      }
-      setProfile(nextProfile)
-      setOriginalProfile(nextProfile)
+      const nextProfile = profileFromUser(user)
+      const nextIdentity = userIdentity(user)
+
+      setProfileForm((current) => {
+        const identityChanged = current.identity !== nextIdentity
+        const isDirty = !profilesMatch(current.draft, current.baseline)
+
+        if (!identityChanged && isDirty) return current
+
+        return {
+          baseline: nextProfile,
+          draft: nextProfile,
+          identity: nextIdentity,
+        }
+      })
     }, 0)
     return () => window.clearTimeout(timer)
   }, [user])
-
-  useEffect(() => {
-    setSearchParams({ tab: activeTab }, { replace: true })
-  }, [activeTab, setSearchParams])
 
   const settingsNav = useMemo(() => {
     const items = [
@@ -97,13 +148,27 @@ export default function SettingsView() {
     return items
   }, [isAdmin])
 
+  const requestedTab = searchParams.get('tab')
+  const activeTab =
+    requestedTab && settingsNav.some((item) => item.key === requestedTab) ? requestedTab : 'profile'
+
+  const selectTab = (tab: string) => {
+    if (tab === activeTab || !settingsNav.some((item) => item.key === tab)) return
+
+    const nextSearchParams = new URLSearchParams(searchParams)
+    nextSearchParams.set('tab', tab)
+    setSearchParams(nextSearchParams)
+  }
+
+  const updateProfileField = (field: keyof ProfileFields, value: string) => {
+    setProfileForm((current) => ({
+      ...current,
+      draft: { ...current.draft, [field]: value },
+    }))
+  }
+
   const saveProfile = async () => {
-    const isModified =
-      profile.name !== originalProfile.name ||
-      profile.position !== originalProfile.position ||
-      profile.email !== originalProfile.email ||
-      profile.phone !== originalProfile.phone ||
-      profile.department !== originalProfile.department
+    const isModified = !profilesMatch(profile, originalProfile)
 
     if (!isModified) {
       toastInfo('未做任何修改')
@@ -122,10 +187,20 @@ export default function SettingsView() {
       return
     }
 
-    const ok = await updateProfile(profile)
+    const submittedProfile = profile
+    const submittedIdentity = profileForm.identity
+    const ok = await updateProfile(submittedProfile)
     if (ok) {
       toastSuccess('保存成功')
-      setOriginalProfile(profile)
+      setProfileForm((current) => {
+        if (current.identity !== submittedIdentity) return current
+
+        return {
+          ...current,
+          baseline: submittedProfile,
+          draft: profilesMatch(current.draft, submittedProfile) ? submittedProfile : current.draft,
+        }
+      })
     }
   }
 
@@ -194,262 +269,242 @@ export default function SettingsView() {
   const activePanel = () => {
     if (activeTab === 'users' && isAdmin) {
       return (
-        <GlassCard className="h-fit flex flex-col p-0 overflow-hidden">
+        <Card.Root className="h-fit flex flex-col overflow-hidden" gap="lg" padding="lg">
           <UserManagement />
-        </GlassCard>
+        </Card.Root>
       )
     }
 
     if (activeTab === 'dictionary') {
       return (
-        <GlassCard className="flex flex-col p-0">
+        <Card.Root className="flex flex-col" gap="lg" padding="lg">
           <DictionaryManagement />
-        </GlassCard>
+        </Card.Root>
       )
     }
 
     if (activeTab === 'data-sync') {
       return (
-        <GlassCard className="h-full" noPadding>
+        <Card.Root className="h-full" gap="lg" padding="lg">
           <DataSyncPanel />
-        </GlassCard>
+        </Card.Root>
       )
     }
 
     if (activeTab === 'developer') {
       return (
-        <GlassCard className="h-full" noPadding>
+        <Card.Root className="h-full" gap="lg" padding="lg">
           <TokenManagement />
-        </GlassCard>
+        </Card.Root>
       )
     }
 
     if (activeTab === 'security') {
       return (
-        <GlassCard className="security-card" noPadding>
-          <div className="security-panel">
-            <div className="dev-header">
-              <div className="dev-header-content">
-                <div className="dev-title-section">
-                  <div className="dev-icon-wrapper">
-                    <i className="ri-lock-line" />
-                  </div>
-                  <div className="dev-title-info">
-                    <h2 className="dev-title">安全设置</h2>
-                    <p className="dev-subtitle">管理账户安全，保护个人信息</p>
-                  </div>
-                </div>
-                <button className="dev-create-btn" onClick={handlePasswordChange} type="button">
-                  <i className="ri-lock-password-line" />
-                  <span>修改密码</span>
-                </button>
-              </div>
-            </div>
+        <Card.Root className="security-card" gap="lg" padding="lg">
+          <SectionHeader
+            actions={
+              <Button onClick={handlePasswordChange}>
+                <i className="ri-lock-password-line" />
+                <span>修改密码</span>
+              </Button>
+            }
+            description="管理账户安全，保护个人信息"
+            icon={<i className="ri-lock-line" />}
+            size="lg"
+            title="安全设置"
+          />
 
-            <div className="dev-content">
-              <div className="security-form-grid">
-                <div className="form-group">
-                  <label className="form-label">当前密码</label>
-                  <input
-                    autoCapitalize="off"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    className="form-input"
-                    onChange={(event) =>
-                      setSecurityForm((current) => ({
-                        ...current,
-                        oldPassword: event.target.value,
-                      }))
-                    }
-                    placeholder="请输入当前密码"
-                    spellCheck={false}
-                    type="password"
-                    value={securityForm.oldPassword}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">新密码</label>
-                  <input
-                    autoCapitalize="off"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    className="form-input"
-                    onChange={(event) =>
-                      setSecurityForm((current) => ({
-                        ...current,
-                        newPassword: event.target.value,
-                      }))
-                    }
-                    placeholder="请输入新密码（至少6位）"
-                    spellCheck={false}
-                    type="password"
-                    value={securityForm.newPassword}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">确认新密码</label>
-                  <input
-                    autoCapitalize="off"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    className="form-input"
-                    onChange={(event) =>
-                      setSecurityForm((current) => ({
-                        ...current,
-                        confirmPassword: event.target.value,
-                      }))
-                    }
-                    placeholder="请再次输入新密码"
-                    spellCheck={false}
-                    type="password"
-                    value={securityForm.confirmPassword}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </GlassCard>
+          <FormGrid columns={3}>
+            <Field.Root>
+              <Field.Label>当前密码</Field.Label>
+              <Input
+                autoCapitalize="off"
+                autoComplete="off"
+                autoCorrect="off"
+                onChange={(event) =>
+                  setSecurityForm((current) => ({
+                    ...current,
+                    oldPassword: event.target.value,
+                  }))
+                }
+                placeholder="请输入当前密码"
+                spellCheck={false}
+                type="password"
+                value={securityForm.oldPassword}
+              />
+            </Field.Root>
+            <Field.Root>
+              <Field.Label>新密码</Field.Label>
+              <Input
+                autoCapitalize="off"
+                autoComplete="off"
+                autoCorrect="off"
+                onChange={(event) =>
+                  setSecurityForm((current) => ({
+                    ...current,
+                    newPassword: event.target.value,
+                  }))
+                }
+                placeholder="请输入新密码（至少6位）"
+                spellCheck={false}
+                type="password"
+                value={securityForm.newPassword}
+              />
+            </Field.Root>
+            <Field.Root>
+              <Field.Label>确认新密码</Field.Label>
+              <Input
+                autoCapitalize="off"
+                autoComplete="off"
+                autoCorrect="off"
+                onChange={(event) =>
+                  setSecurityForm((current) => ({
+                    ...current,
+                    confirmPassword: event.target.value,
+                  }))
+                }
+                placeholder="请再次输入新密码"
+                spellCheck={false}
+                type="password"
+                value={securityForm.confirmPassword}
+              />
+            </Field.Root>
+          </FormGrid>
+        </Card.Root>
       )
     }
 
     if (activeTab === 'notification') {
       return (
-        <GlassCard className="h-full" noPadding>
+        <Card.Root className="h-full" gap="lg" padding="lg">
           <NotificationManagement isAdmin={isAdmin} />
-        </GlassCard>
+        </Card.Root>
       )
     }
 
     if (activeTab === 'appearance') {
       return (
-        <GlassCard className="appearance-card" noPadding>
-          <div className="appearance-panel">
-            <div className="appearance-header">
-              <div className="appearance-header-main">
-                <div className="appearance-title-wrapper">
-                  <div className="appearance-icon">
-                    <i className="ri-palette-line" />
-                  </div>
-                  <div className="appearance-title-content">
-                    <h2 className="appearance-title">外观设置</h2>
-                    <p className="appearance-subtitle">自定义界面主题，打造专属的使用体验</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <Card.Root className="appearance-card" gap="lg" padding="lg">
+          <SectionHeader
+            description="自定义界面主题，打造专属的使用体验"
+            icon={<i className="ri-palette-line" />}
+            size="lg"
+            title="外观设置"
+          />
 
-            <div className="appearance-content">
-              <fieldset className="theme-card-group">
-                <legend className="sr-only">主题模式</legend>
-                {THEME_OPTIONS.map((item) => (
-                  <label
-                    className={`theme-card ${theme === item.value ? 'active' : ''}`}
-                    key={item.value}
-                  >
-                    <input
-                      checked={theme === item.value}
-                      className="theme-card__input"
-                      name="appearance-theme"
-                      onChange={() => setTheme(item.value)}
-                      type="radio"
-                      value={item.value}
-                    />
-                    <div className="theme-icon">
-                      <i className={item.icon} />
-                    </div>
-                    <span className="theme-label">{item.label}</span>
-                    {theme === item.value ? (
-                      <div className="theme-check">
-                        <i className="ri-check-line" />
-                      </div>
-                    ) : null}
-                  </label>
-                ))}
-              </fieldset>
-            </div>
-          </div>
-        </GlassCard>
+          <RadioGroup
+            aria-label="主题模式"
+            columns={3}
+            name="appearance-theme"
+            onValueChange={(value) => setTheme(value as typeof theme)}
+            value={theme}
+          >
+            {THEME_OPTIONS.map((item) => (
+              <Radio key={item.value} value={item.value} variant="card">
+                <span className="theme-card-content">
+                  <span className="theme-icon">
+                    <i className={item.icon} />
+                  </span>
+                  <span className="theme-label">{item.label}</span>
+                  {theme === item.value ? (
+                    <span className="theme-check">
+                      <i className="ri-check-line" />
+                    </span>
+                  ) : null}
+                </span>
+              </Radio>
+            ))}
+          </RadioGroup>
+        </Card.Root>
       )
     }
 
     if (activeTab === 'about') {
       return (
-        <GlassCard className="about-page h-auto min-h-full">
+        <Card.Root className="about-page h-auto min-h-full">
           <div className="about-container">
             <div className="about-hero">
               <div className="logo-wrapper">
                 <div className="logo-glow" />
-                <img alt="Orange Logo" className="about-logo" src="/orange.png" />
+                <Image alt="Orange Logo" className="about-logo" src="/orange.png" />
               </div>
               <h1 className="about-title">Orange</h1>
               <div className="about-subtitle">
-                <span className="version-badge">v{pkg.version}</span>
+                <Chip size="sm" tone="accent">
+                  v{pkg.version}
+                </Chip>
                 <span className="tagline">小旭姐专属记账工具</span>
               </div>
             </div>
 
             <div className="info-cards-grid">
-              <div className="info-card info-card-author">
-                <div className="card-glass">
-                  <div className="card-icon-wrapper">
-                    <i className="ri-user-smile-line" />
-                  </div>
-                  <div className="card-label">作者</div>
-                  <div className="card-value">willxue</div>
-                </div>
-              </div>
-              <div className="info-card info-card-wechat">
-                <div className="card-glass">
-                  <div className="card-icon-wrapper">
-                    <i className="ri-wechat-line" />
-                  </div>
-                  <div className="card-label">微信公众号</div>
-                  <div className="card-value">为学书院</div>
-                </div>
-              </div>
-              <div
-                className="info-card info-card-github"
+              <Card.Root className="info-card" gap="sm" padding="lg" variant="tertiary">
+                <Surface
+                  as="span"
+                  className="card-icon-wrapper"
+                  padding="none"
+                  radius="panel"
+                  tone="accent"
+                >
+                  <i className="ri-user-smile-line" />
+                </Surface>
+                <span className="card-label">作者</span>
+                <span className="card-value">willxue</span>
+              </Card.Root>
+              <Card.Root className="info-card" gap="sm" padding="lg" variant="tertiary">
+                <Surface
+                  as="span"
+                  className="card-icon-wrapper"
+                  padding="none"
+                  radius="panel"
+                  tone="success"
+                >
+                  <i className="ri-wechat-line" />
+                </Surface>
+                <span className="card-label">微信公众号</span>
+                <span className="card-value">为学书院</span>
+              </Card.Root>
+              <Card.Root
+                as="button"
+                className="info-card"
+                gap="sm"
                 onClick={openGitHub}
-                onKeyUp={(event) => {
-                  if (event.key === 'Enter') openGitHub()
-                }}
-                role="button"
-                tabIndex={0}
+                padding="lg"
+                pressable
+                type="button"
+                variant="tertiary"
               >
-                <div className="card-glass">
-                  <div className="card-icon-wrapper">
-                    <i className="ri-github-line" />
-                  </div>
-                  <div className="card-label">开源地址</div>
-                  <div className="card-value">
-                    FruitsAI/Orange
-                    <i className="ri-arrow-right-up-line external-icon" />
-                  </div>
-                </div>
-              </div>
+                <Surface
+                  as="span"
+                  className="card-icon-wrapper"
+                  padding="none"
+                  radius="panel"
+                  variant="inset"
+                >
+                  <i className="ri-github-line" />
+                </Surface>
+                <span className="card-label">开源地址</span>
+                <span className="card-value">
+                  FruitsAI/Orange
+                  <i className="ri-arrow-right-up-line external-icon" />
+                </span>
+              </Card.Root>
             </div>
 
             <div className="tech-stack">
               {techStack.map((tech) => (
-                <div className="tech-pill" data-tech={tech.key} key={tech.key}>
+                <Chip data-tech={tech.key} key={tech.key}>
                   <span className="tech-dot" />
                   <span className="tech-name">{tech.label}</span>
-                </div>
+                </Chip>
               ))}
             </div>
 
-            <button
-              className={`update-btn ${checkingUpdate ? 'updating' : ''}`}
-              disabled={checkingUpdate}
-              onClick={() => void checkUpdate()}
-              type="button"
-            >
-              <span className="btn-glow" />
-              <span className="btn-content">
-                <i className={`ri-loop-left-line btn-icon ${checkingUpdate ? 'spinning' : ''}`} />
-                <span className="btn-text">{checkingUpdate ? '正在检测更新...' : '检测更新'}</span>
-              </span>
-            </button>
+            <Button onClick={() => void checkUpdate()} pending={checkingUpdate}>
+              <i className={`ri-loop-left-line ${checkingUpdate ? 'spinning' : ''}`} />
+              <span>{checkingUpdate ? '正在检测更新...' : '检测更新'}</span>
+            </Button>
 
             <div className="copyright">
               <span className="copyright-text">© {new Date().getFullYear()} FruitsAI</span>
@@ -457,138 +512,110 @@ export default function SettingsView() {
               <span className="copyright-rights">All rights reserved</span>
             </div>
           </div>
-        </GlassCard>
+        </Card.Root>
       )
     }
 
     return (
-      <GlassCard className="profile-card" noPadding>
-        <div className="profile-panel">
-          <div className="dev-header">
-            <div className="dev-header-content">
-              <div className="dev-title-section">
-                <div className="dev-icon-wrapper">
-                  <i className="ri-user-3-line" />
-                </div>
-                <div className="dev-title-info">
-                  <h2 className="dev-title">个人信息</h2>
-                  <p className="dev-subtitle">管理您的个人资料和联系方式</p>
-                </div>
-              </div>
-              <button className="dev-create-btn" onClick={saveProfile} type="button">
-                <i className="ri-save-line" />
-                <span>保存更改</span>
-              </button>
-            </div>
-          </div>
+      <Card.Root className="profile-card" gap="lg" padding="lg">
+        <SectionHeader
+          actions={
+            <Button onClick={saveProfile}>
+              <i className="ri-save-line" />
+              <span>保存更改</span>
+            </Button>
+          }
+          description="管理您的个人资料和联系方式"
+          icon={<i className="ri-user-3-line" />}
+          size="lg"
+          title="个人信息"
+        />
 
-          <div className="dev-content">
-            <div className="profile-form-grid">
-              <div className="form-group">
-                <label className="form-label">姓名</label>
-                <input
-                  autoCapitalize="off"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  className="form-input"
-                  onChange={(event) =>
-                    setProfile((current) => ({ ...current, name: event.target.value }))
-                  }
-                  spellCheck={false}
-                  type="text"
-                  value={profile.name}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">职位</label>
-                <input
-                  autoCapitalize="off"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  className="form-input"
-                  onChange={(event) =>
-                    setProfile((current) => ({ ...current, position: event.target.value }))
-                  }
-                  spellCheck={false}
-                  type="text"
-                  value={profile.position}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">邮箱</label>
-                <input
-                  autoCapitalize="off"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  className="form-input"
-                  onChange={(event) =>
-                    setProfile((current) => ({ ...current, email: event.target.value }))
-                  }
-                  spellCheck={false}
-                  type="email"
-                  value={profile.email}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">手机</label>
-                <input
-                  autoCapitalize="off"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  className="form-input"
-                  onChange={(event) =>
-                    setProfile((current) => ({ ...current, phone: event.target.value }))
-                  }
-                  spellCheck={false}
-                  type="tel"
-                  value={profile.phone}
-                />
-              </div>
-              <div className="form-group form-group-full">
-                <label className="form-label">部门</label>
-                <input
-                  autoCapitalize="off"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  className="form-input"
-                  onChange={(event) =>
-                    setProfile((current) => ({ ...current, department: event.target.value }))
-                  }
-                  spellCheck={false}
-                  type="text"
-                  value={profile.department}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </GlassCard>
+        <FormGrid columns={2}>
+          <Field.Root>
+            <Field.Label>姓名</Field.Label>
+            <Input
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+              onChange={(event) => updateProfileField('name', event.target.value)}
+              spellCheck={false}
+              type="text"
+              value={profile.name}
+            />
+          </Field.Root>
+          <Field.Root>
+            <Field.Label>职位</Field.Label>
+            <Input
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+              onChange={(event) => updateProfileField('position', event.target.value)}
+              spellCheck={false}
+              type="text"
+              value={profile.position}
+            />
+          </Field.Root>
+          <Field.Root>
+            <Field.Label>邮箱</Field.Label>
+            <Input
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+              onChange={(event) => updateProfileField('email', event.target.value)}
+              spellCheck={false}
+              type="email"
+              value={profile.email}
+            />
+          </Field.Root>
+          <Field.Root>
+            <Field.Label>手机</Field.Label>
+            <Input
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+              onChange={(event) => updateProfileField('phone', event.target.value)}
+              spellCheck={false}
+              type="tel"
+              value={profile.phone}
+            />
+          </Field.Root>
+          <Field.Root className="settings-field--full">
+            <Field.Label>部门</Field.Label>
+            <Input
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+              onChange={(event) => updateProfileField('department', event.target.value)}
+              spellCheck={false}
+              type="text"
+              value={profile.department}
+            />
+          </Field.Root>
+        </FormGrid>
+      </Card.Root>
     )
   }
 
   return (
-    <div className="settings-view grid gap-lg">
-      <GlassCard className="p-0 h-fit nav-card">
-        <div className="nav-header">设置</div>
-        <div className="nav-list">
+    <Tabs.Root className="settings-view" onValueChange={selectTab} value={activeTab}>
+      <Card.Root className="h-fit nav-card" gap="sm" padding="sm">
+        <Card.Header>
+          <SectionHeader density="compact" title="设置" />
+        </Card.Header>
+        <Tabs.List aria-label="设置分类" orientation="vertical" variant="navigation">
           {settingsNav.map((item) => (
-            <a
-              className={`nav-item-settings ${activeTab === item.key ? 'active' : ''}`}
-              href="#"
-              key={item.key}
-              onClick={(event) => {
-                event.preventDefault()
-                setActiveTab(item.key)
-              }}
-            >
-              <i className={`${item.icon} nav-icon`} />{' '}
+            <Tabs.Tab key={item.key} value={item.key}>
+              <i aria-hidden="true" className={`${item.icon} nav-icon`} />{' '}
               <span className="nav-label">{item.label}</span>
-            </a>
+            </Tabs.Tab>
           ))}
-        </div>
-      </GlassCard>
+        </Tabs.List>
+      </Card.Root>
 
-      {activePanel()}
-    </div>
+      <Tabs.Panel className="settings-content" value={activeTab}>
+        {activePanel()}
+      </Tabs.Panel>
+    </Tabs.Root>
   )
 }

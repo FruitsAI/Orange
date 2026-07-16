@@ -10,7 +10,7 @@ const styles = readFileSync(resolve('src/design-system/styles.css'), 'utf8')
 describe('Orange Design System stylesheet entry', () => {
   it('declares one deterministic cascade order', () => {
     expect(styles).toContain(
-      '@layer reset, vendor, tokens, base, legacy, components, patterns, utilities, overrides;',
+      '@layer reset, vendor, tokens, base, components, patterns, utilities, overrides;',
     )
   })
 
@@ -22,7 +22,6 @@ describe('Orange Design System stylesheet entry', () => {
       './tokens/semantic.css',
       './tokens/themes/day-ember.css',
       './tokens/themes/night-orbit.css',
-      './tokens/compatibility.css',
       './foundations/reset.css',
       './foundations/typography.css',
       './foundations/focus.css',
@@ -33,7 +32,7 @@ describe('Orange Design System stylesheet entry', () => {
   })
 
   it('does not duplicate Tailwind or import legacy bundles', () => {
-    expect(styles).not.toMatch(/@import\s+['"]tailwindcss['"]/) 
+    expect(styles).not.toMatch(/@import\s+['"]tailwindcss['"]/)
     expect(styles).not.toMatch(/assets\/(?:main|liquid-glass)\.css/)
   })
 })

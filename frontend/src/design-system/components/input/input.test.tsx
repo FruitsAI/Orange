@@ -2,6 +2,7 @@ import { createRef } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@/test/render'
 import { Input, InputGroup, NativeSelect, TextArea } from './Input'
+import inputCss from './input.css?raw'
 
 describe('input primitives', () => {
   it('forwards refs and native props while exposing a size contract', () => {
@@ -41,6 +42,13 @@ describe('input primitives', () => {
       'end-content',
     )
     expect(screen.getByRole('textbox', { name: '金额' })).toBeInTheDocument()
+  })
+
+  it('owns password typography inside the input primitive', () => {
+    render(<Input aria-label="密码" type="password" />)
+
+    expect(screen.getByLabelText('密码')).toHaveAttribute('type', 'password')
+    expect(inputCss).toMatch(/\.ods-input\[type='password'\]\s*\{[\s\S]*letter-spacing:\s*0\.12em/)
   })
 
   it('provides textarea and native select variants with forwarded native behavior', () => {

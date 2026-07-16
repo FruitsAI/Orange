@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import AppDock from '@/components/layout/AppDock'
 import AppTopbar from '@/components/layout/AppTopbar'
@@ -7,7 +7,6 @@ import { useAmbientLight } from '@/hooks/useAmbientLight'
 
 export default function AppLayout() {
   const appBackgroundRef = useAmbientLight<HTMLDivElement>()
-  const mainContentRef = useRef<HTMLElement | null>(null)
   const [scrolled, setScrolled] = useState(false)
 
   return (
@@ -63,9 +62,8 @@ export default function AppLayout() {
           const nextScrolled = event.currentTarget.scrollTop > 24
           setScrolled((current) => (current === nextScrolled ? current : nextScrolled))
         }}
-        ref={mainContentRef}
       >
-        <div className="app-view-content animate-fade-in">
+        <div className="app-view-content ods-motion-fade-in">
           <Outlet />
         </div>
       </main>

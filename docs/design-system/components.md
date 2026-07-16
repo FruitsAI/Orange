@@ -89,7 +89,10 @@ import {
 
 可直接用于全站迁移的 patterns：
 
-- `RouterButton`、`RouterLink` 保留 React Router 客户端导航，并复用 ODS Button/Link variants。
+- `Button` 的 `tone="danger"` 可与 `variant="ghost"` 正交组合，页面不再自行覆盖危险操作颜色。
+- `Surface` 通过 `tone` 表达 accent/success/warning/danger/info 语义，业务图标块不再复制底色与边框。
+- `RouterButton`、`RouterLink` 保留 React Router 客户端导航，并复用 ODS Button/Link variants；列表入口使用 `RouterLink appearance="row"`，由 ODS 统一 hover、pressed、focus 与 reduced-motion 行为。
+- `Table.Row interactive` 统一可点击行的视觉反馈，仍由行内真实链接/按钮承担键盘语义；`Table.Column/Cell sticky="end"` 统一固定操作列的层级、背景和分隔线。
 - `PageHeader` 只用于页面级 `h1`；`SectionHeader` 支持 `headingLevel={2 | 3 | 4}`。
 - `FormSection`、`FormGrid`、`FormActions` 统一表单分区、响应式列和操作行。
 - `PaginationBar` 组合结果信息、共享 `Pagination` 与可选 trailing control。

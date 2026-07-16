@@ -22,6 +22,17 @@
   height: var(--ods-control-height-md);
 }
 
+.ods-input[type='password'] {
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  letter-spacing: 0.12em;
+}
+
 .ods-textarea {
   min-height: calc(var(--ods-control-height-md) * 2);
   padding-block: var(--ods-space-3);

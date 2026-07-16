@@ -1,20 +1,44 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 
 const SOURCE_ROOT = 'src'
-const NATIVE_CONTROL_TAGS = new Set(['button', 'input', 'select', 'textarea', 'table'])
+const NATIVE_PRIMITIVE_TAGS = new Set([
+  'a',
+  'button',
+  'dialog',
+  'img',
+  'input',
+  'progress',
+  'select',
+  'table',
+  'textarea',
+])
+const DIRECT_ROUTER_PRIMITIVES = new Set(['Link', 'NavLink'])
+const DIRECT_OVERLAY_PRIMITIVES = new Set(['createPortal'])
+const NATIVE_DIALOG_APIS = new Set(['alert', 'confirm', 'prompt'])
+const INTERACTIVE_CONTAINER_TAGS = new Set(['article', 'div', 'li', 'section', 'span', 'tr'])
+const REMOVED_LEGACY_COMPONENTS = [
+  'src/components/common/ConfirmModal.tsx',
+  'src/components/common/DatePicker.tsx',
+  'src/components/common/EmptyState.tsx',
+  'src/components/common/GlassCard.tsx',
+  'src/components/common/PanelHeader.tsx',
+  'src/components/common/StatusBadge.tsx',
+  'src/components/common/ToastContainer.tsx',
+]
 
-// These selectors are presentation contracts owned by the pre-ODS stylesheets. A production
-// consumer must move to the matching ODS component before its entry can be removed below.
+// Presentation contracts formerly owned by the pre-ODS stylesheets. Production consumers must
+// use an Orange Design System component or pattern instead of reintroducing these selectors.
 const LEGACY_CLASS_TOKEN_PATTERNS = [
   /^btn(?:$|-)/,
   /^(?:form-(?:actions|field(?:-wide)?|grid|group(?:-full)?|input|label|select|textarea)|input-(?:group|label|wrapper)|select-arrow|search-input(?:-icon|-wrapper)?|date-input)$/,
   /^modal(?:$|-)/,
   /^confirm-(?:actions|btn|message|modal|overlay|title)$/,
   /^(?:glass-card(?:$|--)|glass-panel|liquid-glass(?:$|--))/,
+  /^panel-header$/,
   /^status-badge(?:$|--|__)/,
   /^(?:data-table|progress-bar(?:$|-))/,
   /^(?:pagination-(?:controls|info|inner|left)|page-(?:btn|number|numbers|select|size|size-selector))$/,
@@ -23,275 +47,19 @@ const LEGACY_CLASS_TOKEN_PATTERNS = [
   /^toast(?:$|-)/,
 ]
 
-type DebtKind = `native:${string}` | `legacy:${string}`
+type DebtKind =
+  | `direct-overlay:${string}`
+  | `direct-router:${string}`
+  | `interactive-container:${string}`
+  | `legacy:${string}`
+  | `native-api:${string}`
+  | `native:${string}`
+  | `private-ods-import:${string}`
 type DebtCounts = Partial<Record<DebtKind, number>>
 
-// This is an exact, decrement-only inventory. After migrating a batch, lower/remove only the
-// entries reported as reduced debt. Never raise a value to make newly introduced debt pass.
-const MIGRATION_DEBT_ALLOWLIST: Record<string, DebtCounts> = {
-  'src/components/common/ConfirmModal.tsx': {
-    'legacy:confirm-actions': 1,
-    'legacy:confirm-message': 1,
-    'legacy:confirm-modal': 1,
-    'legacy:confirm-overlay': 1,
-    'legacy:confirm-title': 1,
-  },
-  'src/components/common/DatePicker.tsx': {
-    'legacy:date-picker-wrapper': 1,
-    'native:input': 1,
-  },
-  'src/components/common/GlassCard.tsx': {
-    'legacy:glass-card': 1,
-    'legacy:glass-card--flat': 1,
-    'legacy:glass-card--hover': 1,
-  },
-  'src/components/common/StatusBadge.tsx': {
-    'legacy:status-badge': 1,
-    'legacy:status-badge__icon': 1,
-    'legacy:status-badge--active': 1,
-    'legacy:status-badge--archived': 1,
-    'legacy:status-badge--completed': 3,
-    'legacy:status-badge--notstarted': 2,
-    'legacy:status-badge--overdue': 1,
-    'legacy:status-badge--pending': 1,
-  },
-  'src/components/common/ThemeSelector.tsx': {
-    'native:button': 3,
-  },
-  'src/components/common/ToastContainer.tsx': {
-    'legacy:toast-container': 1,
-    'legacy:toast-item': 1,
-    'native:button': 1,
-  },
-  'src/components/dashboard/ActionQueue.tsx': {
-    'legacy:btn': 2,
-    'legacy:btn-ghost': 2,
-    'legacy:btn-sm': 2,
-  },
-  'src/components/dashboard/IncomeChart.tsx': {
-    'legacy:btn': 1,
-    'legacy:btn-ghost': 1,
-    'legacy:btn-secondary': 1,
-    'legacy:btn-sm': 1,
-    'native:button': 1,
-    'native:table': 1,
-  },
-  'src/components/dashboard/ProjectList.tsx': {
-    'legacy:btn': 2,
-    'legacy:btn-ghost': 1,
-    'legacy:btn-secondary': 1,
-    'legacy:btn-sm': 2,
-  },
-  'src/components/layout/AppTopbar.tsx': {
-    'native:button': 9,
-  },
-  'src/components/notification/NotificationDetailModal.tsx': {
-    'legacy:modal': 1,
-    'legacy:modal-body': 1,
-    'legacy:modal-close': 1,
-    'legacy:modal-header': 1,
-    'legacy:modal-overlay': 1,
-    'legacy:modal-title': 1,
-    'native:button': 1,
-  },
-  'src/components/settings/DataSyncPanel.tsx': {
-    'native:button': 5,
-    'native:input': 5,
-    'native:select': 1,
-  },
-  'src/components/settings/DictionaryManagement.tsx': {
-    'legacy:btn': 2,
-    'legacy:btn-primary': 1,
-    'legacy:btn-secondary': 1,
-    'legacy:form-group': 3,
-    'legacy:form-input': 3,
-    'legacy:form-label': 3,
-    'legacy:modal': 1,
-    'legacy:modal-body': 1,
-    'legacy:modal-close': 1,
-    'legacy:modal-footer': 1,
-    'legacy:modal-header': 1,
-    'legacy:modal-overlay': 1,
-    'legacy:modal-title': 1,
-    'native:button': 6,
-    'native:input': 3,
-  },
-  'src/components/settings/NotificationManagement.tsx': {
-    'legacy:btn': 2,
-    'legacy:btn-primary': 1,
-    'legacy:btn-secondary': 1,
-    'legacy:form-group': 4,
-    'legacy:form-input': 2,
-    'legacy:form-label': 4,
-    'legacy:form-select': 2,
-    'legacy:input-wrapper': 2,
-    'legacy:modal': 1,
-    'legacy:modal-body': 1,
-    'legacy:modal-close': 1,
-    'legacy:modal-footer': 1,
-    'legacy:modal-header': 1,
-    'legacy:modal-overlay': 1,
-    'legacy:modal-title': 1,
-    'legacy:page-btn': 2,
-    'legacy:page-number': 1,
-    'legacy:page-numbers': 1,
-    'legacy:page-select': 1,
-    'legacy:page-size': 1,
-    'legacy:pagination-controls': 1,
-    'legacy:pagination-info': 1,
-    'legacy:pagination-inner': 1,
-    'legacy:select-arrow': 2,
-    'native:button': 9,
-    'native:input': 1,
-    'native:select': 3,
-    'native:textarea': 1,
-  },
-  'src/components/settings/TokenManagement.tsx': {
-    'native:button': 11,
-    'native:input': 1,
-  },
-  'src/components/settings/UserManagement.tsx': {
-    'legacy:btn': 4,
-    'legacy:btn-ghost': 2,
-    'legacy:btn-primary': 2,
-    'legacy:form-group': 10,
-    'legacy:form-input': 8,
-    'legacy:form-label': 10,
-    'legacy:form-select': 2,
-    'legacy:input-wrapper': 2,
-    'legacy:modal': 2,
-    'legacy:modal-body': 2,
-    'legacy:modal-close': 2,
-    'legacy:modal-footer': 2,
-    'legacy:modal-header': 2,
-    'legacy:modal-overlay': 2,
-    'legacy:modal-title': 2,
-    'legacy:page-btn': 2,
-    'legacy:page-number': 1,
-    'legacy:page-numbers': 1,
-    'legacy:page-select': 1,
-    'legacy:page-size': 1,
-    'legacy:pagination-controls': 1,
-    'legacy:pagination-info': 1,
-    'legacy:pagination-inner': 1,
-    'legacy:search-input': 1,
-    'legacy:search-input-wrapper': 1,
-    'legacy:select-arrow': 2,
-    'native:button': 13,
-    'native:input': 9,
-    'native:select': 3,
-  },
-  'src/views/AnalyticsView.tsx': {
-    'legacy:btn': 2,
-    'legacy:btn-ghost': 1,
-    'legacy:btn-secondary': 2,
-    'legacy:btn-sm': 1,
-    'legacy:btn-text': 1,
-    'native:button': 2,
-  },
-  'src/views/CalendarView.tsx': {
-    'legacy:btn': 5,
-    'legacy:btn-ghost': 4,
-    'legacy:btn-icon': 2,
-    'legacy:btn-secondary': 1,
-    'legacy:btn-sm': 3,
-    'native:button': 6,
-  },
-  'src/views/dashboard/DashboardError.tsx': {
-    'legacy:btn': 1,
-    'legacy:btn-secondary': 1,
-    'legacy:btn-sm': 1,
-    'legacy:glass-card': 1,
-    'native:button': 1,
-  },
-  'src/views/PaymentCreateView.tsx': {
-    'legacy:btn': 4,
-    'legacy:btn-ghost': 2,
-    'legacy:btn-primary': 2,
-    'legacy:btn-sm': 2,
-    'legacy:form-actions': 1,
-    'legacy:form-grid': 1,
-    'legacy:form-select': 4,
-    'legacy:form-textarea': 1,
-    'legacy:glass-panel': 1,
-    'legacy:input-group': 6,
-    'legacy:input-wrapper': 7,
-    'legacy:select-arrow': 4,
-    'native:button': 5,
-    'native:input': 1,
-    'native:select': 4,
-    'native:textarea': 1,
-  },
-  'src/views/ProjectCreateView.tsx': {
-    'legacy:btn': 4,
-    'legacy:btn-ghost': 2,
-    'legacy:btn-primary': 2,
-    'legacy:btn-sm': 2,
-    'legacy:form-actions': 1,
-    'legacy:form-grid': 3,
-    'legacy:form-select': 6,
-    'legacy:form-textarea': 2,
-    'legacy:glass-panel': 1,
-    'legacy:input-group': 17,
-    'legacy:input-wrapper': 17,
-    'legacy:select-arrow': 6,
-    'native:button': 5,
-    'native:input': 5,
-    'native:select': 6,
-    'native:textarea': 2,
-  },
-  'src/views/ProjectDetailView.tsx': {
-    'legacy:btn': 4,
-    'legacy:btn-ghost': 3,
-    'legacy:btn-icon': 3,
-    'legacy:btn-primary': 1,
-    'legacy:btn-sm': 1,
-    'legacy:confirm-btn': 1,
-    'legacy:progress-bar-bg': 1,
-    'legacy:progress-bar-fill': 1,
-    'native:button': 7,
-  },
-  'src/views/ProjectsView.tsx': {
-    'legacy:btn': 6,
-    'legacy:btn-ghost': 5,
-    'legacy:btn-icon': 3,
-    'legacy:btn-primary': 1,
-    'legacy:btn-secondary': 1,
-    'legacy:btn-sm': 5,
-    'legacy:btn-text': 1,
-    'legacy:data-table': 1,
-    'legacy:dropdown-item': 3,
-    'legacy:dropdown-menu-fixed': 1,
-    'legacy:page-btn': 2,
-    'legacy:page-number': 1,
-    'legacy:page-numbers': 1,
-    'legacy:page-select': 1,
-    'legacy:page-size': 1,
-    'legacy:pagination-controls': 1,
-    'legacy:pagination-info': 1,
-    'legacy:pagination-inner': 1,
-    'legacy:progress-bar': 1,
-    'legacy:progress-bar-fill': 1,
-    'legacy:search-input': 1,
-    'legacy:search-input-wrapper': 1,
-    'native:button': 12,
-    'native:input': 1,
-    'native:select': 1,
-    'native:table': 1,
-  },
-  'src/views/SettingsView.tsx': {
-    'legacy:btn-content': 1,
-    'legacy:btn-glow': 1,
-    'legacy:btn-icon': 1,
-    'legacy:btn-text': 1,
-    'legacy:form-group': 8,
-    'legacy:form-group-full': 1,
-    'legacy:form-input': 8,
-    'legacy:form-label': 8,
-    'native:button': 3,
-    'native:input': 9,
-  },
-}
+// The migration is complete. Keep this baseline empty: adding an exception would silently create
+// a second implementation path and undermine the shared component contract.
+const MIGRATION_DEBT_ALLOWLIST: Record<string, DebtCounts> = {}
 
 interface DebtInventory {
   counts: Record<string, DebtCounts>
@@ -304,8 +72,7 @@ function isProductionTsx(path: string) {
     !path.endsWith('.test.tsx') &&
     !path.endsWith('.spec.tsx') &&
     !path.startsWith(`${SOURCE_ROOT}/design-system/`) &&
-    !path.startsWith(`${SOURCE_ROOT}/test/`) &&
-    !path.endsWith('/DesignSystemView.tsx')
+    !path.startsWith(`${SOURCE_ROOT}/test/`)
   )
 }
 
@@ -361,10 +128,58 @@ function collectMigrationDebt(): DebtInventory {
         if (isLegacyClassToken(token)) addDebt(file, `legacy:${token}`, nodeLine)
       }
 
+      if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+        if (node.moduleSpecifier.text.startsWith('@/design-system/')) {
+          addDebt(file, `private-ods-import:${node.moduleSpecifier.text}`, nodeLine)
+        }
+
+        if (node.moduleSpecifier.text === 'react-dom') {
+          const bindings = node.importClause?.namedBindings
+          if (bindings && ts.isNamedImports(bindings)) {
+            for (const element of bindings.elements) {
+              const importedName = element.propertyName?.text ?? element.name.text
+              if (DIRECT_OVERLAY_PRIMITIVES.has(importedName)) {
+                addDebt(file, `direct-overlay:${importedName}`, nodeLine)
+              }
+            }
+          }
+        }
+
+        if (node.moduleSpecifier.text === 'react-router-dom') {
+          const bindings = node.importClause?.namedBindings
+          if (bindings && ts.isNamedImports(bindings)) {
+            for (const element of bindings.elements) {
+              const importedName = element.propertyName?.text ?? element.name.text
+              if (DIRECT_ROUTER_PRIMITIVES.has(importedName)) {
+                addDebt(file, `direct-router:${importedName}`, nodeLine)
+              }
+            }
+          }
+        }
+      }
+
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression) &&
+        node.expression.expression.getText(sourceFile) === 'window' &&
+        NATIVE_DIALOG_APIS.has(node.expression.name.text)
+      ) {
+        addDebt(file, `native-api:${node.expression.name.text}`, nodeLine)
+      }
+
       if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
         const tagName = node.tagName.getText(sourceFile)
+        if (NATIVE_PRIMITIVE_TAGS.has(tagName)) addDebt(file, `native:${tagName}`, nodeLine)
 
-        if (NATIVE_CONTROL_TAGS.has(tagName)) addDebt(file, `native:${tagName}`, nodeLine)
+        if (INTERACTIVE_CONTAINER_TAGS.has(tagName)) {
+          const hasControlHandler = node.attributes.properties.some(
+            (attribute) =>
+              ts.isJsxAttribute(attribute) &&
+              (attribute.name.getText(sourceFile) === 'onClick' ||
+                attribute.name.getText(sourceFile) === 'onKeyDown'),
+          )
+          if (hasControlHandler) addDebt(file, `interactive-container:${tagName}`, nodeLine)
+        }
       }
       ts.forEachChild(node, visit)
     }
@@ -375,7 +190,7 @@ function collectMigrationDebt(): DebtInventory {
   return inventory
 }
 
-function formatAllowlist(counts: Record<string, DebtCounts>) {
+function formatInventory(counts: Record<string, DebtCounts>) {
   const sorted = Object.fromEntries(
     Object.entries(counts)
       .sort(([left], [right]) => left.localeCompare(right))
@@ -418,22 +233,28 @@ function migrationDebtDiff(actual: DebtInventory) {
 
   return [
     increased.length > 0
-      ? `New/increased migration debt (migrate it; do not raise the allowlist):\n${increased.join('\n')}`
+      ? `New/increased migration debt (use ODS; do not add an exception):\n${increased.join('\n')}`
       : '',
     reduced.length > 0
-      ? `Reduced migration debt (decrement/remove these allowlist entries):\n${reduced.join('\n')}`
+      ? `Reduced migration debt (remove obsolete baseline entries):\n${reduced.join('\n')}`
       : '',
-    `Current exact inventory:\n${formatAllowlist(actual.counts)}`,
+    `Current exact inventory:\n${formatInventory(actual.counts)}`,
   ]
     .filter(Boolean)
     .join('\n\n')
 }
 
 describe('Orange Design System production migration contract', () => {
-  it('keeps native controls and legacy presentation classes on an exact decrement-only baseline', () => {
+  it('keeps production on the zero-debt ODS baseline', () => {
     const actual = collectMigrationDebt()
     const diff = migrationDebtDiff(actual)
 
     expect(diff, diff).toBe('')
+  })
+
+  it('does not recreate component paths superseded by Orange Design System', () => {
+    const recreated = REMOVED_LEGACY_COMPONENTS.filter((path) => existsSync(resolve(path)))
+
+    expect(recreated, `Recreated legacy components:\n${recreated.join('\n')}`).toEqual([])
   })
 })

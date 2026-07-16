@@ -31,6 +31,7 @@ export interface RadioGroupProps extends Omit<
   FieldsetHTMLAttributes<HTMLFieldSetElement>,
   'onChange'
 > {
+  columns?: 1 | 2 | 3
   name?: string
   onValueChange: (value: string) => void
   required?: boolean
@@ -38,7 +39,17 @@ export interface RadioGroupProps extends Omit<
 }
 
 const RadioGroupRoot = forwardRef<HTMLFieldSetElement, RadioGroupProps>(function RadioGroupRoot(
-  { children, className, disabled = false, name, onValueChange, required = false, value, ...props },
+  {
+    children,
+    className,
+    columns = 1,
+    disabled = false,
+    name,
+    onValueChange,
+    required = false,
+    value,
+    ...props
+  },
   ref,
 ) {
   const generatedName = useId().replaceAll(':', '')
@@ -58,6 +69,7 @@ const RadioGroupRoot = forwardRef<HTMLFieldSetElement, RadioGroupProps>(function
       <fieldset
         {...props}
         className={['ods-radio-group', className].filter(Boolean).join(' ')}
+        data-columns={columns}
         data-slot="root"
         disabled={disabled}
         ref={ref}
@@ -89,10 +101,11 @@ export interface RadioProps extends Omit<
 > {
   children?: ReactNode
   value: string
+  variant?: 'card' | 'default'
 }
 
 export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
-  { children, className, disabled, onChange, value, ...props },
+  { children, className, disabled, onChange, value, variant = 'default', ...props },
   ref,
 ) {
   const group = useRadioGroupContext()
@@ -105,7 +118,9 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
     <label
       className={['ods-radio', className].filter(Boolean).join(' ')}
       data-disabled={group.disabled || disabled || undefined}
+      data-selected={group.value === value || undefined}
       data-slot="radio"
+      data-variant={variant}
     >
       <input
         {...props}

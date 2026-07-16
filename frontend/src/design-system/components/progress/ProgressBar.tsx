@@ -2,11 +2,13 @@ import { forwardRef, type HTMLAttributes } from 'react'
 
 export type ProgressBarTone = 'accent' | 'success' | 'warning' | 'danger'
 export type ProgressBarSize = 'sm' | 'md' | 'lg'
+export type ProgressBarMotion = 'none' | 'reveal'
 
 export interface ProgressBarProps extends Omit<HTMLAttributes<HTMLDivElement>, 'aria-label'> {
   label: string
   max?: number
   min?: number
+  motion?: ProgressBarMotion
   size?: ProgressBarSize
   tone?: ProgressBarTone
   value?: number
@@ -19,6 +21,7 @@ export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(function
     label,
     max = 100,
     min = 0,
+    motion = 'none',
     size = 'md',
     tone = 'accent',
     value,
@@ -30,8 +33,7 @@ export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(function
   const safeMax = max > min ? max : min + 1
   const determinate = typeof value === 'number' && Number.isFinite(value)
   const clampedValue = determinate ? Math.min(safeMax, Math.max(min, value)) : undefined
-  const percentage =
-    clampedValue === undefined ? 0 : ((clampedValue - min) / (safeMax - min)) * 100
+  const percentage = clampedValue === undefined ? 0 : ((clampedValue - min) / (safeMax - min)) * 100
 
   return (
     <div
@@ -43,6 +45,7 @@ export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(function
       aria-valuetext={valueLabel}
       className={['ods-progress', className].filter(Boolean).join(' ')}
       data-indeterminate={!determinate || undefined}
+      data-motion={motion}
       data-size={size}
       data-slot="progress"
       data-tone={tone}

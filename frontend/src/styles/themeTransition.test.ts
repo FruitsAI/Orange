@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const foundationsCss = readFileSync(resolve('src/styles/foundations.css'), 'utf8')
-const liquidGlassCss = readFileSync(resolve('src/assets/liquid-glass.css'), 'utf8')
+const foundationsCss = readFileSync(resolve('src/design-system/foundations/motion.css'), 'utf8')
 
 describe('theme transition contract', () => {
   it('limits the short transition to visual theme properties', () => {
@@ -18,7 +17,7 @@ describe('theme transition contract', () => {
     expect(transitionRule).not.toContain('transform')
   })
 
-  it('removes the legacy global duration override', () => {
-    expect(liquidGlassCss).not.toMatch(/\.theme-transitioning \*\s*\{[^}]*transition-duration/)
+  it('removes the legacy theme-transition implementation with liquid glass', () => {
+    expect(existsSync(resolve('src/assets/liquid-glass.css'))).toBe(false)
   })
 })

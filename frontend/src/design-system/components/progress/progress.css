@@ -56,6 +56,11 @@
   animation: ods-progress-indeterminate 1.4s var(--ods-ease-emphasized) infinite;
 }
 
+.ods-progress[data-motion='reveal']:not([data-indeterminate='true']) .ods-progress__fill {
+  animation: ods-progress-reveal var(--ods-duration-page) var(--ods-ease-emphasized) both;
+  transform-origin: left center;
+}
+
 @keyframes ods-progress-indeterminate {
   from {
     transform: translateX(-120%);
@@ -66,9 +71,24 @@
   }
 }
 
+@keyframes ods-progress-reveal {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ods-progress__fill {
     transition: none;
+  }
+
+  .ods-progress[data-motion='reveal']:not([data-indeterminate='true']) .ods-progress__fill {
+    animation: none;
+    transform: none;
   }
 
   .ods-progress[data-indeterminate='true'] .ods-progress__fill {

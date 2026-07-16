@@ -37,4 +37,27 @@ describe('RadioGroup', () => {
     expect(screen.getByRole('group', { name: '主题' })).toBeDisabled()
     expect(screen.getByRole('radio', { name: '自动' })).toBeDisabled()
   })
+
+  it('provides a shared responsive card selection variant', () => {
+    render(
+      <RadioGroup columns={2} onValueChange={() => {}} value="dark">
+        <RadioGroup.Legend>主题</RadioGroup.Legend>
+        <Radio value="light" variant="card">
+          亮色
+        </Radio>
+        <Radio value="dark" variant="card">
+          深色
+        </Radio>
+      </RadioGroup>,
+    )
+
+    const group = screen.getByRole('group', { name: '主题' })
+    const lightCard = screen.getByRole('radio', { name: '亮色' }).closest('label')
+    const darkCard = screen.getByRole('radio', { name: '深色' }).closest('label')
+
+    expect(group).toHaveAttribute('data-columns', '2')
+    expect(lightCard).toHaveAttribute('data-variant', 'card')
+    expect(lightCard).not.toHaveAttribute('data-selected')
+    expect(darkCard).toHaveAttribute('data-selected', 'true')
+  })
 })

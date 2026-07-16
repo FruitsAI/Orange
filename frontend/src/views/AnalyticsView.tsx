@@ -2,9 +2,9 @@ import Chart from 'chart.js/auto'
 import type { ChartConfiguration } from 'chart.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { dashboardApi, type DashboardStats } from '@/api/dashboard'
-import GlassCard from '@/components/common/GlassCard'
 import StatCard from '@/components/dashboard/StatCard'
 import { useToastStore } from '@/composables/useToast'
+import { Button, ButtonGroup, Card } from '@/design-system'
 import { useThemeStore } from '@/stores/theme'
 
 type Period = 'week' | 'month' | 'quarter' | 'year'
@@ -40,6 +40,18 @@ export default function AnalyticsView() {
   const doughnutChartCanvas = useRef<HTMLCanvasElement | null>(null)
   const barChart = useRef<Chart<'bar'> | null>(null)
   const doughnutChart = useRef<Chart<'doughnut'> | null>(null)
+  const isMountedRef = useRef(false)
+  const statsRequestGenerationRef = useRef(0)
+  const trendRequestGenerationRef = useRef(0)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      statsRequestGenerationRef.current += 1
+      trendRequestGenerationRef.current += 1
+    }
+  }, [])
 
   const collectionRate = useMemo(() => {
     if (!stats.total_amount) return '0.00'
@@ -172,31 +184,43 @@ export default function AnalyticsView() {
     }
   }, [colors])
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const response = await dashboardApi.getStats(activePeriod)
-      setStats(response.data.data)
-    } catch {
-      toastError('获取分析数据失败')
-    }
-  }, [activePeriod, toastError])
-
-  const fetchCharts = useCallback(async () => {
-    try {
-      const response = await dashboardApi.getIncomeTrend(activePeriod)
-      const data = response.data.data
-      if (barChart.current) {
-        barChart.current.data.labels = data.labels
-        if (barChart.current.data.datasets[0])
-          barChart.current.data.datasets[0].data = data.actual_values
-        if (barChart.current.data.datasets[1])
-          barChart.current.data.datasets[1].data = data.expected_values
-        barChart.current.update()
+  const fetchStats = useCallback(
+    async (period: Period) => {
+      const requestGeneration = ++statsRequestGenerationRef.current
+      try {
+        const response = await dashboardApi.getStats(period)
+        if (!isMountedRef.current || requestGeneration !== statsRequestGenerationRef.current) return
+        setStats(response.data.data)
+      } catch {
+        if (!isMountedRef.current || requestGeneration !== statsRequestGenerationRef.current) return
+        toastError('获取分析数据失败')
       }
-    } catch {
-      toastError('获取趋势图失败')
-    }
-  }, [activePeriod, toastError])
+    },
+    [toastError],
+  )
+
+  const fetchCharts = useCallback(
+    async (period: Period) => {
+      const requestGeneration = ++trendRequestGenerationRef.current
+      try {
+        const response = await dashboardApi.getIncomeTrend(period)
+        if (!isMountedRef.current || requestGeneration !== trendRequestGenerationRef.current) return
+        const data = response.data.data
+        if (barChart.current) {
+          barChart.current.data.labels = data.labels
+          if (barChart.current.data.datasets[0])
+            barChart.current.data.datasets[0].data = data.actual_values
+          if (barChart.current.data.datasets[1])
+            barChart.current.data.datasets[1].data = data.expected_values
+          barChart.current.update()
+        }
+      } catch {
+        if (!isMountedRef.current || requestGeneration !== trendRequestGenerationRef.current) return
+        toastError('获取趋势图失败')
+      }
+    },
+    [toastError],
+  )
 
   useEffect(() => {
     initCharts()
@@ -209,12 +233,18 @@ export default function AnalyticsView() {
   }, [initCharts])
 
   useEffect(() => {
+    statsRequestGenerationRef.current += 1
+    trendRequestGenerationRef.current += 1
     const timer = window.setTimeout(() => {
-      void fetchStats()
-      void fetchCharts()
+      void fetchStats(activePeriod)
+      void fetchCharts(activePeriod)
     }, 0)
-    return () => window.clearTimeout(timer)
-  }, [fetchCharts, fetchStats])
+    return () => {
+      window.clearTimeout(timer)
+      statsRequestGenerationRef.current += 1
+      trendRequestGenerationRef.current += 1
+    }
+  }, [activePeriod, fetchCharts, fetchStats])
 
   useEffect(() => {
     if (doughnutChart.current) {
@@ -232,21 +262,23 @@ export default function AnalyticsView() {
   return (
     <div className="analytics-view">
       <div className="analytics-toolbar">
-        <div className="flex gap-sm">
+        <ButtonGroup aria-label="统计周期">
           {periods.map((period) => (
-            <button
-              className={`btn btn-sm ${activePeriod === period ? 'btn-secondary active' : 'btn-ghost'}`}
+            <Button
+              aria-pressed={activePeriod === period}
               key={period}
               onClick={() => setActivePeriod(period)}
-              type="button"
+              size="sm"
+              variant={activePeriod === period ? 'secondary' : 'ghost'}
             >
               {periodLabel(period)}
-            </button>
+            </Button>
           ))}
-        </div>
-        <button className="btn btn-secondary" type="button">
-          <i className="ri-download-line" /> <span className="btn-text">导出报表</span>
-        </button>
+        </ButtonGroup>
+        <Button variant="secondary">
+          <i aria-hidden="true" className="ri-download-line" />
+          <span>导出报表</span>
+        </Button>
       </div>
 
       <div className="grid grid-cols-4 gap-lg mb-lg">
@@ -293,23 +325,23 @@ export default function AnalyticsView() {
       </div>
 
       <div className="grid chart-layout gap-lg">
-        <GlassCard>
-          <div className="glass-card-header">
-            <h3 className="glass-card-title">{chartTitle}</h3>
-          </div>
-          <div className="chart-container">
+        <Card.Root variant="tertiary">
+          <Card.Header>
+            <Card.Title>{chartTitle}</Card.Title>
+          </Card.Header>
+          <Card.Content className="chart-container">
             <canvas ref={barChartCanvas} />
-          </div>
-        </GlassCard>
+          </Card.Content>
+        </Card.Root>
 
-        <GlassCard>
-          <div className="glass-card-header">
-            <h3 className="glass-card-title">收款结构</h3>
-          </div>
-          <div className="chart-container">
+        <Card.Root variant="tertiary">
+          <Card.Header>
+            <Card.Title>收款结构</Card.Title>
+          </Card.Header>
+          <Card.Content className="chart-container">
             <canvas ref={doughnutChartCanvas} />
-          </div>
-        </GlassCard>
+          </Card.Content>
+        </Card.Root>
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import GlassCard from '@/components/common/GlassCard'
+import { Card, Chip, Surface, type SurfaceTone } from '@/design-system'
 
 interface StatCardProps {
   label: string
@@ -9,7 +9,6 @@ interface StatCardProps {
   trendValue?: string
   trendUp?: boolean
   trendDirection?: 'up' | 'down'
-  iconColorClass?: string
   variant?: 'primary' | 'success' | 'warning' | 'danger'
   suffix?: string
 }
@@ -23,30 +22,36 @@ export default function StatCard({
   trendValue,
   trendUp,
   trendDirection,
-  iconColorClass,
   variant,
   suffix,
 }: StatCardProps) {
   const displayTrend = trend || trendValue
   const isTrendUp = trendUp ?? trendDirection === 'up'
-  const computedIconClass = iconColorClass || (variant ? `stat-card-icon--${variant}` : '')
+  const iconTone: SurfaceTone = variant === 'primary' ? 'accent' : (variant ?? 'neutral')
 
   return (
-    <GlassCard className="stat-card">
-      <div className={`stat-card-icon ${computedIconClass}`.trim()}>
+    <Card.Root className="stat-card" gap="none" variant="tertiary">
+      <Surface
+        aria-hidden="true"
+        className="stat-card-icon"
+        padding="none"
+        radius="control"
+        tone={iconTone}
+        variant="inset"
+      >
         <i className={icon} />
-      </div>
+      </Surface>
       <div className="stat-card-value">
         {value}
         {suffix ? <span className="text-lg ml-1">{suffix}</span> : null}
       </div>
       <div className="stat-card-label">{label}</div>
       {displayTrend ? (
-        <div className={`stat-card-trend ${isTrendUp ? 'stat-card-trend--up' : 'stat-card-trend--down'}`}>
+        <Chip className="stat-card-trend" size="sm" tone={isTrendUp ? 'success' : 'danger'}>
           {trendPrefix ? <span className="mr-1 opacity-75">{trendPrefix}</span> : null}
           <i className={isTrendUp ? 'ri-arrow-up-line' : 'ri-arrow-down-line'} /> {displayTrend}
-        </div>
+        </Chip>
       ) : null}
-    </GlassCard>
+    </Card.Root>
   )
 }

@@ -16,7 +16,7 @@
   z-index: -1;
   inset: 0;
   overflow: hidden;
-  background: var(--color-bg);
+  background: var(--ods-color-bg-canvas);
 }
 
 .app-background::before {
@@ -24,7 +24,7 @@
   inset: 0;
   background: radial-gradient(
     circle 760px at var(--light-x, 28%) var(--light-y, 18%),
-    var(--color-ambient-glow),
+    var(--ods-color-ambient-glow),
     transparent 58%
   );
   content: '';
@@ -48,12 +48,6 @@
 .app-topbar {
   --wails-draggable: drag;
   align-items: center;
-  background: color-mix(in srgb, var(--bg-elevated) 78%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
-  border-radius: 20px;
-  box-shadow:
-    0 18px 50px rgba(35, 24, 15, 0.08),
-    inset 0 1px rgba(255, 255, 255, 0.4);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   height: var(--app-topbar-height);
@@ -62,42 +56,21 @@
   position: fixed;
   right: var(--app-topbar-inset);
   top: var(--app-topbar-top-inset);
-  transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease;
   z-index: 1000;
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  backdrop-filter: blur(24px) saturate(150%);
-}
-
-.app-topbar[data-scrolled='true'] {
-  background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
-  border-color: color-mix(in srgb, var(--text-primary) 14%, transparent);
-  box-shadow:
-    0 14px 36px rgba(35, 24, 15, 0.14),
-    inset 0 1px rgba(255, 255, 255, 0.45);
-}
-
-[data-theme='dark'] .app-topbar {
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.3),
-    inset 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .app-topbar a,
 .app-topbar button,
 .app-topbar input,
 .app-topbar [role='menu'],
-.app-topbar__dropdown {
+.app-topbar__popover {
   --wails-draggable: no-drag;
 }
 
 .app-topbar__brand {
   align-items: center;
-  color: var(--text-primary);
   display: inline-flex;
-  font-family: var(--font-display);
+  font-family: var(--ods-font-family-display);
   font-size: 18px;
   font-weight: 700;
   gap: 10px;
@@ -106,54 +79,18 @@
   text-decoration: none;
 }
 
-.app-topbar__brand img {
-  border-radius: 10px;
+.app-topbar__brand-logo {
   height: 34px;
-  object-fit: contain;
   width: 34px;
 }
 
 .app-topbar__nav {
   --wails-draggable: drag;
   align-items: center;
-  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text-primary) 5%, transparent);
-  border-radius: 999px;
   display: flex;
   gap: 3px;
   justify-self: center;
   padding: 4px;
-}
-
-.app-topbar__nav-link {
-  border-radius: 999px;
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 20px;
-  padding: 7px 14px;
-  text-decoration: none;
-  transition:
-    background-color 160ms ease,
-    color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
-  white-space: nowrap;
-}
-
-.app-topbar__nav-link:hover {
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  color: var(--text-primary);
-}
-
-.app-topbar__nav-link:active {
-  transform: scale(0.97);
-}
-
-.app-topbar__nav-link[aria-current='page'] {
-  background: linear-gradient(135deg, var(--color-primary), #ff6a00);
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--color-primary) 28%, transparent);
-  color: #fff;
 }
 
 .app-topbar__utilities {
@@ -165,107 +102,33 @@
   min-width: 0;
 }
 
-.app-topbar__command,
-.app-topbar__icon-button,
-.app-topbar__user-button {
-  align-items: center;
-  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text-primary) 7%, transparent);
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: inline-flex;
-  height: 38px;
-  justify-content: center;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease,
-    transform 160ms ease;
-}
-
-.app-topbar__command:hover,
-.app-topbar__icon-button:hover,
-.app-topbar__user-button:hover {
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  border-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
-  color: var(--text-primary);
-}
-
-.app-topbar__command:active,
-.app-topbar__icon-button:active,
-.app-topbar__user-button:active {
-  transform: scale(0.96);
-}
-
 .app-topbar__command {
-  border-radius: 12px;
-  font-size: 13px;
-  gap: 8px;
-  padding: 0 10px;
+  font-size: var(--ods-font-size-sm);
 }
 
 .app-topbar__command span {
-  color: var(--text-tertiary);
-  font-family: var(--font-mono);
+  color: var(--ods-color-fg-subtle);
+  font-family: var(--ods-font-family-mono);
   font-size: 11px;
 }
 
-.app-topbar__command:disabled,
-.app-topbar__command:disabled:hover {
-  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
-  border-color: color-mix(in srgb, var(--text-primary) 6%, transparent);
-  color: var(--text-tertiary);
-  cursor: not-allowed;
-  opacity: 0.68;
-  transform: none;
-}
-
 .app-topbar__icon-button {
-  border-radius: 12px;
   font-size: 18px;
-  padding: 0;
   position: relative;
   text-decoration: none;
-  width: 38px;
 }
 
 .app-topbar__menu-wrapper {
   position: relative;
 }
 
-.app-topbar__notification-dot {
-  background: #ff4d4f;
-  border: 2px solid var(--bg-elevated);
-  border-radius: 50%;
-  height: 8px;
-  position: absolute;
-  right: 7px;
-  top: 7px;
-  width: 8px;
-}
-
 .app-topbar__user-button {
-  border-radius: 14px;
-  gap: 8px;
   max-width: 156px;
   padding: 0 9px 0 5px;
 }
 
-.app-topbar__avatar {
-  align-items: center;
-  background: linear-gradient(135deg, #ff9f1a, #ff5c00);
-  border-radius: 10px;
-  color: #fff;
-  display: inline-flex;
-  font-size: 13px;
-  font-weight: 700;
-  height: 28px;
-  justify-content: center;
-  width: 28px;
-}
-
 .app-topbar__user-name {
-  color: var(--text-primary);
+  color: var(--ods-color-fg-default);
   font-size: 13px;
   font-weight: 500;
   max-width: 76px;
@@ -274,40 +137,18 @@
   white-space: nowrap;
 }
 
-.app-topbar__dropdown {
-  background: color-mix(in srgb, var(--bg-elevated) 96%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
-  overflow: hidden;
-  position: absolute;
-  right: 0;
-  top: calc(100% + 10px);
-  z-index: 1002;
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
-  backdrop-filter: blur(28px) saturate(160%);
-}
-
 .app-topbar__notification-menu {
+  overflow: hidden;
   width: min(340px, calc(100vw - 28px));
 }
 
 .app-topbar__dropdown-header {
   align-items: center;
-  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 7%, transparent);
-  color: var(--text-secondary);
+  color: var(--ods-color-fg-muted);
   display: flex;
   font-size: 13px;
   justify-content: space-between;
   padding: 12px 14px;
-}
-
-.app-topbar__dropdown-header button {
-  background: none;
-  border: 0;
-  color: var(--color-primary);
-  cursor: pointer;
-  font-size: 12px;
 }
 
 .app-topbar__notification-list {
@@ -316,26 +157,13 @@
 }
 
 .app-topbar__empty {
-  color: var(--text-tertiary);
-  font-size: 13px;
-  padding: 32px;
-  text-align: center;
+  padding: var(--ods-space-8);
 }
 
 .app-topbar__notification-item {
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 5%, transparent);
-  color: var(--text-primary);
-  cursor: pointer;
-  display: block;
-  padding: 12px 14px;
+  align-items: stretch;
+  flex-direction: column;
   text-align: left;
-  width: 100%;
-}
-
-.app-topbar__notification-item:hover {
-  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 
 .app-topbar__notification-title {
@@ -351,48 +179,17 @@
   white-space: nowrap;
 }
 
-.app-topbar__notification-title .notification-type-badge {
-  border-radius: 5px;
-  flex: 0 0 auto;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
-}
-
-.app-topbar__notification-title .type-1 {
-  background: rgba(100, 116, 139, 0.12);
-  color: #64748b;
-}
-
-.app-topbar__notification-title .type-2 {
-  background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
-}
-
-.app-topbar__notification-title .type-3 {
-  background: rgba(139, 92, 246, 0.12);
-  color: #8b5cf6;
-}
-
 .app-topbar__notification-title .unread-title {
-  color: var(--text-primary);
+  color: var(--ods-color-fg-default);
   font-weight: 600;
 }
 
 .app-topbar__notification-title .read-title {
-  color: var(--text-secondary);
-}
-
-.app-topbar__unread-dot {
-  background: #ef4444;
-  border-radius: 50%;
-  flex: 0 0 auto;
-  height: 6px;
-  width: 6px;
+  color: var(--ods-color-fg-muted);
 }
 
 .app-topbar__notification-time {
-  color: var(--text-tertiary);
+  color: var(--ods-color-fg-subtle);
   display: block;
   font-size: 11px;
   margin: 5px 0 0 12px;
@@ -400,115 +197,20 @@
 
 .app-topbar__user-menu {
   min-width: 180px;
-  padding: 6px;
 }
 
-.app-topbar__user-menu > button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 10px;
-  color: var(--text-primary);
-  cursor: pointer;
-  display: flex;
-  font-size: 13px;
-  gap: 9px;
-  padding: 9px 10px;
-  text-align: left;
-  width: 100%;
+.app-topbar__user-menu-action {
+  justify-content: flex-start;
 }
 
-.app-topbar__user-menu > button:hover {
-  background: color-mix(in srgb, var(--color-primary) 9%, transparent);
-  color: var(--color-primary);
-}
-
-.app-topbar__user-menu > button.is-danger {
-  color: var(--color-danger);
-}
-
-.app-topbar__dropdown-divider {
-  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
-  height: 1px;
-  margin: 4px;
-}
-
-.app-topbar__overlay {
+.theme-selector__popover {
   --wails-draggable: no-drag;
-  background: transparent;
-  border: 0;
-  inset: 0;
-  position: fixed;
-  z-index: 999;
-}
-
-.theme-selector__menu {
-  --wails-draggable: no-drag;
-  display: grid;
-  width: min(196px, calc(100vw - 24px));
+  width: 196px;
   max-width: calc(100vw - 24px);
-  padding: 6px;
-  overflow: hidden;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-panel);
-  background: color-mix(in srgb, var(--color-surface-raised) 96%, transparent);
-  box-shadow: var(--shadow-panel);
-  position: fixed;
-  z-index: 1100;
-  -webkit-backdrop-filter: blur(28px) saturate(155%);
-  backdrop-filter: blur(28px) saturate(155%);
-}
-
-.theme-selector__option {
-  --wails-draggable: no-drag;
-  display: grid;
-  min-height: 42px;
-  grid-template-columns: 22px minmax(0, 1fr) 18px;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0 var(--space-3);
-  border: 0;
-  border-radius: var(--radius-control);
-  background: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  font-size: 0.82rem;
-  text-align: left;
-  transition:
-    background-color var(--motion-instant) var(--ease-standard),
-    color var(--motion-instant) var(--ease-standard);
-}
-
-.theme-selector__option:hover,
-.theme-selector__option:focus-visible {
-  background: color-mix(in srgb, var(--color-accent) 11%, transparent);
-  color: var(--color-text);
-}
-
-.theme-selector__option[aria-selected='true'] {
-  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
-  color: var(--color-accent);
-}
-
-.theme-selector__label {
-  justify-self: start;
-}
-
-.theme-selector__check {
-  justify-self: end;
-  opacity: 0;
-}
-
-.theme-selector__check.is-visible {
-  opacity: 1;
 }
 
 .app-topbar-portal {
   --wails-draggable: no-drag;
-}
-
-.app-topbar-portal.modal-overlay {
-  z-index: 1200;
 }
 
 .app-topbar-portal a,
@@ -521,15 +223,9 @@
 .app-dock {
   --wails-draggable: no-drag;
   align-items: center;
-  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text-primary) 11%, transparent);
-  border-radius: 20px;
   bottom: calc(10px + env(safe-area-inset-bottom));
-  box-shadow:
-    0 18px 48px rgba(35, 24, 15, 0.16),
-    inset 0 1px rgba(255, 255, 255, 0.42);
   display: none;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   height: var(--app-dock-height);
   left: 50%;
   padding: 5px;
@@ -537,77 +233,6 @@
   transform: translateX(-50%);
   width: min(430px, calc(100vw - 24px));
   z-index: 1000;
-  -webkit-backdrop-filter: blur(24px) saturate(155%);
-  backdrop-filter: blur(24px) saturate(155%);
-}
-
-[data-theme='dark'] .app-dock {
-  box-shadow:
-    0 22px 58px rgba(0, 0, 0, 0.38),
-    inset 0 1px rgba(255, 255, 255, 0.08);
-}
-
-.app-dock__link {
-  align-items: center;
-  border-radius: 15px;
-  color: var(--text-tertiary);
-  display: flex;
-  flex-direction: column;
-  font-size: 10px;
-  font-weight: 600;
-  gap: 2px;
-  height: 100%;
-  justify-content: center;
-  min-width: 0;
-  position: relative;
-  text-decoration: none;
-  transition:
-    background-color 160ms ease,
-    color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
-}
-
-.app-dock__link i {
-  font-size: 20px;
-  line-height: 22px;
-}
-
-.app-dock__link span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.app-dock__link:hover {
-  background: color-mix(in srgb, var(--color-primary) 9%, transparent);
-  color: var(--text-primary);
-}
-
-.app-dock__link:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: -2px;
-}
-
-.app-dock__link:active {
-  transform: scale(0.96);
-}
-
-.app-dock__link[aria-current='page'] {
-  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 24%, transparent);
-  color: var(--color-primary);
-}
-
-.app-dock__link[aria-current='page']::after {
-  background: var(--color-primary);
-  border-radius: 999px;
-  bottom: 4px;
-  box-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 56%, transparent);
-  content: '';
-  height: 3px;
-  position: absolute;
-  width: 14px;
 }
 
 .app-main {
@@ -649,11 +274,6 @@
   .app-topbar__nav {
     gap: 1px;
   }
-
-  .app-topbar__nav-link {
-    font-size: 12px;
-    padding-inline: 10px;
-  }
 }
 
 @media (max-width: 768px) {
@@ -676,7 +296,6 @@
 
 @media (max-width: 480px) {
   .app-topbar {
-    --app-topbar-notification-trailing-offset: 80px;
     padding-inline: 6px;
   }
 
@@ -698,21 +317,13 @@
     padding-inline: 3px;
     width: 34px;
   }
-
-  .app-topbar__notification-wrapper .app-topbar__notification-menu {
-    /* 34px settings + 34px user + two 3px gaps + 6px end padding */
-    right: calc(0px - var(--app-topbar-notification-trailing-offset));
-    width: min(340px, calc(100vw - 28px));
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .app-topbar,
-  .app-topbar__nav-link,
   .app-topbar__command,
   .app-topbar__icon-button,
-  .app-topbar__user-button,
-  .app-dock__link {
+  .app-topbar__user-button {
     transition-duration: 0.01ms;
   }
 }

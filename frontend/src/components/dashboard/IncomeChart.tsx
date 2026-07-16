@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Chart from 'chart.js/auto'
 import EmberPanel from '@/components/common/EmberPanel'
-import PanelHeader from '@/components/common/PanelHeader'
+import { Button, ButtonGroup, SectionHeader, Table } from '@/design-system'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useThemeStore } from '@/stores/theme'
 import { formatCurrency } from '@/utils/format'
@@ -79,57 +79,58 @@ export default function IncomeChart({
 
   return (
     <EmberPanel>
-      <PanelHeader
-        action={
-          <div aria-label="趋势周期" className="income-chart__periods" role="group">
+      <SectionHeader
+        actions={
+          <ButtonGroup aria-label="趋势周期" className="income-chart__periods">
             {incomePeriodOptions.map((option) => (
-              <button
+              <Button
                 aria-pressed={period === option.period}
-                className={`btn btn-sm ${period === option.period ? 'btn-secondary active' : 'btn-ghost'}`}
                 key={option.period}
                 onClick={() => onPeriodChange(option.period)}
-                type="button"
+                size="sm"
+                variant={period === option.period ? 'secondary' : 'ghost'}
               >
                 {option.label}
-              </button>
+              </Button>
             ))}
-          </div>
+          </ButtonGroup>
         }
         className="income-chart__header"
+        density="compact"
+        description={subtitle}
         headingLevel={2}
-        subtitle={subtitle}
         title="现金流趋势"
       />
       <div className="chart-container income-chart__canvas">
         <canvas aria-hidden="true" ref={canvasRef} />
       </div>
-      <table className="income-chart__accessible">
+      <Table.Root visuallyHidden>
         <caption>{subtitle}数据</caption>
-        <thead>
-          <tr>
-            <th scope="col">周期</th>
-            <th scope="col">计划回款</th>
-            <th scope="col">实际回款</th>
-          </tr>
-        </thead>
-        <tbody>
+        <Table.Header>
+          <Table.Row>
+            <Table.Column>周期</Table.Column>
+            <Table.Column>计划回款</Table.Column>
+            <Table.Column>实际回款</Table.Column>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {safeLabels.map((label, index) => (
-            <tr key={`${label}-${index}`}>
-              <th scope="row">{label}</th>
-              <td>
+            <Table.Row key={`${label}-${index}`}>
+              <Table.Column scope="row">{label}</Table.Column>
+              <Table.Cell>
                 {accessibleExpected[index] === null
                   ? '暂无数据'
                   : formatCurrency(accessibleExpected[index])}
-              </td>
-              <td>
+              </Table.Cell>
+              <Table.Cell>
                 {accessibleActual[index] === null
                   ? '暂无数据'
                   : formatCurrency(accessibleActual[index])}
-              </td>
-            </tr>
+              </Table.Cell>
+            </Table.Row>
           ))}
-        </tbody>
-      </table>
+        </Table.Body>
+      </Table.Root>
     </EmberPanel>
   )
 }

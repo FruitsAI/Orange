@@ -1,15 +1,24 @@
 # Migration Guide
 
-ODS 采用渐进迁移。目标是减少重复 CSS 和行为分叉，而不是一次性改写所有页面。
+ODS 的生产页面迁移已经完成，当前目标是维持零债务基线：减少重复 CSS 和行为分叉，并阻止页面重新出现第二套控件实现。
 
-## 总体顺序
+## 当前零债务基线
+
+- 登录、工作台、项目列表、项目创建/编辑/详情、收款创建、日历、分析、设置和设计系统展厅等全路由统一消费 `@/design-system`。
+- 页面不得自行实现 Button、Input、Select、Table、Modal、Popover、Tabs、Pagination、Toast、空状态或路由交互控件。
+- 产品领域组件可以保留在业务目录，但其交互 primitive、状态表达和 overlay 必须组合 ODS。
+- 页面 CSS 只负责布局和产品叙事；不得依赖 ODS 内部 DOM 层级来复制组件视觉或交互状态。
+- legacy tokens、foundation bundle 与 compatibility aliases 已删除，feature CSS 只消费 `--ods-*`。
+- `src/design-system/migration.contract.test.ts` 维持空 allowlist。发现新增债务时必须迁移调用方，不能添加例外。
+
+## 已执行的迁移顺序
 
 1. 建立 tokens、foundations、cascade layers、公共 exports 和契约测试。
 2. 实现 Button、Field、Dialog 等高频组件，但暂不删除 legacy styles。
 3. 选择一个完整 vertical slice 迁移并完成视觉/交互验收。
 4. 通过 `rg` 证明旧 class 和 token 没有生产引用后，删除对应 CSS 区块。
 5. 重复迁移 Settings、Projects、Calendar 和创建流程。
-6. 最后移除 compatibility aliases 与 legacy layer。
+6. 移除 compatibility aliases、legacy token/foundation 文件与 legacy cascade layer。
 
 ## 首批映射
 
@@ -44,7 +53,7 @@ ODS 采用渐进迁移。目标是减少重复 CSS 和行为分叉，而不是�
 
 ## Token 迁移
 
-旧 token 在迁移期由 `compatibility.css` 单向映射。新代码禁止使用旧名称。
+Token 迁移已经完成，`compatibility aliases 已删除`。生产 CSS 直接消费 ODS semantic tokens：
 
 ```css
 /* 迁移前 */
@@ -75,6 +84,6 @@ background: var(--ods-color-bg-surface-raised);
 - focused tests 与全量 frontend tests 通过。
 - ESLint、TypeScript 和生产构建通过。
 - Day Ember、Night Orbit、键盘与 320px 验收通过。
-- 对应 compatibility alias 已无消费者。
+- 对应旧 alias 已无消费者，且 token 契约扫描保持通过。
 
 不要以“大文件不好维护”为理由直接批量删除；每次删除都要有消费者清单和回归证据。

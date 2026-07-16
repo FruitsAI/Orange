@@ -6,23 +6,7 @@
 }
 
 .design-showcase__header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ods-space-3);
   padding-block: var(--ods-space-4) var(--ods-space-2);
-}
-
-.design-showcase__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ods-space-2);
-  margin: 0;
-  color: var(--ods-color-fg-subtle);
-  font-family: var(--ods-font-family-mono);
-  font-size: var(--ods-font-size-xs);
-  font-weight: var(--ods-font-weight-semibold);
-  letter-spacing: var(--ods-letter-spacing-wide);
-  text-transform: uppercase;
 }
 
 .design-showcase__pulse {
@@ -33,16 +17,6 @@
   box-shadow: 0 0 14px rgba(var(--ods-color-accent-rgb), 0.72);
 }
 
-.design-showcase__title {
-  margin: 0;
-  color: var(--ods-color-fg-default);
-  font-family: var(--ods-font-family-display);
-  font-size: var(--ods-font-size-3xl);
-  font-weight: var(--ods-font-weight-bold);
-  letter-spacing: var(--ods-letter-spacing-tight);
-  line-height: var(--ods-line-height-heading);
-}
-
 .design-showcase__title-accent {
   background: var(--ods-gradient-text);
   background-clip: text;
@@ -50,45 +24,10 @@
   color: transparent;
 }
 
-.design-showcase__subtitle {
-  margin: 0;
-  max-width: 60ch;
-  color: var(--ods-color-fg-muted);
-  line-height: var(--ods-line-height-body);
-}
-
-.design-showcase__subtitle code {
-  font-family: var(--ods-font-family-mono);
-  font-size: 0.9em;
-  color: var(--ods-color-accent);
-}
-
 .design-showcase__section {
   display: flex;
   flex-direction: column;
   gap: var(--ods-space-6);
-}
-
-.design-showcase__section-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ods-space-1);
-}
-
-.design-showcase__section-title {
-  margin: 0;
-  color: var(--ods-color-fg-default);
-  font-family: var(--ods-font-family-display);
-  font-size: var(--ods-font-size-xl);
-  font-weight: var(--ods-font-weight-semibold);
-  letter-spacing: var(--ods-letter-spacing-tight);
-}
-
-.design-showcase__section-description {
-  margin: 0;
-  color: var(--ods-color-fg-muted);
-  font-size: var(--ods-font-size-sm);
-  line-height: var(--ods-line-height-body);
 }
 
 .design-showcase__section-body {
@@ -127,10 +66,5 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--ods-space-3) var(--ods-space-4);
-  border: 1px solid var(--ods-color-border-default);
-  border-radius: var(--ods-radius-md);
-  background: var(--ods-color-bg-surface);
-  color: var(--ods-color-fg-default);
   font-size: var(--ods-font-size-sm);
 }

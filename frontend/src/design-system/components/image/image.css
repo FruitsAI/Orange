@@ -22,6 +22,10 @@
   border-radius: var(--ods-radius-pill);
 }
 
+.ods-image[data-background='transparent'] {
+  background: transparent;
+}
+
 .ods-image__img {
   display: block;
   width: 100%;
@@ -29,6 +33,22 @@
   object-fit: cover;
   opacity: 0;
   transition: opacity var(--ods-duration-page) var(--ods-ease-standard);
+}
+
+.ods-image[data-fit='contain'] .ods-image__img {
+  object-fit: contain;
+}
+
+.ods-image[data-fit='fill'] .ods-image__img {
+  object-fit: fill;
+}
+
+.ods-image[data-fit='none'] .ods-image__img {
+  object-fit: none;
+}
+
+.ods-image[data-fit='scale-down'] .ods-image__img {
+  object-fit: scale-down;
 }
 
 .ods-image__img[data-loaded='true'] {

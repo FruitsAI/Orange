@@ -7,17 +7,29 @@ export interface PaginationBarProps extends Omit<HTMLAttributes<HTMLDivElement>,
   page: number
   pageCount: number
   paginationLabel?: string
+  separated?: boolean
   trailing?: ReactNode
 }
 
 export const PaginationBar = forwardRef<HTMLDivElement, PaginationBarProps>(function PaginationBar(
-  { className, info, onPageChange, page, pageCount, paginationLabel = '分页', trailing, ...props },
+  {
+    className,
+    info,
+    onPageChange,
+    page,
+    pageCount,
+    paginationLabel = '分页',
+    separated = false,
+    trailing,
+    ...props
+  },
   ref,
 ) {
   return (
     <div
       {...props}
       className={['ods-pagination-bar', className].filter(Boolean).join(' ')}
+      data-separated={separated || undefined}
       data-slot="pagination-bar"
       ref={ref}
     >

@@ -7,14 +7,14 @@ Orange Design System（ODS）是 Orange 桌面应用的视觉与交互公共层�
 - 为亮色与暗色主题提供完整、对等的 semantic tokens。
 - 让组件通过明确的 variant、size 和 state API 复用视觉，而不是复制页面 CSS。
 - 保持 Wails 桌面体验，包括标题栏安全区、拖拽区、键盘导航和 reduced motion。
-- 渐进迁移现有页面，避免一次重写 `main.css` 与 `liquid-glass.css`。
+- 让登录、工作台、项目、收款、日历、分析、设置和组件展厅等全路由共享同一套组件实现。
 - 为后续组件展示、视觉回归和独立发布预留稳定边界。
 
 ## 架构
 
 ```text
 frontend/src/design-system/
-  tokens/         reference、semantic、themes、compatibility
+  tokens/         reference、semantic、themes
   foundations/    reset、typography、focus、motion、accessibility
   components/     可复用交互组件
   patterns/       Orange 产品级组合模式
@@ -29,8 +29,9 @@ frontend/src/design-system/
 - 新样式只消费 `--ods-*` semantic tokens。
 - React 组件从 `@/design-system` 使用 named imports。
 - `.ods-*` 是 Design System 的 DOM class 命名空间；内部 anatomy 使用 `data-slot`。
-- `tokens/compatibility.css` 仅允许把旧变量映射到 ODS，不允许 ODS 反向依赖旧变量。
+- 旧 `styles/tokens.css` 与 `tokens/compatibility.css` 已删除；所有生产样式只消费 `--ods-*`。
 - 页面布局、Dashboard Hero 和业务卡片等产品表达属于 patterns 或业务目录，不进入基础组件。
+- 页面只能组合 ODS primitives 和 patterns，不得复制 Button、Field、Select、Table、Modal、Popover、Pagination 等控件的视觉或交互实现。
 
 未来的根聚合入口遵循以下规则：
 
@@ -45,7 +46,7 @@ export type { ButtonProps } from "./components/button";
 - CSS 由 `styles.css` 唯一聚合；组件包不在 TSX 中 side-effect import 自己的 CSS。
 - `components/index.css` 只有在对应组件包完成测试后才加入 `components` layer。
 
-`frontend/src/design-system/styles.css` 当前没有接入 `main.tsx`。这是有意的：foundation 可以先独立验证，待首个组件迁移切片准备好后，再一次性切换 CSS 入口并处理 Tailwind 与 legacy layer。
+`frontend/src/design-system/styles.css` 已接入 `frontend/src/main.tsx`，作为 tokens、foundations、components 与 patterns 的统一入口。生产 TSX 由零债务迁移契约持续阻止原生交互控件、直接 Router primitives、原生 dialog API 和已淘汰 class 回流。
 
 ## HeroUI 参考边界
 

@@ -355,10 +355,7 @@ describe('dashboard model', () => {
       const legacyElapsedDays = Math.ceil(
         (dueDate.getTime() - beforeDstBoundary.getTime()) / 86_400_000,
       )
-      const display = toPaymentDisplay(
-        { ...payment, plan_date: '2026-03-09' },
-        beforeDstBoundary,
-      )
+      const display = toPaymentDisplay({ ...payment, plan_date: '2026-03-09' }, beforeDstBoundary)
 
       expect(legacyElapsedDays).toBe(1)
       expect(display.days_left).toBe(2)
@@ -383,9 +380,13 @@ describe('dashboard model', () => {
 describe('DashboardError', () => {
   it('announces the error and exposes an accessible retry action', async () => {
     const onRetry = vi.fn()
-    render(<DashboardError message="收款计划加载失败" onRetry={onRetry} />)
+    const { container } = render(<DashboardError message="收款计划加载失败" onRetry={onRetry} />)
 
     expect(screen.getByRole('alert')).toHaveTextContent('收款计划加载失败')
+    expect(container.querySelector('.ods-alert')).toBeInTheDocument()
+    expect(container.querySelector('.ods-button')).toBeInTheDocument()
+    expect(container.querySelector('.glass-card')).not.toBeInTheDocument()
+    expect(container.querySelector('.btn')).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: '重试收款计划' }))
     expect(onRetry).toHaveBeenCalledTimes(1)
   })

@@ -5,29 +5,33 @@ import { describe, expect, it } from 'vitest'
 
 const readSource = (path: string) => readFileSync(resolve(path), 'utf8')
 
-const liquidGlassCss = readSource('src/assets/liquid-glass.css')
 const mainCss = readSource('src/assets/main.css')
 const layoutCss = readSource('src/styles/layout.css')
 const dashboardCss = readSource('src/styles/dashboard.css')
+const loginCss = readSource('src/styles/login.css')
 const motionCss = readSource('src/styles/motion.css')
-const tokensCss = readSource('src/styles/tokens.css')
+const projectDomainCss = readSource('src/styles/project-domain.css')
 const mainSource = readSource('src/main.tsx')
 const appLayoutSource = readSource('src/components/layout/AppLayout.tsx')
 const dashboardViewSource = readSource('src/views/DashboardView.tsx')
 const dashboardSkeletonSource = readSource('src/views/dashboard/DashboardSkeleton.tsx')
-const legacyCss = `${liquidGlassCss}\n${mainCss}`
+const legacyCss = mainCss
 
 // Inventory from the task-11 migration audit:
 // - legacy/dead: sidebar/nav-menu/nav-item shell, page-header/title/subtitle/actions,
 //   quick actions, dashboard chart/project rows, and table-era dashboard project-list rules.
 // - current owner: app shell selectors live in layout.css; Ember dashboard selectors live in
 //   dashboard.css.
-// - shared/active: GlassCard is used outside the dashboard and stays in liquid-glass.css.
 // - active but misplaced: StatCard is still used by Analytics and moves to stat-card.css.
 const removedLegacySelector =
   /(^|[,{]\s*)\.(?:sidebar(?:[.:\s~]|$)|nav-menu(?:[.:\s]|$)|nav-section(?:[.:\s]|$)|nav-item(?:[.:\s]|$)|page-header(?:[.:\s]|$)|page-title(?:[.:\s,]|$)|page-subtitle(?:[.:\s,]|$)|page-actions(?:[.:\s]|$)|quick-action(?:[.:\s-]|$)|quick-actions-grid(?:[.:\s]|$)|dashboard-charts-row(?:[.:\s,]|$)|dashboard-projects-row(?:[.:\s,]|$))/m
 
 describe('legacy CSS ownership contract', () => {
+  it('removes the unreferenced liquid-glass implementation and import', () => {
+    expect(existsSync(resolve('src/assets/liquid-glass.css'))).toBe(false)
+    expect(mainSource).not.toContain("import './assets/liquid-glass.css'")
+  })
+
   it('keeps the active shell exclusively in layout.css', () => {
     expect(layoutCss).toMatch(/\.app-container\s*\{/)
     expect(layoutCss).toMatch(/\.app-background\s*\{/)
@@ -37,7 +41,7 @@ describe('legacy CSS ownership contract', () => {
     expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.app-background(?:[.:\s]|$)/m)
     expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.main-content(?:[.:\s]|$)/m)
     expect(legacyCss).not.toMatch(removedLegacySelector)
-    expect(tokensCss).not.toMatch(/--(?:sidebar-width|sidebar-collapsed-width|bg-sidebar)\s*:/)
+    expect(existsSync(resolve('src/styles/tokens.css'))).toBe(false)
     expect(appLayoutSource).not.toMatch(/className=["'`]([^"'`]*\s)?main-content(?:\s|["'`])/)
   })
 
@@ -54,14 +58,35 @@ describe('legacy CSS ownership contract', () => {
     )
   })
 
-  it('keeps one shared GlassCard base with dark and reduced-motion behavior', () => {
-    const baseDefinitions = legacyCss.match(/^\.glass-card\s*\{/gm) ?? []
+  it('removes legacy GlassCard and StatusBadge implementations superseded by ODS', () => {
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.glass-card(?:[.:\s-]|$)/m)
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.status-badge(?:[.:\s_-]|$)/m)
+    expect(motionCss).not.toMatch(/(^|[,{]\s*)\.glass-card(?:[.:\s-]|$)/m)
+  })
 
-    expect(baseDefinitions).toHaveLength(1)
-    expect(mainCss).not.toMatch(/^\.glass-card(?:[.:\s]|$)/m)
-    expect(liquidGlassCss).toMatch(/\[data-theme='dark'\] \.glass-card:hover/)
-    expect(liquidGlassCss).toMatch(/\.glass-card-header\s*\{/)
-    expect(motionCss).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.glass-card/)
+  it('removes legacy button, table, progress, and theme-control primitives', () => {
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.btn(?:[.:\s-]|$)/m)
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.data-table(?:[.:\s]|$)/m)
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.progress-bar(?:[.:\s-]|$)/m)
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.theme-toggle(?:[.:\s-]|$)/m)
+  })
+
+  it('does not let unlayered global form rules override ODS controls', () => {
+    expect(mainCss).not.toMatch(/^(?:input|select|textarea)(?:,|\s*\{)/m)
+    expect(mainCss).not.toMatch(/^\[data-theme='dark'\] (?:input|select|textarea):focus/m)
+  })
+
+  it('removes superseded shell, modal, input-group, and skeleton primitives', () => {
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.(?:dock|control-center)(?:[.:\s-]|$)/m)
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.modal(?:[.:\s-]|$)/m)
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.input-group(?:[.:\s-]|$)/m)
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.skeleton(?:[.:\s-]|$)/m)
+  })
+
+  it('keeps the calendar primitive exclusively in Orange Design System', () => {
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.calendar-day(?:[.:\s-]|$)/m)
+    expect(legacyCss).not.toMatch(/(^|[,{]\s*)\.calendar-nav(?:[.:\s-]|$)/m)
+    expect(mainCss).not.toMatch(/(^|[,{]\s*)\.calendar-view \.event-dot(?:[.:\s-]|$)/m)
   })
 
   it('moves the Analytics StatCard contract out of legacy global styles', () => {
@@ -82,5 +107,40 @@ describe('legacy CSS ownership contract', () => {
     expect(existsSync(resolve('src/components/dashboard/UpcomingPayments.tsx'))).toBe(false)
     expect(existsSync(resolve('src/assets/base.css'))).toBe(false)
     expect(mainSource).not.toContain('base.css')
+  })
+
+  it('removes styles owned by superseded common components', () => {
+    expect(existsSync(resolve('src/styles/components.css'))).toBe(false)
+    expect(mainSource).not.toContain("import './styles/components.css'")
+    expect(mainCss).not.toMatch(
+      /\.(?:confirm-overlay|date-picker-wrapper|status-badge--danger|toast-container)(?:[.\s:{]|$)/,
+    )
+    expect(mainCss).not.toContain('components/common/ConfirmModal.tsx')
+    expect(mainCss).not.toContain('components/common/DatePicker.tsx')
+    expect(mainCss).not.toContain('components/common/ToastContainer.tsx')
+  })
+
+  it('keeps the transitional main stylesheet limited to page composition', () => {
+    const classNames = [...mainCss.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((match) => match[1])
+
+    expect([...new Set(classNames)].sort()).toEqual(
+      [
+        'analytics-toolbar',
+        'analytics-view',
+        'calendar-view',
+        'chart-container',
+        'chart-layout',
+        'main-layout',
+      ].sort(),
+    )
+    expect(mainCss).not.toMatch(
+      /\.(?:btn-primary-login|data-table|dropdown-item|form-tab|input-wrapper|page-number|password-toggle|remember-me|search-input-wrapper)(?:[.\s:{]|$)/,
+    )
+  })
+
+  it('uses ODS variants and tones instead of page-level component skins', () => {
+    expect(loginCss).not.toMatch(/\.login-card(?:[.\s:{]|$)/)
+    expect(projectDomainCss).not.toMatch(/\.finance-card--(?:success|warning)/)
+    expect(projectDomainCss).not.toContain('.payment-item--highlighted')
   })
 })

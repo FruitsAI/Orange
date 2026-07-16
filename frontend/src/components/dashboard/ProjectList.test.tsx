@@ -26,7 +26,7 @@ describe('ProjectList compact dashboard list', () => {
   })
 
   it('keeps project, client, status, amount, and progress visible without table controls', () => {
-    render(
+    const { container } = render(
       <ProjectList
         projects={[
           project(9, {
@@ -41,12 +41,19 @@ describe('ProjectList compact dashboard list', () => {
 
     expect(screen.getByRole('heading', { level: 2, name: '近期项目' })).toBeInTheDocument()
     expect(screen.getByText('最近创建的项目')).toBeInTheDocument()
-    const link = screen.getByRole('link', { name: /未来展厅.*回款进度75%/ })
+    const link = screen.getByRole('link', { name: /未来展厅/ })
     expect(link).toHaveTextContent('橙子科技')
     expect(link).toHaveTextContent('¥100,000.00')
     expect(link).toHaveTextContent('回款 75%')
     expect(link).toHaveTextContent('进行中')
+    expect(screen.getByRole('progressbar', { name: '回款进度75%' })).toHaveAttribute(
+      'aria-valuenow',
+      '75',
+    )
     expect(screen.queryByRole('columnheader')).not.toBeInTheDocument()
+    expect(container.querySelector('.ods-data-list')).toBeInTheDocument()
+    expect(screen.getByText('¥100,000.00')).toHaveAttribute('data-hide-below', 'sm')
+    expect(screen.getByText('回款 75%').parentElement).toHaveAttribute('data-layout', 'meter')
   })
 
   it('shows a useful empty state', () => {

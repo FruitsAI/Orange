@@ -1,3 +1,5 @@
+import { Card, Chip, Surface, type ChipTone } from '@/design-system'
+
 export interface MetricTrend {
   accessibleLabel: string
   direction: 'down' | 'flat' | 'up'
@@ -14,17 +16,28 @@ export type SummaryMetricProps = {
 export default function SummaryMetric({ icon, label, status, trend, value }: SummaryMetricProps) {
   const displayValue =
     status === 'loading' ? `${label}加载中` : status === 'error' ? '暂不可用' : value
+  const trendTone: ChipTone =
+    trend?.tone === 'positive' ? 'success' : trend?.tone === 'negative' ? 'danger' : 'neutral'
 
   return (
-    <article
+    <Card.Root
       aria-busy={status === 'loading'}
+      as="article"
       className="summary-metric"
       data-motion="entrance"
       data-motion-item
+      variant="secondary"
     >
-      <div aria-hidden="true" className="summary-metric__icon">
+      <Surface
+        aria-hidden="true"
+        className="summary-metric__icon"
+        padding="none"
+        radius="control"
+        tone="accent"
+        variant="inset"
+      >
         <i className={icon} />
-      </div>
+      </Surface>
       <div className="summary-metric__content">
         <span className="summary-metric__label">{label}</span>
         <strong
@@ -35,9 +48,11 @@ export default function SummaryMetric({ icon, label, status, trend, value }: Sum
         </strong>
       </div>
       {status === 'data' && trend && (
-        <span
+        <Chip
           aria-label={trend.accessibleLabel}
-          className={`summary-metric__trend summary-metric__trend--${trend.tone}`}
+          className="summary-metric__trend"
+          size="sm"
+          tone={trendTone}
         >
           <i
             aria-hidden="true"
@@ -50,8 +65,8 @@ export default function SummaryMetric({ icon, label, status, trend, value }: Sum
             }
           />
           {trend.label}
-        </span>
+        </Chip>
       )}
-    </article>
+    </Card.Root>
   )
 }

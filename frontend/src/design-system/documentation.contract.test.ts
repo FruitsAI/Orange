@@ -24,13 +24,23 @@ describe('Orange Design System documentation', () => {
     expect(components).toContain('## Phase 2 backlog')
   })
 
-  it('keeps compatibility aliases temporary and one-way', () => {
+  it('documents the completed legacy-token retirement', () => {
     const tokens = readDoc('tokens.md')
     const migration = readDoc('migration.md')
 
-    expect(tokens).toContain('旧变量到 ODS 的单向映射')
-    expect(tokens).toContain('--ods-color-accent: var(--color-primary)')
-    expect(migration).toContain('compatibility aliases')
+    expect(tokens).toContain('兼容层已移除')
+    expect(tokens).toContain('只允许消费 `--ods-*`')
+    expect(migration).toContain('compatibility aliases 已删除')
     expect(migration).toContain('`rg` 无生产 TSX/class/token 引用')
+  })
+
+  it('documents the completed all-route zero-debt migration boundary', () => {
+    const overview = readDoc('README.md')
+    const migration = readDoc('migration.md')
+
+    expect(overview).toContain('全路由')
+    expect(overview).toContain('已接入 `frontend/src/main.tsx`')
+    expect(migration).toContain('零债务基线')
+    expect(migration).toContain('页面不得自行实现')
   })
 })

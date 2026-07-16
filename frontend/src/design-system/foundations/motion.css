@@ -45,6 +45,15 @@
   animation: ods-ambient-pulse 4s var(--ods-ease-standard) infinite;
 }
 
+:root.theme-transitioning,
+:root.theme-transitioning *,
+:root.theme-transitioning *::before,
+:root.theme-transitioning *::after {
+  transition-property: background-color, color, border-color, box-shadow, opacity !important;
+  transition-duration: 220ms !important;
+  transition-timing-function: var(--ods-ease-standard) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html:focus-within {
     scroll-behavior: auto;

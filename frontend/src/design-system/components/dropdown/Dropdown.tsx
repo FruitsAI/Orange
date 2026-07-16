@@ -1,5 +1,19 @@
-import { forwardRef, type HTMLAttributes, type KeyboardEvent, type ReactNode } from 'react'
-import { Popover, usePopoverClose, type PopoverPlacement } from '../popover'
+import {
+  cloneElement,
+  forwardRef,
+  type HTMLAttributes,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
+import {
+  Popover,
+  usePopoverClose,
+  usePopoverOpen,
+  type PopoverPlacement,
+  type PopoverTriggerProps,
+} from '../popover'
+
+const MENU_ITEM_SELECTOR = '[role="menuitem"]:not([aria-disabled="true"])'
 
 export interface DropdownProps {
   children: ReactNode
@@ -21,12 +35,35 @@ export function DropdownRoot({
   )
 }
 
-const moveFocus = (event: KeyboardEvent<HTMLDivElement>) => {
-  const items = Array.from(
-    event.currentTarget.querySelectorAll<HTMLElement>(
-      '[role="menuitem"]:not([aria-disabled="true"])',
-    ),
+export function DropdownTrigger({ children }: PopoverTriggerProps) {
+  const open = usePopoverOpen()
+  const childProps = children.props
+
+  return (
+    <Popover.Trigger>
+      {cloneElement(children, {
+        'aria-haspopup': childProps['aria-haspopup'] ?? 'menu',
+        onKeyDown: (event) => {
+          childProps.onKeyDown?.(event)
+          if (event.defaultPrevented) return
+          if (
+            event.key !== 'ArrowDown' &&
+            event.key !== 'ArrowUp' &&
+            event.key !== 'Enter' &&
+            event.key !== ' '
+          ) {
+            return
+          }
+          event.preventDefault()
+          open()
+        },
+      })}
+    </Popover.Trigger>
   )
+}
+
+const moveFocus = (event: KeyboardEvent<HTMLDivElement>) => {
+  const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR))
   if (items.length === 0) return
   const currentIndex = items.indexOf(document.activeElement as HTMLElement)
   if (event.key === 'ArrowDown') {
@@ -42,15 +79,28 @@ export interface DropdownMenuProps extends HTMLAttributes<HTMLDivElement> {
   label?: string
 }
 
-export function DropdownMenu({ children, className, label, ...props }: DropdownMenuProps) {
+export function DropdownMenu({
+  children,
+  className,
+  label,
+  onKeyDown,
+  ...props
+}: DropdownMenuProps) {
   return (
-    <Popover.Content className={['ods-dropdown', className].filter(Boolean).join(' ')} role="menu">
+    <Popover.Content
+      className={['ods-dropdown', className].filter(Boolean).join(' ')}
+      initialFocus={MENU_ITEM_SELECTOR}
+      role="menu"
+    >
       <div
         {...props}
         aria-label={label}
         className="ods-dropdown__list"
         data-slot="menu"
-        onKeyDown={moveFocus}
+        onKeyDown={(event) => {
+          onKeyDown?.(event)
+          if (!event.defaultPrevented) moveFocus(event)
+        }}
         role="none"
       >
         {children}
@@ -74,6 +124,7 @@ export const DropdownItem = forwardRef<HTMLButtonElement, DropdownItemProps>(fun
     className,
     closeOnSelect = true,
     disabled = false,
+    onClick,
     onSelect,
     shortcut,
     startContent,
@@ -92,7 +143,9 @@ export const DropdownItem = forwardRef<HTMLButtonElement, DropdownItemProps>(fun
       data-slot="item"
       data-tone={tone}
       disabled={disabled}
-      onClick={() => {
+      onClick={(event) => {
+        onClick?.(event)
+        if (event.defaultPrevented) return
         onSelect?.()
         if (closeOnSelect) close()
       }}
@@ -117,5 +170,5 @@ export const DropdownItem = forwardRef<HTMLButtonElement, DropdownItemProps>(fun
 export const Dropdown = Object.assign(DropdownRoot, {
   Item: DropdownItem,
   Menu: DropdownMenu,
-  Trigger: Popover.Trigger,
+  Trigger: DropdownTrigger,
 })

@@ -10,11 +10,13 @@ describe('Button', () => {
 
     render(
       <Button
+        autoHeight
         className="custom-action"
         fullWidth
         onClick={onClick}
         ref={ref}
         size="lg"
+        tone="danger"
         variant="danger"
       >
         删除
@@ -23,8 +25,10 @@ describe('Button', () => {
 
     const button = screen.getByRole('button', { name: '删除' })
     expect(button).toHaveClass('ods-button', 'custom-action')
+    expect(button).toHaveAttribute('data-auto-height', 'true')
     expect(button).toHaveAttribute('data-full-width', 'true')
     expect(button).toHaveAttribute('data-size', 'lg')
+    expect(button).toHaveAttribute('data-tone', 'danger')
     expect(button).toHaveAttribute('data-variant', 'danger')
     expect(ref.current).toBe(button)
 

@@ -44,8 +44,18 @@ describe('LoginView', () => {
     expect(container.querySelector('.btn-primary-login')).not.toBeInTheDocument()
   })
 
-  it('toggles password visibility and renders authentication failures with ODS Alert', async () => {
-    useAuthStore.setState({ error: '账号或密码错误', login: vi.fn().mockResolvedValue(false) })
+  it('toggles password visibility and reads the latest store error for consecutive failures', async () => {
+    const login = vi
+      .fn()
+      .mockImplementationOnce(async () => {
+        useAuthStore.setState({ error: '首次登录失败' })
+        return false
+      })
+      .mockImplementationOnce(async () => {
+        useAuthStore.setState({ error: '连续登录失败' })
+        return false
+      })
+    useAuthStore.setState({ error: null, login })
     const { container } = render(<LoginView />)
 
     const password = screen.getByLabelText('密码')
@@ -54,7 +64,11 @@ describe('LoginView', () => {
     expect(password).toHaveAttribute('type', 'text')
 
     fireEvent.click(screen.getByRole('button', { name: '登录' }))
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('账号或密码错误'))
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('首次登录失败'))
+
+    fireEvent.click(screen.getByRole('button', { name: '登录' }))
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('连续登录失败'))
+    expect(login).toHaveBeenCalledTimes(2)
     expect(container.querySelector('.ods-alert')).toBeInTheDocument()
   })
 })

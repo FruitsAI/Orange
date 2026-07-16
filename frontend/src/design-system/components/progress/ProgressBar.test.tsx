@@ -2,6 +2,7 @@ import { createRef } from 'react'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { ProgressBar } from './ProgressBar'
+import progressCss from './progress.css?raw'
 
 describe('ProgressBar', () => {
   it('exposes native progressbar aria values and clamps visual progress', () => {
@@ -34,5 +35,20 @@ describe('ProgressBar', () => {
     const progress = screen.getByRole('progressbar', { name: '正在导入' })
     expect(progress).not.toHaveAttribute('aria-valuenow')
     expect(progress).toHaveAttribute('data-indeterminate', 'true')
+  })
+
+  it('owns the optional determinate reveal motion', () => {
+    render(<ProgressBar label="项目进度" motion="reveal" value={62} />)
+
+    expect(screen.getByRole('progressbar', { name: '项目进度' })).toHaveAttribute(
+      'data-motion',
+      'reveal',
+    )
+    expect(progressCss).toMatch(
+      /\.ods-progress\[data-motion='reveal'\][^{]+\{[\s\S]*animation:\s*ods-progress-reveal/,
+    )
+    expect(progressCss).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*data-motion='reveal'[\s\S]*animation:\s*none/,
+    )
   })
 })

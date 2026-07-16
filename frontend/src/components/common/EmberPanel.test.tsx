@@ -21,14 +21,17 @@ describe('EmberPanel', () => {
     )
 
     const panel = screen.getByLabelText('财务面板')
-    expect(panel).toHaveClass('glass-card', 'ember-panel', 'custom-panel')
+    expect(panel).toHaveClass('ods-card', 'ember-panel', 'custom-panel')
+    expect(panel).toHaveAttribute('data-gap', 'md')
+    expect(panel).toHaveAttribute('data-variant', 'secondary')
     expect(panel).toHaveAttribute('data-panel', 'income')
     expect(panel).toHaveTextContent('面板内容')
   })
 
-  it('preserves the no-padding option from GlassCard', () => {
-    render(<EmberPanel noPadding>无内边距</EmberPanel>)
+  it('uses the ODS padding contract directly', () => {
+    render(<EmberPanel padding="none">无内边距</EmberPanel>)
 
-    expect(screen.getByText('无内边距')).toHaveClass('ember-panel', 'p-0')
+    expect(screen.getByText('无内边距')).toHaveClass('ember-panel')
+    expect(screen.getByText('无内边距')).toHaveAttribute('data-padding', 'none')
   })
 })

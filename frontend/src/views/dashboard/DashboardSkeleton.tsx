@@ -1,18 +1,30 @@
-import GlassCard from '@/components/common/GlassCard'
+import { Skeleton, Surface, type SurfaceRadius } from '@/design-system'
 
 function SkeletonCard({ height }: { height: number }) {
   return (
-    <GlassCard aria-hidden="true">
-      <div className="skeleton" style={{ height }} />
-    </GlassCard>
+    <Surface aria-hidden="true" variant="raised">
+      <Skeleton height={height} />
+    </Surface>
   )
 }
 
-function SkeletonSurface({ className = '' }: { className?: string }) {
+function SkeletonSurface({
+  className = '',
+  radius = 'panel',
+}: {
+  className?: string
+  radius?: SurfaceRadius
+}) {
   return (
-    <div aria-hidden="true" className={`dashboard-skeleton__surface ${className}`.trim()}>
-      <div className="skeleton dashboard-skeleton__shimmer" />
-    </div>
+    <Surface
+      aria-hidden="true"
+      className={`dashboard-skeleton__surface ${className}`.trim()}
+      padding="none"
+      radius={radius}
+      variant="raised"
+    >
+      <Skeleton className="dashboard-skeleton__shimmer" />
+    </Surface>
   )
 }
 
@@ -47,7 +59,7 @@ export default function DashboardSkeleton() {
       className="ember-dashboard dashboard-skeleton"
       role="status"
     >
-      <SkeletonSurface className="dashboard-skeleton__hero" />
+      <SkeletonSurface className="dashboard-skeleton__hero" radius="shell" />
       <DashboardStatsSkeleton />
       <div className="dashboard-action-grid">
         <SkeletonSurface className="dashboard-skeleton__chart" />

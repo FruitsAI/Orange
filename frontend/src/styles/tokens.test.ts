@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import './tokens.css'
+import '@/design-system/tokens/reference.css'
+import '@/design-system/tokens/semantic.css'
+import '@/design-system/tokens/themes/day-ember.css'
+import '@/design-system/tokens/themes/night-orbit.css'
 
-describe('Ember Orbit design tokens', () => {
+describe('Orange Design System tokens', () => {
   afterEach(() => {
     document.documentElement.removeAttribute('data-theme')
   })
@@ -10,66 +13,35 @@ describe('Ember Orbit design tokens', () => {
   const tokenValue = (token: string) =>
     getComputedStyle(document.documentElement).getPropertyValue(token).trim()
 
-  it('provides a safe Day Ember theme before data-theme is set', () => {
+  it('provides Day Ember as the safe default', () => {
     document.documentElement.removeAttribute('data-theme')
 
-    expect(tokenValue('--color-bg')).toBe('#f7f2e9')
-    expect(tokenValue('--color-surface')).toBe('#fffdf9')
-    expect(tokenValue('--color-accent')).toBe('#f47b16')
-    expect(tokenValue('--color-text')).toBe('#241b15')
+    expect(tokenValue('--ods-ref-color-warm-50')).toBe('#f7f2e9')
+    expect(tokenValue('--ods-color-bg-canvas')).toBe('var(--ods-ref-color-warm-50)')
+    expect(tokenValue('--ods-color-accent')).toBe('var(--ods-ref-color-ember-500)')
+    expect(tokenValue('--ods-color-ambient-glow')).toBe('rgba(244, 123, 22, 0.1)')
   })
 
-  it('provides representative Night Orbit tokens', () => {
+  it('provides the complete Night Orbit theme', () => {
     document.documentElement.setAttribute('data-theme', 'dark')
 
-    expect(tokenValue('--color-bg')).toBe('#080706')
-    expect(tokenValue('--color-surface')).toBe('#151210')
-    expect(tokenValue('--color-accent')).toBe('#ff9f0a')
-    expect(tokenValue('--color-text')).toBe('#fffaf3')
-    expect(tokenValue('--color-ambient-glow')).toBe('rgba(255, 159, 10, 0.16)')
+    expect(tokenValue('--ods-color-bg-canvas')).toBe('var(--ods-ref-color-warm-950)')
+    expect(tokenValue('--ods-color-accent')).toBe('#ff9f0a')
+    expect(tokenValue('--ods-color-fg-default')).toBe('#fffaf3')
+    expect(tokenValue('--ods-color-ambient-glow')).toBe('rgba(255, 159, 10, 0.16)')
   })
 
-  it('provides representative Day Ember tokens', () => {
-    document.documentElement.setAttribute('data-theme', 'light')
-
-    expect(tokenValue('--color-bg')).toBe('#f7f2e9')
-    expect(tokenValue('--color-surface')).toBe('#fffdf9')
-    expect(tokenValue('--color-accent')).toBe('#f47b16')
-    expect(tokenValue('--color-text')).toBe('#241b15')
-    expect(tokenValue('--color-ambient-glow')).toBe('rgba(244, 123, 22, 0.1)')
+  it('publishes semantic spacing, geometry, and motion contracts', () => {
+    expect(tokenValue('--ods-space-6')).toBe('var(--ods-ref-space-6)')
+    expect(tokenValue('--ods-radius-control')).toBe('var(--ods-ref-radius-10)')
+    expect(tokenValue('--ods-duration-instant')).toBe('var(--ods-ref-duration-140)')
+    expect(tokenValue('--ods-ease-standard')).toBe('var(--ods-ref-ease-standard)')
   })
 
-  it.each([
-    ['--space-5', '24px'],
-    ['--space-6', '32px'],
-    ['--radius-control', '10px'],
-    ['--radius-panel', '16px'],
-    ['--radius-shell', '20px'],
-    ['--motion-instant', '140ms'],
-    ['--motion-fast', '200ms'],
-    ['--motion-page', '280ms'],
-    ['--motion-hero', '440ms'],
-    ['--ease-standard', 'cubic-bezier(.2,0,0,1)'],
-    ['--ease-emphasized', 'cubic-bezier(.2,.8,.2,1)'],
-  ])('defines the %s public contract as %s', (token, value) => {
-    expect(tokenValue(token)).toBe(value)
-  })
-
-  it('keeps formal spacing steps distinct', () => {
-    expect(tokenValue('--space-8')).toBe('40px')
-    expect(tokenValue('--space-10')).toBe('48px')
-  })
-
-  it.each([
-    ['--spacing-xs', '6px'],
-    ['--spacing-md', '20px'],
-    ['--spacing-lg', '32px'],
-    ['--radius-sm', '12px'],
-    ['--radius-md', '18px'],
-    ['--radius-lg', '24px'],
-    ['--radius-xl', '32px'],
-    ['--transition-fast', '0.25s cubic-bezier(.2,0,0,1)'],
-  ])('preserves the legacy %s value as %s', (token, value) => {
-    expect(tokenValue(token)).toBe(value)
+  it('does not expose retired aliases', () => {
+    expect(tokenValue('--color-bg')).toBe('')
+    expect(tokenValue('--space-5')).toBe('')
+    expect(tokenValue('--motion-instant')).toBe('')
+    expect(tokenValue('--text-primary')).toBe('')
   })
 })

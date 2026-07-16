@@ -1,9 +1,24 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { notificationApi, type Notification } from '@/api/notification'
 import ThemeSelector from '@/components/common/ThemeSelector'
 import NotificationDetailModal from '@/components/notification/NotificationDetailModal'
+import {
+  Avatar,
+  Badge,
+  Button,
+  Chip,
+  Divider,
+  EmptyState,
+  Image,
+  IconButton,
+  Popover,
+  RouterIconButton,
+  RouterLink,
+  RouterNavLink,
+  Surface,
+  type ChipTone,
+} from '@/design-system'
 import { useAuthStore } from '@/stores/auth'
 import { primaryNavigationItems } from './primaryNavigation'
 import { handleWindowDragRegionDoubleClick } from './windowDrag'
@@ -14,8 +29,11 @@ const getNotificationTypeName = (type: number) => {
   return '系统'
 }
 
-const notificationPopoverId = 'app-topbar-notification-popover'
-const userPopoverId = 'app-topbar-user-popover'
+const getNotificationTone = (type: number): ChipTone => {
+  if (type === 2) return 'accent'
+  if (type === 3) return 'info'
+  return 'neutral'
+}
 
 interface AppTopbarProps {
   scrolled?: boolean
@@ -32,7 +50,11 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   const [recentNotifications, setRecentNotifications] = useState<Notification[]>([])
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
   const notificationTriggerRef = useRef<HTMLButtonElement>(null)
-  const userTriggerRef = useRef<HTMLButtonElement>(null)
+  const isAuthenticatedRef = useRef(isAuthenticated)
+  const isMountedRef = useRef(false)
+  const notificationRefreshGenerationRef = useRef(0)
+  const notificationSessionGenerationRef = useRef(0)
+  const pendingReadMutationsRef = useRef(0)
 
   const userInitial = (user?.name || user?.username || 'U').charAt(0).toUpperCase()
   const closeMenus = useCallback(() => {
@@ -41,28 +63,18 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   const showNotifications = activeMenu === 'notifications'
   const showUserMenu = activeMenu === 'user'
 
-  const closeMenuAndRestoreFocus = useCallback(() => {
-    const trigger =
-      activeMenu === 'notifications'
-        ? notificationTriggerRef.current
-        : activeMenu === 'user'
-          ? userTriggerRef.current
-          : null
-    closeMenus()
-    trigger?.focus()
-  }, [activeMenu, closeMenus])
+  useLayoutEffect(() => {
+    isAuthenticatedRef.current = isAuthenticated
+  }, [isAuthenticated])
 
   useEffect(() => {
-    if (activeMenu !== 'notifications' && activeMenu !== 'user') return
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      event.preventDefault()
-      closeMenuAndRestoreFocus()
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      notificationRefreshGenerationRef.current += 1
+      notificationSessionGenerationRef.current += 1
     }
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [activeMenu, closeMenuAndRestoreFocus])
+  }, [])
 
   useEffect(() => {
     // Route changes are an external navigation event that invalidates open anchored menus.
@@ -71,27 +83,46 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   }, [closeMenus, location.pathname, location.search])
 
   const refreshNotifications = useCallback(async () => {
-    if (!isAuthenticated) return
+    if (!isAuthenticatedRef.current || pendingReadMutationsRef.current > 0) return
+
+    const refreshGeneration = ++notificationRefreshGenerationRef.current
+    const sessionGeneration = notificationSessionGenerationRef.current
 
     try {
       const [countRes, listRes] = await Promise.all([
         notificationApi.getUnreadCount(),
         notificationApi.list(1, 5),
       ])
+      if (
+        !isMountedRef.current ||
+        !isAuthenticatedRef.current ||
+        pendingReadMutationsRef.current > 0 ||
+        refreshGeneration !== notificationRefreshGenerationRef.current ||
+        sessionGeneration !== notificationSessionGenerationRef.current
+      ) {
+        return
+      }
       setUnreadCount(countRes.data.data.count)
       setRecentNotifications(listRes.data.data.list)
     } catch {
       // Notification polling should never break primary navigation.
     }
-  }, [isAuthenticated])
+  }, [])
 
   useEffect(() => {
+    notificationRefreshGenerationRef.current += 1
+    notificationSessionGenerationRef.current += 1
+    pendingReadMutationsRef.current = 0
     if (!isAuthenticated) return
+
     const initialRefresh = window.setTimeout(refreshNotifications, 0)
     const interval = window.setInterval(refreshNotifications, 30000)
     return () => {
       window.clearTimeout(initialRefresh)
       window.clearInterval(interval)
+      notificationRefreshGenerationRef.current += 1
+      notificationSessionGenerationRef.current += 1
+      pendingReadMutationsRef.current = 0
     }
   }, [isAuthenticated, refreshNotifications])
 
@@ -101,8 +132,21 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
     setSelectedNotification(item)
     if (item.is_read) return
 
+    const sessionGeneration = notificationSessionGenerationRef.current
+    pendingReadMutationsRef.current += 1
+    notificationRefreshGenerationRef.current += 1
+
     try {
       await notificationApi.markAsRead(item.id)
+      if (
+        !isMountedRef.current ||
+        !isAuthenticatedRef.current ||
+        sessionGeneration !== notificationSessionGenerationRef.current
+      ) {
+        return
+      }
+
+      notificationRefreshGenerationRef.current += 1
       setUnreadCount((count) => Math.max(0, count - 1))
       setRecentNotifications((items) =>
         items.map((notification) =>
@@ -111,6 +155,10 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
       )
     } catch {
       // Keep showing the detail even if the read marker fails.
+    } finally {
+      if (sessionGeneration === notificationSessionGenerationRef.current) {
+        pendingReadMutationsRef.current = Math.max(0, pendingReadMutationsRef.current - 1)
+      }
     }
   }
 
@@ -121,45 +169,66 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   }
 
   return (
-    <header
+    <Surface
+      as="header"
       className="app-topbar"
       data-scrolled={scrolled || undefined}
       onDoubleClick={handleWindowDragRegionDoubleClick}
+      padding="none"
+      radius="shell"
+      variant={scrolled ? 'raised' : 'glass'}
     >
-      <NavLink
+      <RouterLink
         aria-label="Orange 工作台"
         className="app-topbar__brand"
         onClick={closeMenus}
+        tone="foreground"
         to="/dashboard"
       >
-        <img alt="Orange Logo" src="/orange.png" />
+        <Image
+          alt="Orange Logo"
+          className="app-topbar__brand-logo"
+          fit="contain"
+          radius="md"
+          showSkeleton={false}
+          src="/orange.png"
+        />
         <span>Orange</span>
-      </NavLink>
+      </RouterLink>
 
-      <nav aria-label="主导航" className="app-topbar__nav">
+      <Surface
+        as="nav"
+        aria-label="主导航"
+        className="app-topbar__nav"
+        padding="none"
+        radius="pill"
+        variant="inset"
+      >
         {primaryNavigationItems.map((item) => (
-          <NavLink
+          <RouterNavLink
+            appearance="tab"
             className="app-topbar__nav-link"
             key={item.path}
             onClick={closeMenus}
             to={item.path}
           >
             {item.label}
-          </NavLink>
+          </RouterNavLink>
         ))}
-      </nav>
+      </Surface>
 
       <div className="app-topbar__utilities">
-        <button
+        <Button
           aria-label="命令入口即将推出"
           className="app-topbar__command"
           disabled
+          size="sm"
           title="命令入口即将推出"
-          type="button"
+          variant="secondary"
         >
           <i aria-hidden="true" className="ri-search-line" />
           <span>⌘ K</span>
-        </button>
+        </Button>
 
         <ThemeSelector
           onBeforeOpen={closeMenus}
@@ -167,154 +236,145 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
           open={activeMenu === 'theme'}
         />
 
-        <div className="app-topbar__menu-wrapper app-topbar__notification-wrapper">
-          <button
-            aria-controls={notificationPopoverId}
-            aria-expanded={showNotifications}
-            aria-label="查看通知"
-            className="app-topbar__icon-button"
-            onClick={() => {
-              setActiveMenu(showNotifications ? null : 'notifications')
-              refreshNotifications()
-            }}
-            ref={notificationTriggerRef}
-            type="button"
+        <Popover.Root
+          className="app-topbar__menu-wrapper app-topbar__notification-wrapper"
+          onOpenChange={(open) => {
+            setActiveMenu(open ? 'notifications' : null)
+            if (open) void refreshNotifications()
+          }}
+          open={showNotifications}
+          placement="bottom-end"
+        >
+          <Popover.Trigger>
+            <IconButton
+              className="app-topbar__icon-button"
+              label="查看通知"
+              ref={notificationTriggerRef}
+              variant="secondary"
+            >
+              <Badge dot invisible={unreadCount === 0} tone="danger">
+                <i aria-hidden="true" className="ri-notification-3-line" />
+              </Badge>
+            </IconButton>
+          </Popover.Trigger>
+
+          <Popover.Content
+            aria-label="最近通知"
+            className="app-topbar__popover app-topbar__notification-menu"
+            padding="none"
+            role="region"
           >
-            <i aria-hidden="true" className="ri-notification-3-line" />
-            {unreadCount > 0 ? <span className="app-topbar__notification-dot" /> : null}
-          </button>
-
-          {showNotifications ? (
-            <>
-              <div
-                aria-label="最近通知"
-                className="app-topbar__dropdown app-topbar__notification-menu"
-                id={notificationPopoverId}
-                role="region"
+            <div className="app-topbar__dropdown-header">
+              <span>最近通知</span>
+              <Button
+                onClick={() => {
+                  closeMenus()
+                  navigate('/settings?tab=notification')
+                }}
+                size="sm"
+                variant="ghost"
               >
-                <div className="app-topbar__dropdown-header">
-                  <span>最近通知</span>
-                  <button
-                    onClick={() => {
-                      closeMenus()
-                      navigate('/settings?tab=notification')
-                    }}
-                    type="button"
-                  >
-                    查看全部
-                  </button>
-                </div>
-                <div className="app-topbar__notification-list">
-                  {recentNotifications.length === 0 ? (
-                    <div className="app-topbar__empty">暂无通知</div>
-                  ) : (
-                    recentNotifications.map((item) => (
-                      <button
-                        className="app-topbar__notification-item"
-                        key={item.id}
-                        onClick={() => handleNotificationClick(item)}
-                        type="button"
-                      >
-                        <span className="app-topbar__notification-title">
-                          {!item.is_read ? <span className="app-topbar__unread-dot" /> : null}
-                          <span className={`notification-type-badge type-${item.type}`}>
-                            {getNotificationTypeName(item.type)}
-                          </span>
-                          <span className={item.is_read ? 'read-title' : 'unread-title'}>
-                            {item.title}
-                          </span>
+                查看全部
+              </Button>
+            </div>
+            <Divider />
+            <div className="app-topbar__notification-list">
+              {recentNotifications.length === 0 ? (
+                <EmptyState className="app-topbar__empty" headingLevel={4} title="暂无通知" />
+              ) : (
+                recentNotifications.map((item, index) => (
+                  <Fragment key={item.id}>
+                    <Button
+                      autoHeight
+                      className="app-topbar__notification-item"
+                      fullWidth
+                      onClick={() => handleNotificationClick(item)}
+                      variant="ghost"
+                    >
+                      <span className="app-topbar__notification-title">
+                        <Chip size="sm" tone={getNotificationTone(item.type)}>
+                          {getNotificationTypeName(item.type)}
+                        </Chip>
+                        <span className={item.is_read ? 'read-title' : 'unread-title'}>
+                          {item.title}
                         </span>
-                        <span className="app-topbar__notification-time">
-                          {new Date(item.create_time).toLocaleDateString()}
-                        </span>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-              {typeof document !== 'undefined'
-                ? createPortal(
-                    <button
-                      aria-label="关闭通知菜单"
-                      className="app-topbar__overlay"
-                      onClick={closeMenuAndRestoreFocus}
-                      tabIndex={-1}
-                      type="button"
-                    />,
-                    document.body,
-                  )
-                : null}
-            </>
-          ) : null}
-        </div>
+                      </span>
+                      <span className="app-topbar__notification-time">
+                        {new Date(item.create_time).toLocaleDateString()}
+                      </span>
+                    </Button>
+                    {index < recentNotifications.length - 1 ? <Divider /> : null}
+                  </Fragment>
+                ))
+              )}
+            </div>
+          </Popover.Content>
+        </Popover.Root>
 
-        <NavLink
-          aria-label="系统设置"
+        <RouterIconButton
           className="app-topbar__icon-button"
+          label="系统设置"
           onClick={closeMenus}
           to="/settings"
+          variant="secondary"
         >
           <i aria-hidden="true" className="ri-settings-4-line" />
-        </NavLink>
+        </RouterIconButton>
 
-        <div className="app-topbar__menu-wrapper">
-          <button
-            aria-controls={userPopoverId}
-            aria-expanded={showUserMenu}
-            aria-label="打开用户菜单"
-            className="app-topbar__user-button"
-            onClick={() => {
-              setActiveMenu(showUserMenu ? null : 'user')
-            }}
-            ref={userTriggerRef}
-            type="button"
+        <Popover.Root
+          className="app-topbar__menu-wrapper"
+          onOpenChange={(open) => setActiveMenu(open ? 'user' : null)}
+          open={showUserMenu}
+          placement="bottom-end"
+        >
+          <Popover.Trigger>
+            <Button
+              aria-label="打开用户菜单"
+              className="app-topbar__user-button"
+              variant="secondary"
+            >
+              <Avatar fallback={userInitial} radius="lg" size="sm" tone="accent" />
+              <span className="app-topbar__user-name">
+                {user?.name || user?.username || '用户'}
+              </span>
+              <i aria-hidden="true" className="ri-arrow-down-s-line" />
+            </Button>
+          </Popover.Trigger>
+
+          <Popover.Content
+            aria-label="用户菜单"
+            className="app-topbar__popover app-topbar__user-menu"
+            role="region"
           >
-            <span aria-hidden="true" className="app-topbar__avatar">
-              {userInitial}
-            </span>
-            <span className="app-topbar__user-name">{user?.name || user?.username || '用户'}</span>
-            <i aria-hidden="true" className="ri-arrow-down-s-line" />
-          </button>
-
-          {showUserMenu ? (
-            <>
-              <div
-                aria-label="用户菜单"
-                className="app-topbar__dropdown app-topbar__user-menu"
-                id={userPopoverId}
-                role="region"
-              >
-                <button
-                  onClick={() => {
-                    closeMenus()
-                    navigate('/settings')
-                  }}
-                  type="button"
-                >
-                  <i aria-hidden="true" className="ri-user-line" />
-                  <span>个人信息</span>
-                </button>
-                <div className="app-topbar__dropdown-divider" />
-                <button className="is-danger" onClick={handleLogout} type="button">
-                  <i aria-hidden="true" className="ri-logout-box-r-line" />
-                  <span>退出登录</span>
-                </button>
-              </div>
-              {typeof document !== 'undefined'
-                ? createPortal(
-                    <button
-                      aria-label="关闭用户菜单"
-                      className="app-topbar__overlay"
-                      onClick={closeMenuAndRestoreFocus}
-                      tabIndex={-1}
-                      type="button"
-                    />,
-                    document.body,
-                  )
-                : null}
-            </>
-          ) : null}
-        </div>
+            <Button
+              autoHeight
+              className="app-topbar__user-menu-action"
+              fullWidth
+              onClick={() => {
+                closeMenus()
+                navigate('/settings')
+              }}
+              size="sm"
+              variant="ghost"
+            >
+              <i aria-hidden="true" className="ri-user-line" />
+              <span>个人信息</span>
+            </Button>
+            <Divider />
+            <Button
+              autoHeight
+              className="app-topbar__user-menu-action"
+              fullWidth
+              onClick={handleLogout}
+              size="sm"
+              tone="danger"
+              variant="ghost"
+            >
+              <i aria-hidden="true" className="ri-logout-box-r-line" />
+              <span>退出登录</span>
+            </Button>
+          </Popover.Content>
+        </Popover.Root>
       </div>
 
       <NotificationDetailModal
@@ -322,6 +382,6 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
         onClose={() => setSelectedNotification(null)}
         open={Boolean(selectedNotification)}
       />
-    </header>
+    </Surface>
   )
 }

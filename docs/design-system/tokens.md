@@ -66,23 +66,11 @@
 
 Canvas 不可靠地解析 CSS custom property。Chart.js 等库应通过统一的 `readDesignToken()` 读取 computed styles，再传入 `--ods-data-*` 值。禁止在 TypeScript 中维护一份 light/dark 三元色表。
 
-## 兼容层
+## 兼容层已移除
 
-`compatibility.css` 在迁移期间提供旧变量到 ODS 的单向映射：
-
-```css
---color-accent: var(--ods-color-accent);
---text-primary: var(--ods-color-fg-default);
-```
-
-禁止以下反向关系：
-
-```css
-/* 禁止 */
---ods-color-accent: var(--color-primary);
-```
-
-旧 alias 必须在最后一个生产消费者迁移后删除，不能成为永久 API。
+全路由迁移完成后，`compatibility.css` 与旧 `styles/tokens.css` 已删除。生产组件、patterns
+和页面 feature CSS 只允许消费 `--ods-*` semantic tokens；契约测试会阻止 `--color-*`、
+`--space-*`、`--motion-*` 等旧 alias 回流。
 
 ## 新 token 的准入条件
 

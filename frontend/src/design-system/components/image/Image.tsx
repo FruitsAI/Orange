@@ -7,15 +7,32 @@ import {
 } from 'react'
 
 export type ImageRadius = 'none' | 'sm' | 'md' | 'lg' | 'full'
+export type ImageFit = 'cover' | 'contain' | 'fill' | 'none' | 'scale-down'
+export type ImageBackground = 'default' | 'transparent'
 
 export interface ImageProps extends ImgHTMLAttributes<HTMLImageElement> {
+  background?: ImageBackground
   fallback?: ReactNode
+  fit?: ImageFit
   radius?: ImageRadius
   showSkeleton?: boolean
 }
 
-export const Image = forwardRef<HTMLImageElement, ImageProps>(function Image(
-  { alt = '', className, fallback, onError, onLoad, radius = 'md', showSkeleton = true, ...props },
+const ImageResource = forwardRef<HTMLImageElement, ImageProps>(function ImageResource(
+  {
+    alt = '',
+    background = 'default',
+    className,
+    fallback,
+    fit = 'cover',
+    onError,
+    onLoad,
+    radius = 'md',
+    showSkeleton = true,
+    src,
+    srcSet,
+    ...props
+  },
   ref,
 ) {
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
@@ -33,6 +50,8 @@ export const Image = forwardRef<HTMLImageElement, ImageProps>(function Image(
   return (
     <span
       className={['ods-image', className].filter(Boolean).join(' ')}
+      data-background={background}
+      data-fit={fit}
       data-radius={radius}
       data-slot="image"
       data-status={status}
@@ -50,6 +69,8 @@ export const Image = forwardRef<HTMLImageElement, ImageProps>(function Image(
           onError={handleError}
           onLoad={handleLoad}
           ref={ref}
+          src={src}
+          srcSet={srcSet}
         />
       )}
       {showSkeleton && status === 'loading' ? (
@@ -57,4 +78,9 @@ export const Image = forwardRef<HTMLImageElement, ImageProps>(function Image(
       ) : null}
     </span>
   )
+})
+
+export const Image = forwardRef<HTMLImageElement, ImageProps>(function Image(props, ref) {
+  const resourceKey = JSON.stringify([props.src ?? null, props.srcSet ?? null, props.sizes ?? null])
+  return <ImageResource {...props} key={resourceKey} ref={ref} />
 })

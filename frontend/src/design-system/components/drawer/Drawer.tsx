@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { useDialogFocus } from '@/hooks/useDialogFocus'
+import { OverlayLayerProvider } from '@/hooks/overlayStack'
 
 export type DrawerPlacement = 'right' | 'left' | 'top' | 'bottom'
 export type DrawerSize = 'sm' | 'md' | 'lg'
@@ -59,36 +60,54 @@ export const DrawerRoot = forwardRef<HTMLDivElement, DrawerRootProps>(function D
 ) {
   const titleId = useId().replaceAll(':', '')
   const dialogRef = useRef<HTMLDivElement>(null)
-  useDialogFocus({ dialogRef, onClose, open })
+  const scrimPressStartedRef = useRef(false)
+  const { overlayToken, zIndex } = useDialogFocus({
+    closeOnEscape: dismissable,
+    dialogRef,
+    onClose,
+    open,
+  })
 
   if (!open || typeof document === 'undefined') return null
 
   return createPortal(
-    <DrawerContext.Provider value={{ onClose, titleId }}>
-      <div
-        className="ods-drawer__scrim"
-        data-slot="scrim"
-        onMouseDown={(event) => {
-          if (dismissable && event.target === event.currentTarget) onClose()
-        }}
-        role="presentation"
-      >
+    <OverlayLayerProvider value={overlayToken}>
+      <DrawerContext.Provider value={{ onClose, titleId }}>
         <div
-          {...props}
-          aria-labelledby={titleId}
-          aria-modal="true"
-          className={['ods-drawer', className].filter(Boolean).join(' ')}
-          data-placement={placement}
-          data-size={size}
-          data-slot="drawer"
-          ref={mergeRefs(dialogRef, ref)}
-          role="dialog"
-          tabIndex={-1}
+          className="ods-drawer__scrim"
+          data-slot="scrim"
+          onPointerCancel={() => {
+            scrimPressStartedRef.current = false
+          }}
+          onPointerDown={(event) => {
+            scrimPressStartedRef.current = event.target === event.currentTarget
+          }}
+          onPointerUp={(event) => {
+            const shouldDismiss =
+              dismissable && scrimPressStartedRef.current && event.target === event.currentTarget
+            scrimPressStartedRef.current = false
+            if (shouldDismiss) onClose()
+          }}
+          role="presentation"
+          style={{ zIndex }}
         >
-          {children}
+          <div
+            {...props}
+            aria-labelledby={titleId}
+            aria-modal="true"
+            className={['ods-drawer', className].filter(Boolean).join(' ')}
+            data-placement={placement}
+            data-size={size}
+            data-slot="drawer"
+            ref={mergeRefs(dialogRef, ref)}
+            role="dialog"
+            tabIndex={-1}
+          >
+            {children}
+          </div>
         </div>
-      </div>
-    </DrawerContext.Provider>,
+      </DrawerContext.Provider>
+    </OverlayLayerProvider>,
     document.body,
   )
 })
@@ -142,7 +161,7 @@ export interface DrawerCloseProps extends HTMLAttributes<HTMLButtonElement> {
 }
 
 export const DrawerClose = forwardRef<HTMLButtonElement, DrawerCloseProps>(function DrawerClose(
-  { className, label = '关闭', ...props },
+  { className, label = '关闭', onClick, ...props },
   ref,
 ) {
   const { onClose } = useDrawerContext()
@@ -152,7 +171,10 @@ export const DrawerClose = forwardRef<HTMLButtonElement, DrawerCloseProps>(funct
       aria-label={label}
       className={['ods-drawer__close', className].filter(Boolean).join(' ')}
       data-slot="close"
-      onClick={onClose}
+      onClick={(event) => {
+        onClick?.(event)
+        if (!event.defaultPrevented) onClose()
+      }}
       ref={ref}
       type="button"
     >

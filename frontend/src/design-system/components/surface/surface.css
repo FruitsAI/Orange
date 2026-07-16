@@ -31,13 +31,17 @@
 
 .ods-surface[data-variant='raised'] {
   background: var(--ods-color-bg-surface-raised);
-  box-shadow: var(--ods-shadow-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    var(--ods-shadow-soft);
 }
 
 .ods-surface[data-variant='glass'] {
+  border: var(--ods-material-glass-border-subtle);
   background: var(--ods-color-bg-surface-glass);
-  box-shadow: var(--ods-shadow-panel);
-  backdrop-filter: blur(28px) saturate(145%);
+  box-shadow: var(--ods-material-glass-shadow-inner), var(--ods-material-glass-shadow-outer);
+  backdrop-filter: blur(var(--ods-material-glass-blur))
+    saturate(var(--ods-material-glass-saturation));
 }
 
 .ods-surface[data-variant='inset'] {

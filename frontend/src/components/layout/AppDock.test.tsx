@@ -16,6 +16,7 @@ const expectedNavigation = [
   { label: '项目管理', path: '/projects' },
   { label: '收款日历', path: '/calendar' },
   { label: '数据分析', path: '/analytics' },
+  { label: '设计系统', path: '/design-system' },
 ]
 
 const getNavigation = (name: string) => {

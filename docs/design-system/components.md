@@ -47,16 +47,18 @@ Phase 1 以真实生产用量为依据，而不是复制 HeroUI 的完整目录�
 
 ## Phase 2 backlog
 
-- Tooltip、Avatar、Breadcrumbs、Separator。
-- ButtonGroup、ToggleButton、ToggleButtonGroup、Switch。
-- Accordion/Disclosure、Drawer。
-- Autocomplete、ComboBox、advanced Select、NumberField。
-- Calendar、DatePicker、DateRangePicker、TimeField。
-- Meter、Slider、InputOTP、Kbd、Toolbar、TagGroup。
+已交付（消费 ODS tokens，纯 CSS + 轻量 React 状态）：Tooltip、Avatar/AvatarGroup、User、Breadcrumbs、Divider（Separator）、ButtonGroup、Switch、Accordion、NumberInput（NumberField）、Kbd、Code、Snippet、Link、Badge、CircularProgress、ScrollShadow、Spacer、Modal、Drawer、Popover、Listbox、Select、Dropdown（Menu）、Slider、CheckboxGroup、InputOtp、Table、Image、Calendar、DatePicker。
+
+浮层组件（Modal/Drawer/Popover/Select/Dropdown/DatePicker）复用 `useDialogFocus` 焦点栈与 `createPortal`；Calendar/DatePicker 复用已有依赖 `dayjs`；Slider 用 Pointer Events 实现 1:1 跟手。
+
+仍在 backlog（需产品用例或更重依赖，暂不硬写）：
+
+- ToggleButton、ToggleButtonGroup、Autocomplete、ComboBox。
+- DateRangePicker、TimeField、Meter、Toolbar、TagGroup。
 - ColorArea、ColorField、ColorPicker、ColorSlider、ColorSwatch。
 - 虚拟化 collection/table、拖拽排序和高级数据网格。
 
-Phase 2 的复杂 collection 与日期组件不得只为了“组件齐全”而手写。先确认产品用例，再评估 React Aria primitives、日期库、虚拟化方案和可维护成本。
+Phase 2 的复杂 collection 与颜色组件不得只为了“组件齐全”而手写。先确认产品用例，再评估 React Aria primitives、虚拟化方案和可维护成本。
 
 ## 产品模式
 

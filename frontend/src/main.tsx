@@ -7,6 +7,7 @@ import './styles/components.css'
 import './styles/layout.css'
 import './styles/dashboard.css'
 import './styles/stat-card.css'
+import './styles/design-showcase.css'
 // ODS owns its cascade layers; legacy Tailwind remains loaded exactly once by assets/main.css.
 import './design-system/styles.css'
 import 'remixicon/fonts/remixicon.css'

@@ -5,6 +5,7 @@ import ProtectedRoute from '@/router/ProtectedRoute'
 import AnalyticsView from '@/views/AnalyticsView'
 import CalendarView from '@/views/CalendarView'
 import DashboardView from '@/views/DashboardView'
+import DesignSystemView from '@/views/DesignSystemView'
 import LoginView from '@/views/LoginView'
 import PaymentCreateView from '@/views/PaymentCreateView'
 import ProjectCreateView from '@/views/ProjectCreateView'
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
               { path: 'payment/create', element: <PaymentCreateView /> },
               { path: 'calendar', element: <CalendarView /> },
               { path: 'analytics', element: <AnalyticsView /> },
+              { path: 'design-system', element: <DesignSystemView /> },
               { path: 'settings', element: <SettingsView /> },
             ],
           },

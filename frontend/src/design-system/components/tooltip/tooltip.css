@@ -1,0 +1,80 @@
+.ods-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.ods-tooltip__content {
+  position: absolute;
+  z-index: var(--ods-z-dropdown);
+  width: max-content;
+  max-width: 260px;
+  padding: var(--ods-space-2) var(--ods-space-3);
+  border: var(--ods-material-glass-border-subtle);
+  border-radius: var(--ods-radius-sm);
+  background: var(--ods-color-bg-surface-raised);
+  box-shadow: var(--ods-shadow-panel);
+  backdrop-filter: blur(var(--ods-material-glass-blur))
+    saturate(var(--ods-material-glass-saturation));
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-xs);
+  line-height: var(--ods-line-height-body);
+  /* Materialize from the trigger: scale + blur together, not a flat fade. */
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.92);
+  transition:
+    opacity var(--ods-duration-fast) var(--ods-ease-standard),
+    transform var(--ods-duration-fast) var(--ods-ease-spring);
+}
+
+.ods-tooltip__content[data-placement='top'] {
+  inset-block-end: calc(100% + var(--ods-space-2));
+  inset-inline-start: 50%;
+  transform-origin: bottom center;
+  translate: -50% 0;
+}
+
+.ods-tooltip__content[data-placement='bottom'] {
+  inset-block-start: calc(100% + var(--ods-space-2));
+  inset-inline-start: 50%;
+  transform-origin: top center;
+  translate: -50% 0;
+}
+
+.ods-tooltip__content[data-placement='left'] {
+  inset-inline-end: calc(100% + var(--ods-space-2));
+  inset-block-start: 50%;
+  transform-origin: center right;
+  translate: 0 -50%;
+}
+
+.ods-tooltip__content[data-placement='right'] {
+  inset-inline-start: calc(100% + var(--ods-space-2));
+  inset-block-start: 50%;
+  transform-origin: center left;
+  translate: 0 -50%;
+}
+
+.ods-tooltip__content[data-open='true'] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ods-tooltip__content {
+    transform: none;
+    transition: opacity var(--ods-duration-fast) var(--ods-ease-standard);
+  }
+
+  .ods-tooltip__content[data-open='true'] {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ods-tooltip__content {
+    background: var(--ods-color-bg-surface);
+    backdrop-filter: none;
+  }
+}

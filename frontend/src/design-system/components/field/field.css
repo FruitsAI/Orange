@@ -1,5 +1,7 @@
 .ods-field {
   display: grid;
+  /* Rows must not stretch when a sibling grid cell is taller (e.g. a field with an error). */
+  align-content: start;
   gap: var(--ods-space-2);
   min-width: 0;
 }

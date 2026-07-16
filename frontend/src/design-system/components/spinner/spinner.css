@@ -24,7 +24,7 @@
 .ods-spinner__indicator {
   width: var(--ods-space-5);
   height: var(--ods-space-5);
-  border: 2px solid var(--ods-color-border-default);
+  border: 2px solid color-mix(in srgb, currentColor 18%, transparent);
   border-top-color: currentColor;
   border-radius: var(--ods-radius-pill);
   animation: ods-spinner-rotate 800ms linear infinite;

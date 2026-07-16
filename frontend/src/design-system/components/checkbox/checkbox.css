@@ -56,8 +56,11 @@
 
 .ods-checkbox__input:checked + .ods-checkbox__control,
 .ods-checkbox__input:indeterminate + .ods-checkbox__control {
-  background: var(--ods-color-accent);
-  border-color: var(--ods-color-accent);
+  background: var(--ods-gradient-glow);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 4px 10px rgba(var(--ods-color-accent-rgb), 0.35);
 }
 
 .ods-checkbox__input:checked + .ods-checkbox__control .ods-checkbox__indicator {

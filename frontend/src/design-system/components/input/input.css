@@ -69,7 +69,8 @@
 .ods-native-select:focus-visible,
 .ods-input-group:focus-within {
   border-color: var(--ods-color-border-focus);
-  box-shadow: 0 0 0 var(--ods-focus-ring-width) var(--ods-color-selection);
+  background: var(--ods-color-bg-surface);
+  box-shadow: 0 0 0 4px var(--ods-color-accent-soft);
 }
 
 .ods-input[aria-invalid='true'],
@@ -77,6 +78,12 @@
 .ods-native-select[aria-invalid='true'],
 .ods-input-group:has([aria-invalid='true']) {
   border-color: var(--ods-color-status-danger);
+}
+
+.ods-input[aria-invalid='true']:focus-visible,
+.ods-textarea[aria-invalid='true']:focus-visible,
+.ods-native-select[aria-invalid='true']:focus-visible {
+  box-shadow: 0 0 0 4px var(--ods-color-status-danger-soft);
 }
 
 .ods-input:disabled,

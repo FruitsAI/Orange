@@ -9,6 +9,7 @@
   background: var(--ods-color-bg-canvas-subtle);
   border: 1px solid var(--ods-color-border-default);
   border-radius: var(--ods-radius-pill);
+  box-shadow: inset 0 1px 3px rgba(var(--ods-color-fg-default-rgb), 0.05);
   display: inline-flex;
   gap: var(--ods-space-1);
   padding: var(--ods-space-1);
@@ -47,8 +48,11 @@
 
 .ods-tabs__tab[aria-selected='true'] {
   background: var(--ods-color-bg-surface-raised);
-  box-shadow: var(--ods-shadow-soft);
-  color: var(--ods-color-accent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    var(--ods-shadow-soft);
+  color: var(--ods-color-fg-default);
+  font-weight: var(--ods-font-weight-semibold);
 }
 
 .ods-tabs__tab:focus-visible {

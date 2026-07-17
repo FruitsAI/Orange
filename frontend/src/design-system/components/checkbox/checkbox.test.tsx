@@ -3,8 +3,19 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@/test/render'
 import { Checkbox } from './Checkbox'
+import checkboxCss from './checkbox.css?raw'
 
 describe('Checkbox', () => {
+  it('transitions only transform on the visual control', () => {
+    const controlRule = checkboxCss.match(/\.ods-checkbox__control\s*\{([^}]+)\}/)?.[1]
+    const transitionValue = controlRule
+      ?.match(/transition:\s*([\s\S]*?);/)?.[1]
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    expect(transitionValue).toBe('transform var(--ods-duration-fast) var(--ods-ease-standard)')
+  })
+
   it('keeps a native checkbox and forwards checked changes', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()

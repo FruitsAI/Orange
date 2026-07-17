@@ -26,11 +26,7 @@
   flex: 0 0 auto;
   height: var(--ods-space-5);
   justify-content: center;
-  transition:
-    background-color var(--ods-duration-fast) var(--ods-ease-standard),
-    border-color var(--ods-duration-fast) var(--ods-ease-standard),
-    box-shadow var(--ods-duration-fast) var(--ods-ease-standard),
-    transform var(--ods-duration-fast) var(--ods-ease-standard);
+  transition: transform var(--ods-duration-fast) var(--ods-ease-standard);
   width: var(--ods-space-5);
 }
 

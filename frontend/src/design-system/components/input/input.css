@@ -10,10 +10,7 @@
   line-height: var(--ods-line-height-body);
   outline: none;
   padding-inline: var(--ods-control-padding-inline-md);
-  transition:
-    background-color var(--ods-duration-fast) var(--ods-ease-standard),
-    border-color var(--ods-duration-fast) var(--ods-ease-standard),
-    box-shadow var(--ods-duration-fast) var(--ods-ease-standard);
+  transition: background-color var(--ods-duration-instant) var(--ods-ease-standard);
   width: 100%;
 }
 
@@ -82,6 +79,7 @@
   border-color: var(--ods-color-border-focus);
   background: var(--ods-color-bg-surface);
   box-shadow: 0 0 0 4px var(--ods-color-accent-soft);
+  transition: none;
 }
 
 .ods-input[aria-invalid='true'],
@@ -114,10 +112,7 @@
   gap: var(--ods-control-gap);
   min-width: 0;
   padding-inline: var(--ods-control-padding-inline-md);
-  transition:
-    background-color var(--ods-duration-fast) var(--ods-ease-standard),
-    border-color var(--ods-duration-fast) var(--ods-ease-standard),
-    box-shadow var(--ods-duration-fast) var(--ods-ease-standard);
+  transition: background-color var(--ods-duration-instant) var(--ods-ease-standard);
 }
 
 .ods-input-group > .ods-input {

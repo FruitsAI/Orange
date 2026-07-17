@@ -5,6 +5,29 @@ import { Input, InputGroup, NativeSelect, TextArea } from './Input'
 import inputCss from './input.css?raw'
 
 describe('input primitives', () => {
+  it('keeps focus feedback immediate and only crossfades hover backgrounds', () => {
+    const inputFamilyRule = inputCss.match(
+      /\.ods-input,\s*\.ods-textarea,\s*\.ods-native-select\s*\{([^}]+)\}/,
+    )?.[1]
+    const inputGroupRule = inputCss.match(/\.ods-input-group\s*\{([^}]+)\}/)?.[1]
+    const focusRule = inputCss.match(
+      /\.ods-input:focus-visible,\s*\.ods-textarea:focus-visible,\s*\.ods-native-select:focus-visible,\s*\.ods-input-group:focus-within\s*\{([^}]+)\}/,
+    )?.[1]
+    const transitionValue = (rule: string | undefined) =>
+      rule
+        ?.match(/transition:\s*([\s\S]*?);/)?.[1]
+        .replace(/\s+/g, ' ')
+        .trim()
+
+    expect(transitionValue(inputFamilyRule)).toBe(
+      'background-color var(--ods-duration-instant) var(--ods-ease-standard)',
+    )
+    expect(transitionValue(inputGroupRule)).toBe(
+      'background-color var(--ods-duration-instant) var(--ods-ease-standard)',
+    )
+    expect(focusRule).toContain('transition: none')
+  })
+
   it('forwards refs and native props while exposing a size contract', () => {
     const ref = createRef<HTMLInputElement>()
     const onChange = vi.fn()

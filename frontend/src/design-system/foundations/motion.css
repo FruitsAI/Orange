@@ -50,7 +50,7 @@
 :root.theme-transitioning *::before,
 :root.theme-transitioning *::after {
   transition-property: background-color, color, border-color, box-shadow, opacity !important;
-  transition-duration: 220ms !important;
+  transition-duration: var(--ods-duration-fast) !important;
   transition-timing-function: var(--ods-ease-standard) !important;
 }
 

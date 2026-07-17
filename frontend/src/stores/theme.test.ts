@@ -1,7 +1,7 @@
 import { act } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { THEME_OPTIONS, useThemeStore } from './theme'
+import { THEME_OPTIONS, THEME_TRANSITION_DURATION, useThemeStore } from './theme'
 
 interface MediaController {
   dispatchSystemTheme: (dark: boolean) => void
@@ -115,7 +115,7 @@ describe('theme store', () => {
 
     act(() => vi.advanceTimersByTime(180))
     useThemeStore.getState().setTheme('light')
-    act(() => vi.advanceTimersByTime(219))
+    act(() => vi.advanceTimersByTime(THEME_TRANSITION_DURATION - 1))
     expect(document.documentElement).toHaveClass('theme-transitioning')
 
     act(() => vi.advanceTimersByTime(1))

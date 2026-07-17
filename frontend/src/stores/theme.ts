@@ -44,7 +44,8 @@ const resolveEffectiveTheme = (theme: ThemeMode): EffectiveTheme => {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-const THEME_TRANSITION_DURATION = 220
+// Keep synchronized with --ods-duration-fast (200ms) in design-system/tokens/semantic.css.
+export const THEME_TRANSITION_DURATION = 200
 let transitionTimer: number | undefined
 
 const clearThemeTransition = () => {

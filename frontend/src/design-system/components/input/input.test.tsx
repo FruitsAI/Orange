@@ -44,6 +44,24 @@ describe('input primitives', () => {
     expect(focusRule).toContain('transition: none')
   })
 
+  it('only enables input-family hover feedback for fine pointers', () => {
+    const finePointerMedia = inputCss.match(
+      /@media \(hover: hover\) and \(pointer: fine\)\s*\{[\s\S]*?\n\}/,
+    )?.[0]
+    const cssOutsideFinePointerMedia = inputCss.replace(finePointerMedia ?? '', '')
+    const hoverSelectors = [
+      '.ods-input:hover:not(:disabled)',
+      '.ods-textarea:hover:not(:disabled)',
+      '.ods-native-select:hover:not(:disabled)',
+    ]
+
+    expect(finePointerMedia).toBeDefined()
+    for (const selector of hoverSelectors) {
+      expect(finePointerMedia).toContain(selector)
+      expect(cssOutsideFinePointerMedia).not.toContain(selector)
+    }
+  })
+
   it('forwards refs and native props while exposing a size contract', () => {
     const ref = createRef<HTMLInputElement>()
     const onChange = vi.fn()

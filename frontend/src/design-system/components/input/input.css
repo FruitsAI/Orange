@@ -65,11 +65,13 @@
   color: var(--ods-color-fg-subtle);
 }
 
-.ods-input:hover:not(:disabled),
-.ods-textarea:hover:not(:disabled),
-.ods-native-select:hover:not(:disabled) {
-  background: var(--ods-color-bg-surface-hover);
-  border-color: var(--ods-color-border-strong);
+@media (hover: hover) and (pointer: fine) {
+  .ods-input:hover:not(:disabled),
+  .ods-textarea:hover:not(:disabled),
+  .ods-native-select:hover:not(:disabled) {
+    background: var(--ods-color-bg-surface-hover);
+    border-color: var(--ods-color-border-strong);
+  }
 }
 
 .ods-input:focus-visible,

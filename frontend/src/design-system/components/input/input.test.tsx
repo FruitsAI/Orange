@@ -5,6 +5,22 @@ import { Input, InputGroup, NativeSelect, TextArea } from './Input'
 import inputCss from './input.css?raw'
 
 describe('input primitives', () => {
+  it('keeps autofill colors stable without a long-running pseudo-animation', () => {
+    const autofillRule = inputCss.match(
+      /\.ods-input:-webkit-autofill,\s*\.ods-input:-webkit-autofill:hover,\s*\.ods-input:-webkit-autofill:focus,\s*\.ods-input:-webkit-autofill:active\s*\{([^}]+)\}/,
+    )?.[1]
+    const prefixedMask = autofillRule?.match(/-webkit-box-shadow:\s*([^;]+);/)?.[1]
+    const standardMask = autofillRule?.match(/\n\s+box-shadow:\s*([^;]+);/)?.[1]
+
+    expect(autofillRule).toContain('-webkit-text-fill-color: var(--ods-color-fg-default)')
+    expect(autofillRule).toContain('caret-color: var(--ods-color-fg-default)')
+    expect(prefixedMask).toBe('0 0 0 1000px var(--ods-color-bg-surface) inset')
+    expect(standardMask).toBe(prefixedMask)
+    expect(autofillRule).toContain('transition: none')
+    expect(inputCss).not.toContain('9999s')
+    expect(inputCss).not.toMatch(/transition[^;]*\b\d{4,}s\b/)
+  })
+
   it('keeps focus feedback immediate and only crossfades hover backgrounds', () => {
     const inputFamilyRule = inputCss.match(
       /\.ods-input,\s*\.ods-textarea,\s*\.ods-native-select\s*\{([^}]+)\}/,

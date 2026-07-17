@@ -123,6 +123,17 @@
   padding-inline: var(--ods-space-0);
 }
 
+.ods-input:-webkit-autofill,
+.ods-input:-webkit-autofill:hover,
+.ods-input:-webkit-autofill:focus,
+.ods-input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--ods-color-fg-default);
+  caret-color: var(--ods-color-fg-default);
+  -webkit-box-shadow: 0 0 0 1000px var(--ods-color-bg-surface) inset;
+  box-shadow: 0 0 0 1000px var(--ods-color-bg-surface) inset;
+  transition: none;
+}
+
 .ods-input-group__content {
   align-items: center;
   color: var(--ods-color-fg-muted);

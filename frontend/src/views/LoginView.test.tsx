@@ -44,6 +44,15 @@ describe('LoginView', () => {
     expect(container.querySelector('.btn-primary-login')).not.toBeInTheDocument()
   })
 
+  it('shows the bundled logo immediately through the Image motion contract', () => {
+    render(<LoginView />)
+
+    expect(screen.getByRole('img', { name: 'Orange Logo' }).parentElement).toHaveAttribute(
+      'data-disable-animation',
+      'true',
+    )
+  })
+
   it('toggles password visibility and reads the latest store error for consecutive failures', async () => {
     const login = vi
       .fn()

@@ -55,6 +55,11 @@
   opacity: 1;
 }
 
+.ods-image[data-disable-animation='true'] .ods-image__img {
+  opacity: 1;
+  transition: none;
+}
+
 .ods-image__fallback {
   display: grid;
   min-width: var(--ods-space-12);

@@ -82,6 +82,7 @@ export default function LoginView() {
                 alt="Orange Logo"
                 background="transparent"
                 className="login-logo-image"
+                disableAnimation
                 radius="full"
                 showSkeleton={false}
                 src="/orange.png"

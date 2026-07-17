@@ -139,11 +139,6 @@
   overflow: visible;
 }
 
-.login-wrapper .login-logo-image .ods-image__img {
-  opacity: 1;
-  transition: none;
-}
-
 .login-wrapper .login-form {
   display: grid;
   gap: var(--ods-space-5);

@@ -1,6 +1,10 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { Image } from './Image'
+
+const imageCss = readFileSync(resolve('src/design-system/components/image/image.css'), 'utf8')
 
 describe('Image', () => {
   it('owns image fitting on its root contract', () => {
@@ -19,6 +23,29 @@ describe('Image', () => {
       'data-background',
       'transparent',
     )
+  })
+
+  it('keeps the shared load fade by default and can disable it through the root contract', () => {
+    const { rerender } = render(<Image alt="品牌标志" src="/orange.png" />)
+    const defaultImage = screen.getByAltText('品牌标志')
+    const sharedImageRule = imageCss.match(/\.ods-image__img\s*\{([^}]+)\}/)?.[1]
+    const disabledImageRule = imageCss.match(
+      /\.ods-image\[data-disable-animation='true'\] \.ods-image__img\s*\{([^}]+)\}/,
+    )?.[1]
+
+    expect(defaultImage.parentElement).not.toHaveAttribute('data-disable-animation')
+    expect(sharedImageRule).toContain('opacity: 0')
+    expect(sharedImageRule).toContain(
+      'transition: opacity var(--ods-duration-page) var(--ods-ease-standard)',
+    )
+
+    rerender(<Image alt="品牌标志" disableAnimation src="/orange.png" />)
+    expect(screen.getByAltText('品牌标志').parentElement).toHaveAttribute(
+      'data-disable-animation',
+      'true',
+    )
+    expect(disabledImageRule).toContain('opacity: 1')
+    expect(disabledImageRule).toContain('transition: none')
   })
 
   it('swaps to the fallback when the image errors', () => {

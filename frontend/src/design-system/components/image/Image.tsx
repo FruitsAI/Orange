@@ -12,6 +12,7 @@ export type ImageBackground = 'default' | 'transparent'
 
 export interface ImageProps extends ImgHTMLAttributes<HTMLImageElement> {
   background?: ImageBackground
+  disableAnimation?: boolean
   fallback?: ReactNode
   fit?: ImageFit
   radius?: ImageRadius
@@ -23,6 +24,7 @@ const ImageResource = forwardRef<HTMLImageElement, ImageProps>(function ImageRes
     alt = '',
     background = 'default',
     className,
+    disableAnimation = false,
     fallback,
     fit = 'cover',
     onError,
@@ -51,6 +53,7 @@ const ImageResource = forwardRef<HTMLImageElement, ImageProps>(function ImageRes
     <span
       className={['ods-image', className].filter(Boolean).join(' ')}
       data-background={background}
+      data-disable-animation={disableAnimation || undefined}
       data-fit={fit}
       data-radius={radius}
       data-slot="image"

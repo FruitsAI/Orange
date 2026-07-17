@@ -64,6 +64,8 @@
   /* Motion */
   --ods-duration-instant: var(--ods-ref-duration-140);
   --ods-duration-fast: var(--ods-ref-duration-200);
+  --ods-duration-press: var(--ods-ref-duration-160);
+  --ods-duration-release: var(--ods-ref-duration-100);
   --ods-duration-page: var(--ods-ref-duration-280);
   --ods-duration-hero: var(--ods-ref-duration-440);
   --ods-ease-standard: var(--ods-ref-ease-standard);

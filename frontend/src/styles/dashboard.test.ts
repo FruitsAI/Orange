@@ -9,7 +9,6 @@ const emberPanelSource = readFileSync(resolve('src/components/common/EmberPanel.
 const incomeChartSource = readFileSync(resolve('src/components/dashboard/IncomeChart.tsx'), 'utf8')
 const mainSource = readFileSync(resolve('src/main.tsx'), 'utf8')
 const projectListSource = readFileSync(resolve('src/components/dashboard/ProjectList.tsx'), 'utf8')
-const buttonCss = readFileSync(resolve('src/design-system/components/button/button.css'), 'utf8')
 const routerControlsCss = readFileSync(
   resolve('src/design-system/patterns/router-controls/router-controls.css'),
   'utf8',
@@ -81,7 +80,6 @@ describe('dashboard visual contract', () => {
     expect(dashboardCss).toContain('@media (prefers-reduced-motion: reduce)')
     expect(routerControlsCss).toContain('@media (hover: hover) and (pointer: fine)')
     expect(dashboardCss).not.toContain('transition: none')
-    expect(buttonCss).toMatch(/\.ods-button:active:not\(:disabled\)[\s\S]*scale\(0\.98\)/)
     expect(routerControlsCss).toMatch(
       /\.ods-router-link\[data-appearance='row'\]:active[\s\S]*scale\(0\.985\)/,
     )

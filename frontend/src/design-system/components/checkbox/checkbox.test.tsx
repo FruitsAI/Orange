@@ -8,12 +8,23 @@ import checkboxCss from './checkbox.css?raw'
 describe('Checkbox', () => {
   it('transitions only transform on the visual control', () => {
     const controlRule = checkboxCss.match(/\.ods-checkbox__control\s*\{([^}]+)\}/)?.[1]
+    const activeRule = checkboxCss.match(
+      /\.ods-checkbox:active \.ods-checkbox__control\s*\{([^}]+)\}/,
+    )?.[1]
     const transitionValue = controlRule
       ?.match(/transition:\s*([\s\S]*?);/)?.[1]
       .replace(/\s+/g, ' ')
       .trim()
 
-    expect(transitionValue).toBe('transform var(--ods-duration-fast) var(--ods-ease-standard)')
+    expect(controlRule).toContain('--ods-checkbox-transform-duration: var(--ods-duration-release)')
+    expect(transitionValue).toBe(
+      'transform var(--ods-checkbox-transform-duration) var(--ods-ease-standard)',
+    )
+    expect(activeRule).toContain('--ods-checkbox-transform-duration: var(--ods-duration-press)')
+    expect(activeRule).toContain('transform: scale(0.97)')
+    expect(checkboxCss).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.ods-checkbox:active \.ods-checkbox__control\s*\{[\s\S]*transform:\s*none/,
+    )
   })
 
   it('keeps a native checkbox and forwards checked changes', async () => {

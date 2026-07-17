@@ -35,6 +35,8 @@ describe('Orange Design System tokens', () => {
     expect(tokenValue('--ods-space-6')).toBe('var(--ods-ref-space-6)')
     expect(tokenValue('--ods-radius-control')).toBe('var(--ods-ref-radius-10)')
     expect(tokenValue('--ods-duration-instant')).toBe('var(--ods-ref-duration-140)')
+    expect(tokenValue('--ods-duration-press')).toBe('var(--ods-ref-duration-160)')
+    expect(tokenValue('--ods-duration-release')).toBe('var(--ods-ref-duration-100)')
     expect(tokenValue('--ods-ease-standard')).toBe('var(--ods-ref-ease-standard)')
   })
 

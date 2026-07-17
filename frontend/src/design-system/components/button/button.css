@@ -1,4 +1,6 @@
 .ods-button {
+  --ods-button-transform-duration: var(--ods-duration-release);
+
   position: relative;
   display: inline-flex;
   min-width: 0;
@@ -24,7 +26,7 @@
     border-color var(--ods-duration-fast) var(--ods-ease-standard),
     color var(--ods-duration-fast) var(--ods-ease-standard),
     box-shadow var(--ods-duration-fast) var(--ods-ease-standard),
-    transform var(--ods-duration-instant) var(--ods-ease-standard);
+    transform var(--ods-button-transform-duration) var(--ods-ease-standard);
 }
 
 .ods-button[data-size='sm'] {
@@ -170,8 +172,9 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
-.ods-button:active:not(:disabled) {
-  transform: translateY(1px) scale(0.98);
+.ods-button[data-variant]:active:not(:disabled) {
+  --ods-button-transform-duration: var(--ods-duration-press);
+  transform: scale(0.97);
 }
 
 .ods-button:focus-visible {
@@ -215,8 +218,8 @@
     transition-duration: var(--ods-duration-instant);
   }
 
-  .ods-button:hover:not(:disabled),
-  .ods-button:active:not(:disabled) {
+  .ods-button[data-variant]:hover:not(:disabled),
+  .ods-button[data-variant]:active:not(:disabled) {
     transform: none;
   }
 }

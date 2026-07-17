@@ -5,6 +5,38 @@ import { Button, IconButton } from './Button'
 import buttonCss from './button.css?raw'
 
 describe('Button', () => {
+  it('gates every hover rule to fine pointers without interpolating shadows', () => {
+    const buttonRule = buttonCss.match(/\.ods-button\s*\{([^}]+)\}/)?.[1]
+    const transitionValue = buttonRule
+      ?.match(/transition:\s*([\s\S]*?);/)?.[1]
+      .replace(/\s+/g, ' ')
+      .trim()
+    const finePointerPattern =
+      /@media \(hover: hover\) and \(pointer: fine\) \{\s*(\.ods-button[^{}]+\{[^{}]*\})\s*\}/g
+    const finePointerRules = Array.from(buttonCss.matchAll(finePointerPattern), (match) => match[1])
+    const hoverSelectors = finePointerRules.map((rule) =>
+      rule.match(/^(\.ods-button[^{}]+)\s*\{/)?.[1].trim(),
+    )
+    const buttonOutsideFinePointer = buttonCss.replace(
+      /@media \(hover: hover\) and \(pointer: fine\) \{\s*\.ods-button[^{}]+\{[^{}]*\}\s*\}/g,
+      '',
+    )
+
+    expect(transitionValue).not.toContain('box-shadow')
+    expect(hoverSelectors).toEqual([
+      ".ods-button[data-variant='primary']:hover:not(:disabled)",
+      ".ods-button[data-variant='secondary']:hover:not(:disabled)",
+      ".ods-button[data-variant='tertiary']:hover:not(:disabled)",
+      ".ods-button[data-variant='outline']:hover:not(:disabled)",
+      ".ods-button[data-variant='ghost']:hover:not(:disabled)",
+      ".ods-button[data-variant='ghost'][data-tone='danger']:hover:not(:disabled)",
+      ".ods-button[data-variant='danger']:hover:not(:disabled)",
+    ])
+    expect(buttonOutsideFinePointer).not.toContain('transform: translateY(-1px)')
+    expect(finePointerRules[0]).not.toContain('box-shadow')
+    expect(finePointerRules[6]).not.toContain('box-shadow')
+  })
+
   it('uses asymmetric semantic timing for interruptible press feedback', () => {
     const buttonRule = buttonCss.match(/\.ods-button\s*\{([^}]+)\}/)?.[1]
     const activeSelector = '.ods-button[data-variant]:active:not(:disabled)'

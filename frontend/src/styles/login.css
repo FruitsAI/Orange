@@ -92,7 +92,7 @@
 .login-wrapper .login-container {
   z-index: 1;
   width: min(100%, 27.5rem);
-  animation: login-content-in var(--ods-duration-hero) var(--ods-ease-emphasized) both;
+  animation: login-content-in var(--ods-duration-page) var(--ods-ease-emphasized) both;
 }
 
 .login-wrapper .login-logo {
@@ -126,10 +126,6 @@
   font-size: var(--ods-font-size-md);
 }
 
-.login-wrapper .form-panel {
-  animation: login-form-in var(--ods-duration-page) var(--ods-ease-standard) both;
-}
-
 .login-wrapper .login-theme-toggle {
   position: fixed;
   z-index: 100;
@@ -141,6 +137,11 @@
   width: 72px;
   height: 72px;
   overflow: visible;
+}
+
+.login-wrapper .login-logo-image .ods-image__img {
+  opacity: 1;
+  transition: none;
 }
 
 .login-wrapper .login-form {
@@ -162,13 +163,6 @@
   from {
     opacity: 0;
     transform: translateY(1rem) scale(0.97);
-  }
-}
-
-@keyframes login-form-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.5rem);
   }
 }
 

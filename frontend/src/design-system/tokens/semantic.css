@@ -70,6 +70,7 @@
   --ods-duration-hero: var(--ods-ref-duration-440);
   --ods-ease-standard: var(--ods-ref-ease-standard);
   --ods-ease-emphasized: var(--ods-ref-ease-emphasized);
+  --ods-ease-in-out: var(--ods-ref-ease-in-out);
   --ods-ease-spring: var(--ods-ref-ease-spring);
 
   /* Focus and stacking */

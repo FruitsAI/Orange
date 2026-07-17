@@ -35,6 +35,7 @@
 - `--ods-font-*`、`--ods-line-height-*`、`--ods-letter-spacing-*`：排版。
 - `--ods-space-*`、`--ods-radius-*`、`--ods-control-*`：几何。
 - `--ods-duration-*`、`--ods-ease-*`：动效；按压使用 `--ods-duration-press`（160ms），释放使用 `--ods-duration-release`（100ms）。
+- `--ods-ease-in-out`：屏幕内持续移动与形变使用的对称缓动曲线。
 - `--ods-shadow-*`、`--ods-material-glass-*`：表面与材质。
 - `--ods-data-*`：Canvas/Chart.js 等数据可视化角色。
 - `--ods-shell-*`：Wails/macOS 标题栏和应用壳层尺寸。

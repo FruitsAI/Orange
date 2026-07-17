@@ -62,7 +62,7 @@
   height: 22rem;
   top: -9rem;
   left: -8rem;
-  animation: login-drift-a 22s var(--ods-ease-emphasized) infinite alternate;
+  animation: login-drift-a 22s var(--ods-ease-in-out) infinite alternate;
 }
 
 .login-wrapper .shape:nth-child(2) {
@@ -70,7 +70,7 @@
   height: 15rem;
   top: 30%;
   right: -6rem;
-  animation: login-drift-b 18s var(--ods-ease-emphasized) infinite alternate;
+  animation: login-drift-b 18s var(--ods-ease-in-out) infinite alternate;
 }
 
 .login-wrapper .shape:nth-child(3) {
@@ -78,7 +78,7 @@
   height: 11rem;
   bottom: -4rem;
   left: 24%;
-  animation: login-drift-a 20s var(--ods-ease-emphasized) -6s infinite alternate-reverse;
+  animation: login-drift-a 20s var(--ods-ease-in-out) -6s infinite alternate-reverse;
 }
 
 .login-wrapper .shape:nth-child(4) {
@@ -86,7 +86,7 @@
   height: 7rem;
   top: 18%;
   left: 8%;
-  animation: login-drift-b 16s var(--ods-ease-emphasized) -4s infinite alternate-reverse;
+  animation: login-drift-b 16s var(--ods-ease-in-out) -4s infinite alternate-reverse;
 }
 
 .login-wrapper .login-container {
@@ -168,13 +168,13 @@
 
 @keyframes login-drift-a {
   to {
-    transform: translate3d(2rem, 1.25rem, 0) rotate(7deg);
+    transform: translate3d(2rem, 1.25rem, 0);
   }
 }
 
 @keyframes login-drift-b {
   to {
-    transform: translate3d(-1.5rem, 2rem, 0) rotate(-6deg);
+    transform: translate3d(-1.5rem, 2rem, 0);
   }
 }
 

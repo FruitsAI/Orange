@@ -37,6 +37,8 @@ describe('Orange Design System tokens', () => {
     expect(tokenValue('--ods-duration-instant')).toBe('var(--ods-ref-duration-140)')
     expect(tokenValue('--ods-duration-press')).toBe('var(--ods-ref-duration-160)')
     expect(tokenValue('--ods-duration-release')).toBe('var(--ods-ref-duration-100)')
+    expect(tokenValue('--ods-ref-ease-in-out')).toBe('cubic-bezier(0.77, 0, 0.175, 1)')
+    expect(tokenValue('--ods-ease-in-out')).toBe('var(--ods-ref-ease-in-out)')
     expect(tokenValue('--ods-ease-standard')).toBe('var(--ods-ref-ease-standard)')
   })
 

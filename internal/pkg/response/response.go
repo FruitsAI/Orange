@@ -1,7 +1,9 @@
 package response
 
 import (
+	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,6 +25,13 @@ type PageData struct {
 	PageSize int         `json:"page_size"` // 每页条数
 }
 
+// PageResult 分页响应结果（Swagger 文档使用）
+type PageResult struct {
+	Code    int      `json:"code"`    // 业务状态码
+	Message string   `json:"message"` // 提示消息
+	Data    PageData `json:"data"`    // 分页数据
+}
+
 // 业务错误码定义
 // 0 表示成功，其他值表示各种错误类型。
 const (
@@ -32,17 +41,19 @@ const (
 	CodeUnauthorized  = 2001 // 未授权 (未登录或 Token 无效)
 	CodeTokenExpired  = 2002 // Token 已过期
 	CodeForbidden     = 2003 // 禁止访问 (无权限)
+	CodeTooManyReqs   = 4029 // 请求过于频繁 (触发限流)
 	CodeInternalError = 5000 // 服务器内部错误
 )
 
 // 错误消息映射
-var codeMessages = map[int]string{
+var codeMessages = map[int]string{ // #nosec G101 -- public API response messages, not credentials.
 	CodeSuccess:       "success",
 	CodeParamError:    "参数错误",
 	CodeNotFound:      "资源不存在",
 	CodeUnauthorized:  "未授权",
 	CodeTokenExpired:  "Token已过期",
 	CodeForbidden:     "禁止访问",
+	CodeTooManyReqs:   "请求过于频繁，请稍后再试",
 	CodeInternalError: "服务器内部错误",
 }
 
@@ -83,6 +94,27 @@ func SuccessPage(c *gin.Context, list interface{}, total int64, page, pageSize i
 	})
 }
 
+func httpStatusForCode(code int) int {
+	switch code {
+	case CodeParamError:
+		return http.StatusBadRequest
+	case CodeNotFound:
+		return http.StatusNotFound
+	case CodeUnauthorized, CodeTokenExpired:
+		return http.StatusUnauthorized
+	case CodeForbidden:
+		return http.StatusForbidden
+	case CodeTooManyReqs:
+		return http.StatusTooManyRequests
+	case CodeInternalError:
+		return http.StatusInternalServerError
+	case CodeSuccess:
+		return http.StatusOK
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
 // Error 发送错误响应
 // code: 业务错误码 (非0)
 // message: 可选的自定义错误消息。如果不传，则使用 code 对应的默认消息。
@@ -91,7 +123,7 @@ func Error(c *gin.Context, code int, message ...string) {
 	if len(message) > 0 && message[0] != "" {
 		msg = message[0]
 	}
-	c.JSON(http.StatusOK, Response{
+	c.JSON(httpStatusForCode(code), Response{
 		Code:    code,
 		Message: msg,
 		Data:    nil,
@@ -123,4 +155,37 @@ func InternalError(c *gin.Context, message ...string) {
 func Forbidden(c *gin.Context, message ...string) {
 	Error(c, CodeForbidden, message...)
 	c.Abort()
+}
+
+// TooManyRequests 请求过于频繁 (限流)
+func TooManyRequests(c *gin.Context, message ...string) {
+	Error(c, CodeTooManyReqs, message...)
+	c.Abort()
+}
+
+// GetPagination 从请求中解析分页参数
+// 返回 page 和 pageSize，自动处理边界值
+func GetPagination(c *gin.Context) (page, pageSize int) {
+	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	pageSize, _ = strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+	return
+}
+
+// ParseIDParam 从路径参数中解析 ID
+// param: 参数名称（如 "id"）
+func ParseIDParam(c *gin.Context, param string) (int64, error) {
+	id, err := strconv.ParseInt(c.Param(param), 10, 64)
+	if err != nil {
+		return 0, errors.New("无效的ID参数")
+	}
+	return id, nil
 }

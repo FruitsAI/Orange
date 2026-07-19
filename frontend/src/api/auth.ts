@@ -1,7 +1,7 @@
 /**
  * @file api/auth.ts
  * @description 用户认证相关 API
- * 包含登录、注册、注销、密码修改及用户信息管理接口。
+ * 包含登录、注销、密码修改及用户信息管理接口。
  */
 import api, { type ApiResponse } from './index'
 
@@ -31,14 +31,6 @@ export interface LoginResponse {
   user: User    // 用户信息
 }
 
-// 注册请求参数
-export interface RegisterRequest {
-  username: string
-  name: string
-  email?: string
-  phone?: string
-  password: string
-}
 
 // 修改密码请求参数
 export interface ChangePasswordRequest {
@@ -87,7 +79,7 @@ export interface UpdateUserRequest {
   phone?: string
   department?: string
   position?: string
-  role?: string
+  role?: 'admin' | 'user'
   status?: number
 }
 
@@ -97,9 +89,6 @@ export const authApi = {
   login: (data: LoginRequest) =>
     api.post<ApiResponse<LoginResponse>>('/auth/login', data),
 
-  // 注册
-  register: (data: RegisterRequest) =>
-    api.post<ApiResponse<null>>('/auth/register', data),
 
   // 退出登录
   logout: () =>

@@ -1,0 +1,85 @@
+.ods-summary-metric {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.ods-summary-metric__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  font-size: 1.2rem;
+}
+
+.ods-summary-metric__content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ods-space-1);
+}
+
+.ods-summary-metric__label {
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-sm);
+}
+
+.ods-summary-metric__value {
+  overflow: hidden;
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-display);
+  font-size: var(--ods-font-size-2xl);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--ods-font-weight-semibold);
+  line-height: var(--ods-line-height-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ods-summary-metric[data-status='loading'] .ods-summary-metric__value,
+.ods-summary-metric[data-status='error'] .ods-summary-metric__value {
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-sm);
+  font-weight: var(--ods-font-weight-medium);
+}
+
+.ods-summary-metric__meta {
+  white-space: nowrap;
+}
+
+.ods-summary-metric[data-layout='stacked'] {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-2);
+}
+
+.ods-summary-metric[data-layout='stacked'] .ods-summary-metric__value {
+  font-size: var(--ods-font-size-3xl);
+}
+
+@media (max-width: 42.5rem) {
+  .ods-summary-metric[data-layout='compact'] {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .ods-summary-metric[data-layout='compact'] .ods-summary-metric__meta {
+    grid-column: 2;
+  }
+
+  .ods-summary-metric[data-layout='stacked'] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .ods-summary-metric[data-layout='stacked'] .ods-summary-metric__content {
+    grid-column: 1;
+  }
+
+  .ods-summary-metric[data-layout='stacked'] .ods-summary-metric__meta {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

@@ -57,27 +57,23 @@ func (r *NotificationRepository) Update(notification *models.Notification) error
 func (r *NotificationRepository) FindByID(id int64) (*models.Notification, error) {
 	var notification models.Notification
 
-	// 使用 Joins 手动关联查询 Sender 信息
-	// 避免默认 Preload 可能带来的 n+1 问题或不需要的关联加载
-	err := r.db.Table("notifications").
-		Select("notifications.*, users.id as sender_id, users.username as sender_username, users.name as sender_name").
-		Joins("LEFT JOIN users ON users.id = notifications.sender_id").
-		Where("notifications.id = ?", id).
-		Scan(&notification).Error
-
-	if err != nil {
+	// 使用 Preload 一次性获取 notification 和 sender，避免 N+1 查询
+	if err := r.db.Preload("Sender").First(&notification, id).Error; err != nil {
 		return nil, err
 	}
 
-	// 填充 Sender 结构体 (因 GORM Scan 到结构体不会自动填充嵌套 struct，需手动处理或使用 Preload)
-	// 这里为了兼容性保持原来的逻辑补充完整
-	if notification.SenderID > 0 {
-		var sender models.User
-		if err := r.db.First(&sender, notification.SenderID).Error; err == nil {
-			notification.Sender = &sender
-		}
-	}
+	return &notification, nil
+}
 
+func (r *NotificationRepository) FindByIDForUser(id, userID int64) (*models.Notification, error) {
+	var notification models.Notification
+	err := r.db.Preload("Sender").
+		Joins("LEFT JOIN user_notifications un ON notifications.id = un.notification_id AND un.user_id = ?", userID).
+		Where("notifications.id = ? AND (notifications.is_global = 1 OR un.id IS NOT NULL)", id).
+		First(&notification).Error
+	if err != nil {
+		return nil, err
+	}
 	return &notification, nil
 }
 

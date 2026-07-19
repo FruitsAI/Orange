@@ -1,10 +1,14 @@
 package config
 
 import (
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -24,19 +28,27 @@ type Config struct {
 	DBAutoCreate bool   // 是否自动创建数据库 (本地 true, 云托管 false)
 
 	// API 服务配置
-	APIServerPort   int  // 对外 API 服务端口 (默认 3456)
-	EnableAPIServer bool // 是否启用对外 API 服务
+	APIServerPort   int    // 对外 API 服务端口 (默认 3456)
+	EnableAPIServer bool   // 是否启用对外 API 服务
+	RuntimeMode     string // 运行模式: desktop 或 server
+	FrontendURL     string // Web 前端部署地址，用于默认 CORS 白名单
+	APIBaseURL      string // Web API 对外访问地址，用于部署文档和前端配置对齐
 
-	JWTSecret     string // JWT 签名密钥
-	TokenExpiry   int64  // Token 有效期 (单位: 小时)
-	LogEnable     bool   // 是否启用请求日志
-	LogLevel      string // 日志级别: debug, info, warn, error
-	GitHubRepo    string // 用于检查更新的 GitHub 仓库地址 (格式: owner/repo)
-	LogPath       string // 日志文件输出路径
-	LogMaxSize    int    // 单个日志文件最大大小 (MB)
-	LogMaxBackups int    // 保留旧日志文件的最大个数
-	LogMaxAge     int    // 保留旧日志文件的最大天数
-	LogCompress   bool   // 是否压缩旧日志文件
+	JWTSecret      string   // JWT 签名密钥
+	AllowedOrigins []string // CORS 允许的域名白名单
+	TokenExpiry    int64    // Token 有效期 (单位: 小时)
+	LogEnable      bool     // 是否启用请求日志
+	LogLevel       string   // 日志级别: debug, info, warn, error
+	GitHubRepo     string   // 用于检查更新的 GitHub 仓库地址 (格式: owner/repo)
+	LogPath        string   // 日志文件输出路径
+	LogMaxSize     int      // 单个日志文件最大大小 (MB)
+	LogMaxBackups  int      // 保留旧日志文件的最大个数
+	LogMaxAge      int      // 保留旧日志文件的最大天数
+	LogCompress    bool     // 是否压缩旧日志文件
+
+	// Prometheus 监控配置
+	PrometheusUser     string // Prometheus /metrics 端点的用户名 (可选)
+	PrometheusPassword string // Prometheus /metrics 端点的密码 (可选)
 }
 
 // AppConfig 全局配置实例
@@ -64,12 +76,12 @@ func Load() {
 		// macOS: ~/Library/Application Support/FruitsAI/Orange
 		// Windows: %APPDATA%\FruitsAI\Orange
 		appDir := filepath.Join(configDir, "FruitsAI", "Orange")
-		if err := os.MkdirAll(appDir, 0755); err == nil {
+		if err := os.MkdirAll(appDir, 0700); err == nil {
 			defaultDBPath = filepath.Join(appDir, "orange.db")
 
 			// 日志放到 log 子目录
 			logDir := filepath.Join(appDir, "log")
-			if err := os.MkdirAll(logDir, 0755); err == nil {
+			if err := os.MkdirAll(logDir, 0700); err == nil {
 				defaultLogPath = filepath.Join(logDir, "orange.log")
 			} else {
 				defaultLogPath = filepath.Join(appDir, "orange.log")
@@ -81,7 +93,28 @@ func Load() {
 		log.Printf("Warning: Failed to get user config dir: %v\n", err)
 	}
 
+	// 默认 CORS 允许的源
+	defaultAllowedOrigins := []string{"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"}
+	frontendURL := getEnv("FRONTEND_URL", "")
+	if frontendURL != "" {
+		defaultAllowedOrigins = append(defaultAllowedOrigins, frontendURL)
+	}
+	apiBaseURL := getEnv("API_BASE_URL", "")
+
+	// 从环境变量读取 CORS 配置
+	allowedOriginsEnv := getEnv("ALLOWED_ORIGINS", "")
+	var allowedOrigins []string
+	if allowedOriginsEnv != "" {
+		// 支持逗号分隔的多个域名
+		for _, origin := range splitAndTrim(allowedOriginsEnv, ",") {
+			allowedOrigins = append(allowedOrigins, origin)
+		}
+	} else {
+		allowedOrigins = defaultAllowedOrigins
+	}
+
 	// 组装配置对象，优先从环境变量读取
+	runtimeMode := getEnv("RUNTIME_MODE", "desktop")
 	AppConfig = &Config{
 		// 数据库配置
 		DBType:       getEnv("DB_TYPE", "sqlite"),
@@ -96,18 +129,79 @@ func Load() {
 
 		APIServerPort:   int(getEnvInt("API_SERVER_PORT", 3456)),
 		EnableAPIServer: getEnvBool("ENABLE_API_SERVER", true),
+		RuntimeMode:     runtimeMode,
+		FrontendURL:     frontendURL,
+		APIBaseURL:      apiBaseURL,
 
-		JWTSecret:     getEnv("JWT_SECRET", "orange-secret-key-change-in-production"),
-		TokenExpiry:   getEnvInt("TOKEN_EXPIRY", 24),
-		LogEnable:     getEnvBool("LOG_ENABLE", true),
-		LogLevel:      getEnv("LOG_LEVEL", "debug"),
-		GitHubRepo:    getEnv("GITHUB_REPO", "FruitsAI/Orange"),
-		LogPath:       getEnv("LOG_PATH", defaultLogPath),
-		LogMaxSize:    int(getEnvInt("LOG_MAX_SIZE", 10)),   // 10MB
-		LogMaxBackups: int(getEnvInt("LOG_MAX_BACKUPS", 5)), // 5 files
-		LogMaxAge:     int(getEnvInt("LOG_MAX_AGE", 30)),    // 30 days
-		LogCompress:   getEnvBool("LOG_COMPRESS", true),     // Compress by default
+		JWTSecret:      loadJWTSecret(),
+		AllowedOrigins: allowedOrigins,
+		TokenExpiry:    getEnvInt("TOKEN_EXPIRY", 24),
+		LogEnable:      getEnvBool("LOG_ENABLE", true),
+		LogLevel:       getEnv("LOG_LEVEL", "info"),
+		GitHubRepo:     getEnv("GITHUB_REPO", "FruitsAI/Orange"),
+		LogPath:        getEnv("LOG_PATH", defaultLogPath),
+		LogMaxSize:     int(getEnvInt("LOG_MAX_SIZE", 10)),   // 10MB
+		LogMaxBackups:  int(getEnvInt("LOG_MAX_BACKUPS", 5)), // 5 files
+		LogMaxAge:      int(getEnvInt("LOG_MAX_AGE", 30)),    // 30 days
+		LogCompress:    getEnvBool("LOG_COMPRESS", true),     // Compress by default
+
+		PrometheusUser:     getEnv("PROMETHEUS_USER", ""),
+		PrometheusPassword: getEnv("PROMETHEUS_PASSWORD", ""),
 	}
+
+	if err := validateProductionDatabasePolicy(AppConfig, getEnv("ENV", ""), getEnvBool("ALLOW_PRODUCTION_SQLITE", false)); err != nil {
+		log.Fatal(err)
+	}
+
+	// 安全检查：拒绝使用已知的弱/默认 JWT 密钥（不依赖 ENV 变量，避免误配置绕过）
+	// 任何环境下显式配置了已知弱密钥都直接终止启动，防止用公开密钥伪造 Token。
+	for _, weak := range knownWeakSecrets {
+		if AppConfig.JWTSecret == weak {
+			log.Fatal("🚨 FATAL: 检测到使用已知的默认/弱 JWT 密钥，请通过环境变量 JWT_SECRET 配置一个强随机密钥后再启动")
+		}
+	}
+
+	// JWT 密钥长度检查
+	if len(AppConfig.JWTSecret) < 32 {
+		log.Printf("⚠️  WARNING: JWT secret is short (<%d chars). Consider using a longer key for better security.", 32)
+	}
+}
+
+func validateProductionDatabasePolicy(cfg *Config, env string, allowProductionSQLite bool) error {
+	if env == "production" && cfg.RuntimeMode == "server" && cfg.DBType == "sqlite" && !allowProductionSQLite {
+		return fmt.Errorf("production server deployments must use mysql or postgres; set ALLOW_PRODUCTION_SQLITE=true only for an intentional exception")
+	}
+	return nil
+}
+
+// knownWeakSecrets 已知的默认/弱 JWT 密钥黑名单
+// 这些值曾出现在示例配置或代码回退分支中，一旦命中即拒绝启动。
+var knownWeakSecrets = []string{
+	"orange-secret-key-change-in-production",
+	"orange-runtime-secret-fallback-change-me",
+}
+
+// loadJWTSecret 加载 JWT 密钥
+// 优先取环境变量 JWT_SECRET；未配置时生成一次性随机密钥（重启后旧 Token 全部失效）。
+func loadJWTSecret() string {
+	if value, exists := os.LookupEnv("JWT_SECRET"); exists && value != "" {
+		return value
+	}
+	secret, err := generateRandomSecret()
+	if err != nil {
+		// 无法生成安全随机密钥时直接终止，绝不回退到硬编码弱值
+		log.Fatalf("🚨 FATAL: 无法生成随机 JWT 密钥，且未配置 JWT_SECRET: %v", err)
+	}
+	log.Println("Info: JWT_SECRET is not set; using a random runtime secret")
+	return secret
+}
+
+func generateRandomSecret() (string, error) {
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(buf), nil
 }
 
 // getEnvBool 获取布尔类型的环境变量
@@ -136,4 +230,16 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+// splitAndTrim 分割字符串并去除空白
+func splitAndTrim(s string, sep string) []string {
+	parts := []string{}
+	for _, part := range strings.Split(s, sep) {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			parts = append(parts, trimmed)
+		}
+	}
+	return parts
 }

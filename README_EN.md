@@ -14,8 +14,8 @@
     <a href="https://go.dev" target="_blank">
       <img src="https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat-square&logo=go" alt="Go" />
     </a>
-    <a href="https://vuejs.org" target="_blank">
-      <img src="https://img.shields.io/badge/Vue.js-3.5+-4FC08D?style=flat-square&logo=vue.js" alt="Vue" />
+    <a href="https://react.dev" target="_blank">
+      <img src="https://img.shields.io/badge/React-19+-61DAFB?style=flat-square&logo=react" alt="React" />
     </a>
     <a href="https://tailwindcss.com" target="_blank">
       <img src="https://img.shields.io/badge/Tailwind-4.0+-38B2AC?style=flat-square&logo=tailwind-css" alt="Tailwind CSS" />
@@ -35,14 +35,14 @@
 
 ## 📖 Introduction
 
-**Orange** is a modern desktop application built with [Wails v3](https://wails.io), demonstrating how to build high-performance, native-like cross-platform apps using Go (Backend) and Vue 3 (Frontend).
+**Orange** is a modern desktop application built with [Wails v3](https://wails.io), demonstrating how to build high-performance, native-like cross-platform apps using Go (backend) and React (frontend).
 
 The project integrates a comprehensive suite of business management features, including user permission management, project contract tracking, financial payment management, and system dictionary configuration, aiming to provide best practices for enterprise-level desktop application development.
 
 ## ✨ Features
 
 - **Cross-Platform**: Built on Wails v3, runs perfectly on macOS, Windows, and Linux.
-- **Modern UI**: Designed with Vue 3 + Tailwind CSS 4.0 and Glassmorphism style, delivering a refined and smooth interface.
+- **Modern UI**: Designed with React 19 + Tailwind CSS 4.0 and Liquid Glass styling, delivering a refined and smooth interface.
 - **High Performance Backend**: Powered by Go, integrating Gin Web Framework, GORM ORM, and SQLite database.
 - **Secure**: Built-in JWT identity authentication, Bcrypt password hashing, and middleware authorization mechanisms.
 - **Complete Business Flow**:
@@ -76,14 +76,14 @@ The project integrates a comprehensive suite of business management features, in
     </td>
   </tr>
   <tr>
-    <td align="center"><b>Frontend (Vue)</b></td>
+    <td align="center"><b>Frontend (React)</b></td>
     <td>
       <ul>
-        <li><b>Framework</b>: Vue 3 (Composition API)</li>
+        <li><b>Framework</b>: React 19 + TypeScript</li>
         <li><b>Build Tool</b>: Vite 7</li>
         <li><b>Styling</b>: Tailwind CSS 4</li>
-        <li><b>State Management</b>: Pinia</li>
-        <li><b>Routing</b>: Vue Router 4</li>
+        <li><b>State Management</b>: Zustand</li>
+        <li><b>Routing</b>: React Router</li>
         <li><b>Icons</b>: Remix Icon</li>
         <li><b>Charts</b>: Chart.js</li>
       </ul>
@@ -136,7 +136,7 @@ The build artifacts will be located in the `bin` directory.
 After the application starts and seeds the database, use the following default admin account to login:
 
 - **Username**: `admin`
-- **Password**: `admin123`
+- **Password**: written to `initial-credentials.txt` in the user config directory on first launch
 
 ## ⚙️ Configuration
 
@@ -179,7 +179,7 @@ DB_AUTO_CREATE=true
 ```ini
 # JWT Configuration
 # JWT Secret (MUST change in production)
-JWT_SECRET=orange-secret-key-change-in-production
+JWT_SECRET=
 # Token Expiry (Hours)
 TOKEN_EXPIRY=24
 
@@ -187,7 +187,7 @@ TOKEN_EXPIRY=24
 # Enable file logging
 LOG_ENABLE=true
 # Log Level: debug, info, warn, error
-LOG_LEVEL=debug
+LOG_LEVEL=info
 # Log File Path (Default: user config dir/log/orange.log)
 LOG_PATH=orange.log
 # Max size per log file (MB)
@@ -237,11 +237,12 @@ GITHUB_REPO=FruitsAI/Orange
 Orange/
 ├── build/              # Wails build config and resources (AppIcon, etc.)
 ├── cmd/                # Go application entry point
-├── frontend/           # Vue 3 frontend source code
+├── frontend/           # React frontend source code
 │   ├── src/
 │   │   ├── components/ # Reusable components
 │   │   ├── views/      # Page views
-│   │   ├── stores/     # Pinia state stores
+│   │   ├── stores/     # Zustand state stores
+│   │   ├── router/     # React Router routes
 │   │   └── ...
 ├── internal/           # Go backend business logic (private packages)
 │   ├── config/         # Configuration loading

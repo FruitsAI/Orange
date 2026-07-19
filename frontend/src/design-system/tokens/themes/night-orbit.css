@@ -1,0 +1,83 @@
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ods-color-bg-canvas: var(--ods-ref-color-warm-950);
+  --ods-color-bg-canvas-rgb: 8, 7, 6;
+  --ods-color-bg-canvas-subtle: #0f0d0b;
+  --ods-color-bg-surface: var(--ods-ref-color-warm-900);
+  --ods-color-bg-surface-raised: rgba(34, 29, 25, 0.82);
+  --ods-color-bg-surface-glass: rgba(28, 24, 21, 0.68);
+  --ods-color-bg-surface-hover: rgba(255, 255, 255, 0.06);
+  --ods-color-bg-surface-pressed: rgba(255, 255, 255, 0.1);
+  --ods-color-fg-default: #fffaf3;
+  --ods-color-fg-default-rgb: 255, 250, 243;
+  --ods-color-fg-relaxed: rgba(255, 247, 237, 0.88);
+  --ods-color-fg-muted: rgba(255, 247, 237, 0.72);
+  --ods-color-fg-subtle: rgba(255, 247, 237, 0.46);
+  --ods-color-fg-disabled: rgba(255, 247, 237, 0.28);
+  --ods-color-fg-inverse: var(--ods-ref-color-warm-950);
+  --ods-color-fg-brand-surface: var(--ods-ref-color-warm-25);
+  --ods-color-fg-brand-surface-muted: rgba(255, 247, 237, 0.72);
+  --ods-color-fg-brand-surface-subtle: rgba(255, 247, 237, 0.46);
+  --ods-color-fg-brand-surface-danger: var(--ods-ref-color-red-400);
+  --ods-color-border-default: rgba(255, 244, 229, 0.1);
+  --ods-color-border-strong: rgba(255, 244, 229, 0.16);
+  --ods-color-border-focus: #ff9f0a;
+  --ods-color-border-brand-surface: rgba(255, 244, 229, 0.16);
+  --ods-color-accent: #ff9f0a;
+  --ods-color-accent-rgb: 255, 159, 10;
+  --ods-color-accent-hover: #ffb340;
+  --ods-color-accent-pressed: #e77f00;
+  --ods-color-accent-soft: rgba(255, 159, 10, 0.14);
+  --ods-color-accent-fg: var(--ods-ref-color-warm-950);
+  --ods-color-accent-secondary: var(--ods-ref-color-violet-400);
+  --ods-color-status-success: var(--ods-ref-color-green-400);
+  --ods-color-status-success-soft: rgba(67, 209, 122, 0.14);
+  --ods-color-status-warning: var(--ods-ref-color-amber-300);
+  --ods-color-status-warning-soft: rgba(255, 209, 102, 0.14);
+  --ods-color-status-danger: var(--ods-ref-color-red-400);
+  --ods-color-status-danger-soft: rgba(255, 98, 89, 0.14);
+  --ods-color-status-info: var(--ods-ref-color-blue-300);
+  --ods-color-status-info-soft: rgba(101, 199, 255, 0.14);
+  --ods-color-status-teal: var(--ods-ref-color-teal-300);
+  --ods-color-overlay-scrim: rgba(0, 0, 0, 0.56);
+  --ods-color-ambient-glow: rgba(255, 159, 10, 0.16);
+  --ods-color-selection: rgba(255, 159, 10, 0.28);
+  --ods-shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.24);
+  --ods-shadow-panel: 0 24px 70px rgba(0, 0, 0, 0.42);
+  --ods-shadow-modal: 0 30px 90px rgba(0, 0, 0, 0.58), 0 4px 18px rgba(0, 0, 0, 0.34);
+  --ods-shadow-brand-surface: var(--ods-shadow-panel);
+  --ods-gradient-glow: linear-gradient(135deg, #ff8a00 0%, #ffc247 52%, #ff6b00 100%);
+  --ods-gradient-text: linear-gradient(135deg, #ffc15c 0%, #ff7a18 58%, #ff5c45 100%);
+  --ods-gradient-brand-surface:
+    radial-gradient(circle at 78% 20%, rgba(var(--ods-color-accent-rgb), 0.2), transparent 34%),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--ods-color-bg-surface) 94%, var(--ods-color-accent) 6%),
+      var(--ods-color-bg-surface)
+    );
+  --ods-material-glass-blur: 44px;
+  --ods-material-glass-saturation: 165%;
+  --ods-material-glass-brightness: 1.12;
+  --ods-material-glass-contrast: 1.08;
+  --ods-material-glass-specular: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.06) 24%,
+    transparent 52%,
+    rgba(255, 159, 10, 0.035) 100%
+  );
+  --ods-material-glass-shadow-outer: var(--ods-shadow-panel);
+  --ods-material-glass-shadow-inner:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 0 20px rgba(0, 0, 0, 0.38);
+  --ods-material-glass-border: 1px solid rgba(255, 244, 229, 0.13);
+  --ods-material-glass-border-subtle: 1px solid rgba(255, 244, 229, 0.07);
+  --ods-data-series-planned: #a89c91;
+  --ods-data-series-actual: #ff9d45;
+  --ods-data-series-actual-fill: rgba(255, 138, 31, 0.16);
+  --ods-data-grid: rgba(255, 245, 236, 0.07);
+  --ods-data-tooltip-bg: #211d1a;
+  --ods-data-tooltip-fg: #f7f2ee;
+  --ods-data-tooltip-border: #4d4037;
+  --ods-data-point-bg: #211d1a;
+}

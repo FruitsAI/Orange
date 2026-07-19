@@ -193,3 +193,7 @@ func (s *NotificationService) ListUsers() ([]models.User, error) {
 func (s *NotificationService) Get(id int64) (*models.Notification, error) {
 	return s.notificationRepo.FindByID(id)
 }
+
+func (s *NotificationService) GetForUser(userID, id int64) (*models.Notification, error) {
+	return s.notificationRepo.FindByIDForUser(id, userID)
+}

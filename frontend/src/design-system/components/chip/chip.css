@@ -1,0 +1,78 @@
+.ods-chip {
+  --ods-chip-color: var(--ods-color-fg-muted);
+  --ods-chip-soft: var(--ods-color-bg-surface-hover);
+
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ods-space-1);
+  border: 1px solid transparent;
+  border-radius: var(--ods-radius-pill);
+  color: var(--ods-chip-color);
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-xs);
+  font-weight: var(--ods-font-weight-semibold);
+  letter-spacing: var(--ods-letter-spacing-body);
+  line-height: var(--ods-line-height-tight);
+  white-space: nowrap;
+}
+
+.ods-chip[data-tone='accent'] {
+  --ods-chip-color: var(--ods-color-accent);
+  --ods-chip-soft: var(--ods-color-accent-soft);
+}
+
+.ods-chip[data-tone='success'] {
+  --ods-chip-color: var(--ods-color-status-success);
+  --ods-chip-soft: var(--ods-color-status-success-soft);
+}
+
+.ods-chip[data-tone='warning'] {
+  --ods-chip-color: var(--ods-color-status-warning);
+  --ods-chip-soft: var(--ods-color-status-warning-soft);
+}
+
+.ods-chip[data-tone='danger'] {
+  --ods-chip-color: var(--ods-color-status-danger);
+  --ods-chip-soft: var(--ods-color-status-danger-soft);
+}
+
+.ods-chip[data-tone='info'] {
+  --ods-chip-color: var(--ods-color-status-info);
+  --ods-chip-soft: var(--ods-color-status-info-soft);
+}
+
+.ods-chip[data-variant='soft'] {
+  border-color: color-mix(in srgb, var(--ods-chip-color) 18%, transparent);
+  background: var(--ods-chip-soft);
+}
+
+.ods-chip[data-variant='outline'] {
+  border-color: color-mix(in srgb, var(--ods-chip-color) 48%, transparent);
+  background: transparent;
+}
+
+.ods-chip[data-variant='solid'] {
+  background: var(--ods-chip-color);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 4px 12px color-mix(in srgb, var(--ods-chip-color) 30%, transparent);
+  color: var(--ods-color-fg-inverse);
+}
+
+.ods-chip[data-size='sm'] {
+  min-height: var(--ods-space-5);
+  padding-inline: var(--ods-space-2);
+}
+
+.ods-chip[data-size='md'] {
+  min-height: var(--ods-space-6);
+  padding-inline: var(--ods-space-3);
+}
+
+.ods-chip[data-size='lg'] {
+  min-height: var(--ods-control-height-sm);
+  padding-inline: var(--ods-space-4);
+  font-size: var(--ods-font-size-sm);
+}

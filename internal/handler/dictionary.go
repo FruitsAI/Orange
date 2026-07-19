@@ -3,6 +3,7 @@ package handler
 import (
 	"strconv"
 
+	"github.com/FruitsAI/Orange/internal/constants"
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/pkg/response"
 	"github.com/FruitsAI/Orange/internal/service"
@@ -32,7 +33,7 @@ func NewDictionaryHandler() *DictionaryHandler {
 func (h *DictionaryHandler) List(c *gin.Context) {
 	dictionaries, err := h.dictService.List()
 	if err != nil {
-		response.InternalError(c, "获取字典列表失败")
+		response.HandleServiceError(c, err, "获取字典列表失败")
 		return
 	}
 
@@ -52,7 +53,7 @@ func (h *DictionaryHandler) GetItems(c *gin.Context) {
 
 	items, err := h.dictService.GetItems(code)
 	if err != nil {
-		response.NotFound(c, "字典不存在")
+		response.HandleServiceError(c, err, "获取字典选项失败")
 		return
 	}
 
@@ -71,7 +72,7 @@ func (h *DictionaryHandler) GetItems(c *gin.Context) {
 // @Router /api/v1/dictionaries/{code}/items [post]
 func (h *DictionaryHandler) CreateItem(c *gin.Context) {
 	// 1. 权限校验
-	if c.GetString("role") != "admin" {
+	if c.GetString("role") != constants.RoleAdmin {
 		response.Forbidden(c, "无权操作")
 		return
 	}
@@ -87,7 +88,7 @@ func (h *DictionaryHandler) CreateItem(c *gin.Context) {
 	// 3. 执行创建
 	item, err := h.dictService.CreateItem(code, req.Label, req.Value, req.Sort)
 	if err != nil {
-		response.InternalError(c, "创建字典项失败")
+		response.HandleServiceError(c, err, "创建字典项失败")
 		return
 	}
 
@@ -107,7 +108,7 @@ func (h *DictionaryHandler) CreateItem(c *gin.Context) {
 // @Router /api/v1/dictionaries/{code}/items/{id} [put]
 func (h *DictionaryHandler) UpdateItem(c *gin.Context) {
 	// 1. 权限校验
-	if c.GetString("role") != "admin" {
+	if c.GetString("role") != constants.RoleAdmin {
 		response.Forbidden(c, "无权操作")
 		return
 	}
@@ -129,7 +130,7 @@ func (h *DictionaryHandler) UpdateItem(c *gin.Context) {
 	// 4. 执行更新
 	item, err := h.dictService.UpdateItem(id, req.Label, req.Value, req.Sort)
 	if err != nil {
-		response.InternalError(c, "更新字典项失败")
+		response.HandleServiceError(c, err, "更新字典项失败")
 		return
 	}
 
@@ -147,7 +148,7 @@ func (h *DictionaryHandler) UpdateItem(c *gin.Context) {
 // @Failure 403 {string} string "无权操作"
 // @Router /api/v1/dictionaries/{code}/items/{id} [delete]
 func (h *DictionaryHandler) DeleteItem(c *gin.Context) {
-	if c.GetString("role") != "admin" {
+	if c.GetString("role") != constants.RoleAdmin {
 		response.Forbidden(c, "无权操作")
 		return
 	}
@@ -158,7 +159,7 @@ func (h *DictionaryHandler) DeleteItem(c *gin.Context) {
 	}
 
 	if err := h.dictService.DeleteItem(id); err != nil {
-		response.InternalError(c, "删除字典项失败")
+		response.HandleServiceError(c, err, "删除字典项失败")
 		return
 	}
 

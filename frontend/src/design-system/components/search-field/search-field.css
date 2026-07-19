@@ -1,0 +1,28 @@
+.ods-search-field {
+  width: 100%;
+}
+
+.ods-search-field__icon {
+  font-size: var(--ods-font-size-lg);
+}
+
+.ods-search-field[data-size='sm'] {
+  padding-inline: var(--ods-control-padding-inline-sm);
+}
+
+.ods-search-field[data-size='lg'] {
+  padding-inline: var(--ods-control-padding-inline-lg);
+}
+
+.ods-search-field .ods-input[type='search']::-webkit-search-cancel-button,
+.ods-search-field .ods-input[type='search']::-webkit-search-decoration {
+  appearance: none;
+}
+
+.ods-search-field .ods-spinner {
+  color: var(--ods-color-accent);
+}
+
+.ods-search-field[data-pending='true'] {
+  cursor: progress;
+}

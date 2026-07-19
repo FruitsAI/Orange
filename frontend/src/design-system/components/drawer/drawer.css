@@ -1,0 +1,173 @@
+.ods-drawer__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ods-z-modal);
+  display: flex;
+  background: var(--ods-color-overlay-scrim);
+  backdrop-filter: blur(2px);
+  animation: ods-drawer-scrim-in var(--ods-duration-fast) var(--ods-ease-standard);
+}
+
+.ods-drawer {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  border: var(--ods-material-glass-border-subtle);
+  background: var(--ods-color-bg-surface-raised);
+  box-shadow: var(--ods-shadow-modal);
+  color: var(--ods-color-fg-default);
+  outline: none;
+}
+
+/* Enter and exit along the same edge (apple-design §7). */
+.ods-drawer[data-placement='right'],
+.ods-drawer[data-placement='left'] {
+  inset-block: 0;
+  width: min(28rem, 92vw);
+}
+
+.ods-drawer[data-placement='right'][data-size='sm'],
+.ods-drawer[data-placement='left'][data-size='sm'] {
+  width: min(22rem, 92vw);
+}
+
+.ods-drawer[data-placement='right'][data-size='lg'],
+.ods-drawer[data-placement='left'][data-size='lg'] {
+  width: min(40rem, 96vw);
+}
+
+.ods-drawer[data-placement='right'] {
+  inset-inline-end: 0;
+  border-start-start-radius: var(--ods-radius-shell);
+  border-end-start-radius: var(--ods-radius-shell);
+  animation: ods-drawer-in-right var(--ods-duration-page) var(--ods-ease-emphasized);
+}
+
+.ods-drawer[data-placement='left'] {
+  inset-inline-start: 0;
+  border-start-end-radius: var(--ods-radius-shell);
+  border-end-end-radius: var(--ods-radius-shell);
+  animation: ods-drawer-in-left var(--ods-duration-page) var(--ods-ease-emphasized);
+}
+
+.ods-drawer[data-placement='top'],
+.ods-drawer[data-placement='bottom'] {
+  inset-inline: 0;
+  height: min(24rem, 80vh);
+}
+
+.ods-drawer[data-placement='top'] {
+  inset-block-start: 0;
+  border-end-start-radius: var(--ods-radius-shell);
+  border-end-end-radius: var(--ods-radius-shell);
+  animation: ods-drawer-in-top var(--ods-duration-page) var(--ods-ease-emphasized);
+}
+
+.ods-drawer[data-placement='bottom'] {
+  inset-block-end: 0;
+  border-start-start-radius: var(--ods-radius-shell);
+  border-start-end-radius: var(--ods-radius-shell);
+  animation: ods-drawer-in-bottom var(--ods-duration-page) var(--ods-ease-emphasized);
+}
+
+.ods-drawer__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--ods-space-5) var(--ods-space-6) var(--ods-space-3);
+}
+
+.ods-drawer__title {
+  margin: 0;
+  font-family: var(--ods-font-family-display);
+  font-size: var(--ods-font-size-xl);
+  font-weight: var(--ods-font-weight-semibold);
+  letter-spacing: var(--ods-letter-spacing-tight);
+}
+
+.ods-drawer__body {
+  flex: 1 1 auto;
+  padding: var(--ods-space-2) var(--ods-space-6);
+  overflow-y: auto;
+  color: var(--ods-color-fg-muted);
+  line-height: var(--ods-line-height-body);
+}
+
+.ods-drawer__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ods-space-3);
+  padding: var(--ods-space-5) var(--ods-space-6);
+  border-block-start: 1px solid var(--ods-color-border-default);
+}
+
+.ods-drawer__close {
+  position: absolute;
+  inset-block-start: var(--ods-space-4);
+  inset-inline-end: var(--ods-space-4);
+  display: grid;
+  width: var(--ods-space-8);
+  height: var(--ods-space-8);
+  place-items: center;
+  border: 0;
+  border-radius: var(--ods-radius-pill);
+  background: transparent;
+  color: var(--ods-color-fg-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--ods-duration-fast) var(--ods-ease-standard),
+    color var(--ods-duration-fast) var(--ods-ease-standard);
+}
+
+.ods-drawer__close:hover {
+  background: var(--ods-color-bg-surface-hover);
+  color: var(--ods-color-fg-default);
+}
+
+.ods-drawer__close:focus-visible {
+  outline: var(--ods-focus-ring-width) solid var(--ods-color-border-focus);
+  outline-offset: var(--ods-focus-ring-offset);
+}
+
+@keyframes ods-drawer-scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes ods-drawer-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes ods-drawer-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes ods-drawer-in-top {
+  from {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes ods-drawer-in-bottom {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ods-drawer {
+    animation: ods-drawer-scrim-in var(--ods-duration-fast) var(--ods-ease-standard);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ods-drawer__scrim {
+    backdrop-filter: none;
+  }
+}

@@ -1,0 +1,93 @@
+.ods-select {
+  display: inline-flex;
+  width: 100%;
+  min-width: 12rem;
+  height: var(--ods-control-height-md);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ods-space-2);
+  padding-inline: var(--ods-control-padding-inline-md);
+  border: 1px solid var(--ods-color-border-default);
+  border-radius: var(--ods-radius-control);
+  background: var(--ods-color-bg-surface);
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-md);
+  cursor: pointer;
+  transition:
+    border-color var(--ods-duration-fast) var(--ods-ease-standard),
+    box-shadow var(--ods-duration-fast) var(--ods-ease-standard);
+}
+
+.ods-select[data-size='sm'] {
+  height: var(--ods-control-height-sm);
+  font-size: var(--ods-font-size-sm);
+}
+
+.ods-select[data-size='lg'] {
+  height: var(--ods-control-height-lg);
+}
+
+.ods-select[data-width='content'] {
+  width: auto;
+  min-width: 0;
+}
+
+.ods-select:hover:not(:disabled) {
+  border-color: var(--ods-color-border-strong);
+}
+
+.ods-select:focus-visible {
+  border-color: var(--ods-color-border-focus);
+  box-shadow: 0 0 0 4px var(--ods-color-accent-soft);
+  outline: none;
+}
+
+.ods-select[data-invalid='true'] {
+  border-color: var(--ods-color-status-danger);
+}
+
+.ods-select:disabled {
+  background: var(--ods-color-bg-canvas-subtle);
+  color: var(--ods-color-fg-disabled);
+  cursor: not-allowed;
+}
+
+.ods-select__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ods-select__value[data-placeholder] {
+  color: var(--ods-color-fg-subtle);
+}
+
+.ods-select__caret {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-lg);
+  line-height: 1;
+  transition: transform var(--ods-duration-fast) var(--ods-ease-spring);
+}
+
+.ods-select__caret[data-open='true'] {
+  transform: rotate(180deg);
+}
+
+.ods-select__popover {
+  min-width: 12rem;
+}
+
+.ods-select__popover[data-width='content'] {
+  width: max-content;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ods-select__caret {
+    transition: none;
+  }
+}

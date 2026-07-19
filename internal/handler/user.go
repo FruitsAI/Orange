@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/middleware"
 	"github.com/FruitsAI/Orange/internal/pkg/response"
@@ -11,36 +9,23 @@ import (
 )
 
 type UserHandler struct {
-	authService *service.AuthService
+	userService *service.UserService
 }
 
 func NewUserHandler() *UserHandler {
 	return &UserHandler{
-		authService: service.NewAuthService(),
+		userService: service.NewUserService(),
 	}
-}
-
-// ensureAdmin 检查当前用户是否为管理员
-func (h *UserHandler) ensureAdmin(c *gin.Context) bool {
-	role := middleware.GetRole(c)
-	if role != "admin" {
-		response.Error(c, response.CodeForbidden, "权限不足")
-		return false
-	}
-	return true
 }
 
 // List 获取用户列表
 func (h *UserHandler) List(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	page, pageSize := response.GetPagination(c)
 	keyword := c.Query("keyword")
 
-	result, err := h.authService.ListUsers(page, pageSize, keyword)
+	result, err := h.userService.ListUsers(page, pageSize, keyword)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -51,9 +36,7 @@ func (h *UserHandler) List(c *gin.Context) {
 
 // Create 创建用户
 func (h *UserHandler) Create(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
 	var req dto.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -61,8 +44,8 @@ func (h *UserHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.CreateUser(req); err != nil {
-		response.ParamError(c, err.Error())
+	if err := h.userService.CreateUser(req); err != nil {
+		response.HandleServiceError(c, err, "创建用户失败")
 		return
 	}
 
@@ -71,11 +54,9 @@ func (h *UserHandler) Create(c *gin.Context) {
 
 // Update 更新用户
 func (h *UserHandler) Update(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的用户ID")
 		return
@@ -87,8 +68,8 @@ func (h *UserHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.UpdateUser(id, req); err != nil {
-		response.InternalError(c, err.Error())
+	if err := h.userService.UpdateUser(id, req); err != nil {
+		response.HandleServiceError(c, err, "更新用户失败")
 		return
 	}
 
@@ -97,11 +78,9 @@ func (h *UserHandler) Update(c *gin.Context) {
 
 // Delete 删除用户
 func (h *UserHandler) Delete(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的用户ID")
 		return
@@ -114,8 +93,8 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.DeleteUser(id); err != nil {
-		response.InternalError(c, err.Error())
+	if err := h.userService.DeleteUser(id); err != nil {
+		response.HandleServiceError(c, err, "删除用户失败")
 		return
 	}
 
@@ -124,11 +103,9 @@ func (h *UserHandler) Delete(c *gin.Context) {
 
 // ResetPassword 重置密码
 func (h *UserHandler) ResetPassword(c *gin.Context) {
-	if !h.ensureAdmin(c) {
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的用户ID")
 		return
@@ -140,8 +117,8 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.ResetPassword(id, req.NewPassword); err != nil {
-		response.InternalError(c, err.Error())
+	if err := h.userService.ResetPassword(id, req.NewPassword); err != nil {
+		response.HandleServiceError(c, err, "重置密码失败")
 		return
 	}
 

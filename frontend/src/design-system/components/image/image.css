@@ -1,0 +1,104 @@
+.ods-image {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+  border-radius: var(--ods-radius-md);
+  background: var(--ods-color-bg-surface-hover);
+}
+
+.ods-image[data-radius='none'] {
+  border-radius: 0;
+}
+
+.ods-image[data-radius='sm'] {
+  border-radius: var(--ods-radius-sm);
+}
+
+.ods-image[data-radius='lg'] {
+  border-radius: var(--ods-radius-lg);
+}
+
+.ods-image[data-radius='full'] {
+  border-radius: var(--ods-radius-pill);
+}
+
+.ods-image[data-background='transparent'] {
+  background: transparent;
+}
+
+.ods-image__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity var(--ods-duration-page) var(--ods-ease-standard);
+}
+
+.ods-image[data-fit='contain'] .ods-image__img {
+  object-fit: contain;
+}
+
+.ods-image[data-fit='fill'] .ods-image__img {
+  object-fit: fill;
+}
+
+.ods-image[data-fit='none'] .ods-image__img {
+  object-fit: none;
+}
+
+.ods-image[data-fit='scale-down'] .ods-image__img {
+  object-fit: scale-down;
+}
+
+.ods-image__img[data-loaded='true'] {
+  opacity: 1;
+}
+
+.ods-image[data-disable-animation='true'] .ods-image__img {
+  opacity: 1;
+  transition: none;
+}
+
+.ods-image__fallback {
+  display: grid;
+  min-width: var(--ods-space-12);
+  min-height: var(--ods-space-12);
+  place-items: center;
+  padding: var(--ods-space-4);
+  color: var(--ods-color-fg-subtle);
+  font-size: var(--ods-font-size-sm);
+}
+
+.ods-image__skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    var(--ods-color-bg-surface-hover),
+    var(--ods-color-bg-surface-raised),
+    var(--ods-color-bg-surface-hover)
+  );
+  background-size: 200% 100%;
+  animation: ods-image-shimmer 1.4s var(--ods-ease-standard) infinite;
+}
+
+@keyframes ods-image-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ods-image__img {
+    transition: none;
+  }
+
+  .ods-image__skeleton {
+    animation: none;
+  }
+}

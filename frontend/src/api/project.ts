@@ -34,7 +34,7 @@ export interface Payment {
   amount: number          // 金额
   percentage: number      // 占比 (%)
   plan_date: string       // 计划收款日期
-  status: 'paid' | 'pending' | 'overdue' // 状态
+  status: 'confirmed' | 'paid' | 'pending' | 'overdue' // 状态
   actual_date: string     // 实际收款日期
   method: string          // 收款方式
   remark: string          // 备注

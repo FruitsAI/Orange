@@ -1,0 +1,76 @@
+@keyframes ember-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ember-enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ember-ambient-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+.motion-fade-in {
+  animation: ember-fade-in var(--ods-duration-page) var(--ods-ease-standard) both;
+}
+
+.motion-enter-up {
+  animation: ember-enter-up var(--ods-duration-page) var(--ods-ease-emphasized) both;
+}
+
+.motion-ambient {
+  animation: ember-ambient-pulse 8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-ambient,
+  .motion-float,
+  .motion-glow,
+  [data-motion='ambient'],
+  [data-motion='continuous'],
+  .app-background::after,
+  .login-wrapper .login-background,
+  .login-wrapper .login-background::before,
+  .login-wrapper .floating-shapes .shape {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* The ambient-light hook also pauses pointer tracking while this preference is active. */
+  .app-background {
+    --light-x: 50% !important;
+    --light-y: 50% !important;
+    transition-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+
+  .app-background::before {
+    opacity: 0 !important;
+  }
+
+  .motion-enter-up,
+  [data-motion='entrance'] {
+    animation: ember-fade-in 1ms linear both !important;
+    transform: none !important;
+  }
+}

@@ -26,6 +26,15 @@ func (r *DictionaryRepository) List() ([]models.Dictionary, error) {
 	return dictionaries, nil
 }
 
+// FindByID 根据主键ID查找字典类型
+func (r *DictionaryRepository) FindByID(id int64) (*models.Dictionary, error) {
+	var dict models.Dictionary
+	if err := r.db.First(&dict, id).Error; err != nil {
+		return nil, err
+	}
+	return &dict, nil
+}
+
 // FindByCode 根据唯一编码查找字典类型
 func (r *DictionaryRepository) FindByCode(code string) (*models.Dictionary, error) {
 	var dict models.Dictionary

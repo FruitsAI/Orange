@@ -1,0 +1,25 @@
+.ods-user {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ods-space-3);
+}
+
+.ods-user__info {
+  display: inline-flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.ods-user__name {
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-sm);
+  font-weight: var(--ods-font-weight-semibold);
+  line-height: var(--ods-line-height-tight);
+}
+
+.ods-user__description {
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-xs);
+  line-height: var(--ods-line-height-body);
+}

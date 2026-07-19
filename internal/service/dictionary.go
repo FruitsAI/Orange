@@ -1,7 +1,12 @@
 package service
 
 import (
+	"fmt"
+	"log"
+	"time"
+
 	"github.com/FruitsAI/Orange/internal/models"
+	"github.com/FruitsAI/Orange/internal/pkg/cache"
 	"github.com/FruitsAI/Orange/internal/repository"
 )
 
@@ -21,7 +26,23 @@ func NewDictionaryService() *DictionaryService {
 // List 获取所有字典定义列表
 // 返回系统中定义的所有字典类型。
 func (s *DictionaryService) List() ([]models.Dictionary, error) {
-	return s.dictRepo.List()
+	cacheKey := "dict:list:v1"
+	var result []models.Dictionary
+
+	// 尝试从缓存读取
+	if err := cache.GetJSON(cacheKey, &result); err == nil {
+		return result, nil
+	}
+
+	// 缓存未命中，从数据库查询
+	result, err := s.dictRepo.List()
+	if err != nil {
+		return nil, err
+	}
+
+	// 写入缓存
+	_ = cache.SetJSON(cacheKey, result, 5*time.Minute)
+	return result, nil
 }
 
 // GetItems 根据字典编码获取对应的字典项列表
@@ -33,7 +54,23 @@ func (s *DictionaryService) List() ([]models.Dictionary, error) {
 // 返回:
 //   - []models.DictionaryItem: 按 sort 排序的字典项列表
 func (s *DictionaryService) GetItems(code string) ([]models.DictionaryItem, error) {
-	return s.dictRepo.GetItemsByCode(code)
+	cacheKey := fmt.Sprintf("dict:items:v1:%s", code)
+	var result []models.DictionaryItem
+
+	// 尝试从缓存读取
+	if err := cache.GetJSON(cacheKey, &result); err == nil {
+		return result, nil
+	}
+
+	// 缓存未命中，从数据库查询
+	result, err := s.dictRepo.GetItemsByCode(code)
+	if err != nil {
+		return nil, err
+	}
+
+	// 写入缓存
+	_ = cache.SetJSON(cacheKey, result, 5*time.Minute)
+	return result, nil
 }
 
 // CreateItem 为指定字典创建新选项
@@ -67,6 +104,8 @@ func (s *DictionaryService) CreateItem(code, label, value string, sort int) (*mo
 		return nil, err
 	}
 
+	invalidateDictCache(code)
+
 	return item, nil
 }
 
@@ -96,10 +135,47 @@ func (s *DictionaryService) UpdateItem(id int64, label, value string, sort int) 
 	if err := s.dictRepo.UpdateItem(item); err != nil {
 		return nil, err
 	}
+
+	s.invalidateItemCache(item.DictionaryID)
+
 	return item, nil
 }
 
 // DeleteItem 删除指定字典项
 func (s *DictionaryService) DeleteItem(id int64) error {
-	return s.dictRepo.DeleteItem(id)
+	item, err := s.dictRepo.FindItemByID(id)
+	if err != nil {
+		return err
+	}
+	if err := s.dictRepo.DeleteItem(id); err != nil {
+		return err
+	}
+	s.invalidateItemCache(item.DictionaryID)
+	return nil
+}
+
+// invalidateItemCache 依据字典ID清除相关缓存
+// 先查出字典编码以精确清除选项缓存；查询失败时至少清除列表缓存兜底。
+func (s *DictionaryService) invalidateItemCache(dictID int64) {
+	dict, err := s.dictRepo.FindByID(dictID)
+	if err != nil {
+		log.Printf("Failed to find dictionary for cache invalidation (dictID=%d): %v", dictID, err)
+		if err := cache.Delete("dict:list:v1"); err != nil {
+			log.Printf("Failed to invalidate dict:list cache (fallback): %v", err)
+		}
+		return
+	}
+
+	invalidateDictCache(dict.Code)
+}
+
+// invalidateDictCache 清除指定编码字典的选项缓存与字典列表缓存
+// 失效失败仅记录日志，不阻断主流程（缓存有 TTL 兜底）。
+func invalidateDictCache(code string) {
+	if err := cache.Delete(fmt.Sprintf("dict:items:v1:%s", code)); err != nil {
+		log.Printf("Failed to invalidate dict:items cache: %v", err)
+	}
+	if err := cache.Delete("dict:list:v1"); err != nil {
+		log.Printf("Failed to invalidate dict:list cache: %v", err)
+	}
 }

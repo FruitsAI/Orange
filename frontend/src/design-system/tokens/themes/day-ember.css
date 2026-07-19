@@ -1,0 +1,81 @@
+:root:not([data-theme]),
+[data-theme='light'] {
+  color-scheme: light;
+
+  --ods-color-bg-canvas: var(--ods-ref-color-warm-50);
+  --ods-color-bg-canvas-rgb: 247, 242, 233;
+  --ods-color-bg-canvas-subtle: #fbf7f0;
+  --ods-color-bg-surface: var(--ods-ref-color-warm-25);
+  --ods-color-bg-surface-raised: rgba(255, 253, 249, 0.94);
+  --ods-color-bg-surface-glass: rgba(255, 252, 246, 0.76);
+  --ods-color-bg-surface-hover: rgba(91, 67, 43, 0.055);
+  --ods-color-bg-surface-pressed: rgba(91, 67, 43, 0.09);
+  --ods-color-fg-default: var(--ods-ref-color-warm-800);
+  --ods-color-fg-default-rgb: 36, 27, 21;
+  --ods-color-fg-relaxed: rgba(51, 39, 31, 0.86);
+  --ods-color-fg-muted: rgba(51, 39, 31, 0.7);
+  --ods-color-fg-subtle: rgba(70, 53, 41, 0.48);
+  --ods-color-fg-disabled: rgba(70, 53, 41, 0.28);
+  --ods-color-fg-inverse: var(--ods-ref-color-white);
+  --ods-color-fg-brand-surface: var(--ods-ref-color-white);
+  --ods-color-fg-brand-surface-muted: rgba(255, 255, 255, 0.95);
+  --ods-color-fg-brand-surface-subtle: rgba(255, 255, 255, 0.93);
+  --ods-color-fg-brand-surface-danger: var(--ods-ref-color-white);
+  --ods-color-border-default: rgba(83, 61, 41, 0.11);
+  --ods-color-border-strong: rgba(83, 61, 41, 0.17);
+  --ods-color-border-focus: var(--ods-ref-color-ember-500);
+  --ods-color-border-brand-surface: rgba(255, 255, 255, 0.34);
+  --ods-color-accent: var(--ods-ref-color-ember-500);
+  --ods-color-accent-rgb: 244, 123, 22;
+  --ods-color-accent-hover: var(--ods-ref-color-ember-400);
+  --ods-color-accent-pressed: var(--ods-ref-color-ember-600);
+  --ods-color-accent-soft: rgba(244, 123, 22, 0.12);
+  --ods-color-accent-fg: var(--ods-ref-color-white);
+  --ods-color-accent-secondary: var(--ods-ref-color-violet-500);
+  --ods-color-status-success: var(--ods-ref-color-green-500);
+  --ods-color-status-success-soft: rgba(35, 134, 83, 0.12);
+  --ods-color-status-warning: var(--ods-ref-color-amber-500);
+  --ods-color-status-warning-soft: rgba(196, 123, 0, 0.12);
+  --ods-color-status-danger: var(--ods-ref-color-red-500);
+  --ods-color-status-danger-soft: rgba(215, 71, 62, 0.12);
+  --ods-color-status-info: var(--ods-ref-color-blue-500);
+  --ods-color-status-info-soft: rgba(40, 126, 184, 0.12);
+  --ods-color-status-teal: var(--ods-ref-color-teal-500);
+  --ods-color-overlay-scrim: rgba(36, 27, 21, 0.3);
+  --ods-color-ambient-glow: rgba(244, 123, 22, 0.1);
+  --ods-color-selection: rgba(244, 123, 22, 0.28);
+  --ods-shadow-soft: 0 12px 30px rgba(76, 51, 28, 0.09);
+  --ods-shadow-panel: 0 24px 60px rgba(76, 51, 28, 0.12), 0 2px 8px rgba(76, 51, 28, 0.06);
+  --ods-shadow-modal: 0 30px 90px rgba(76, 51, 28, 0.2), 0 4px 16px rgba(76, 51, 28, 0.1);
+  --ods-shadow-brand-surface: 0 28px 70px rgba(105, 38, 0, 0.26);
+  --ods-gradient-glow: linear-gradient(135deg, #f57616 0%, #ffad32 52%, #ed5e0d 100%);
+  --ods-gradient-text: linear-gradient(135deg, #d85d08 0%, #f47b16 58%, #df4d3b 100%);
+  --ods-gradient-brand-surface:
+    radial-gradient(circle at 92% 18%, rgba(72, 20, 0, 0.24), transparent 30%),
+    linear-gradient(135deg, #a83800 0%, #bd4900 54%, #8f2f00 100%);
+  --ods-material-glass-blur: 36px;
+  --ods-material-glass-saturation: 145%;
+  --ods-material-glass-brightness: 1.04;
+  --ods-material-glass-contrast: 1;
+  --ods-material-glass-specular: linear-gradient(
+    125deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.46) 18%,
+    rgba(255, 255, 255, 0.1) 34%,
+    transparent 62%,
+    rgba(255, 244, 225, 0.3) 100%
+  );
+  --ods-material-glass-shadow-outer: var(--ods-shadow-panel);
+  --ods-material-glass-shadow-inner:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72), inset 0 0 18px rgba(255, 255, 255, 0.24);
+  --ods-material-glass-border: 1px solid rgba(255, 255, 255, 0.76);
+  --ods-material-glass-border-subtle: 1px solid rgba(255, 255, 255, 0.42);
+  --ods-data-series-planned: #85796f;
+  --ods-data-series-actual: #df5d16;
+  --ods-data-series-actual-fill: rgba(226, 91, 20, 0.14);
+  --ods-data-grid: rgba(83, 52, 32, 0.08);
+  --ods-data-tooltip-bg: #fffaf5;
+  --ods-data-tooltip-fg: #2c211a;
+  --ods-data-tooltip-border: #e4d7cc;
+  --ods-data-point-bg: #fffaf5;
+}

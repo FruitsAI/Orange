@@ -1,0 +1,117 @@
+.calendar-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-6);
+}
+
+.calendar-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ods-space-4);
+}
+
+.calendar-view__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+  align-items: start;
+  gap: var(--ods-space-6);
+}
+
+.calendar-board {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ods-space-3);
+}
+
+.calendar-view__calendar {
+  min-height: 25rem;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ods-space-2);
+  padding-inline: var(--ods-space-2);
+}
+
+.calendar-legend__label {
+  margin-inline-end: var(--ods-space-1);
+  color: var(--ods-color-fg-subtle);
+  font-family: var(--ods-font-family-mono);
+  font-size: var(--ods-font-size-xs);
+  letter-spacing: var(--ods-letter-spacing-wide);
+  text-transform: uppercase;
+}
+
+.calendar-view__detail-stack {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ods-space-4);
+}
+
+.calendar-loading-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-2);
+}
+
+.calendar-selection-content {
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-motion-scope='calendar'] [data-motion='entrance'] {
+    animation: ember-enter-up var(--ods-duration-page) var(--ods-ease-emphasized) both;
+  }
+
+  [data-motion-scope='calendar'] .calendar-view__detail-stack > :nth-child(1) {
+    animation-delay: 120ms;
+  }
+
+  [data-motion-scope='calendar'] .calendar-view__detail-stack > :nth-child(2) {
+    animation-delay: 180ms;
+  }
+
+  [data-motion-scope='calendar'] [data-motion-item] {
+    animation: ember-enter-up var(--ods-duration-fast) var(--ods-ease-emphasized) both;
+  }
+
+  [data-motion-scope='calendar'] [data-motion-item]:nth-child(2) {
+    animation-delay: 50ms;
+  }
+
+  [data-motion-scope='calendar'] [data-motion-item]:nth-child(3) {
+    animation-delay: 90ms;
+  }
+}
+
+@media (max-width: 1024px) {
+  .calendar-view__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calendar-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .calendar-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-view__calendar {
+    min-height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-selection-content,
+  [data-motion-scope='calendar'] [data-motion='entrance'],
+  [data-motion-scope='calendar'] [data-motion-item] {
+    animation: none;
+  }
+}

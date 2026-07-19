@@ -1,8 +1,11 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from 'react'
 import { Pagination } from '../../components/pagination'
 
+export type PaginationBarLayout = 'centered' | 'split'
+
 export interface PaginationBarProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
   info?: ReactNode
+  layout?: PaginationBarLayout
   onPageChange: (page: number) => void
   page: number
   pageCount: number
@@ -15,6 +18,7 @@ export const PaginationBar = forwardRef<HTMLDivElement, PaginationBarProps>(func
   {
     className,
     info,
+    layout = 'split',
     onPageChange,
     page,
     pageCount,
@@ -29,6 +33,7 @@ export const PaginationBar = forwardRef<HTMLDivElement, PaginationBarProps>(func
     <div
       {...props}
       className={['ods-pagination-bar', className].filter(Boolean).join(' ')}
+      data-layout={layout}
       data-separated={separated || undefined}
       data-slot="pagination-bar"
       ref={ref}
@@ -43,7 +48,7 @@ export const PaginationBar = forwardRef<HTMLDivElement, PaginationBarProps>(func
           {info}
         </span>
       ) : (
-        <span aria-hidden="true" />
+        <span aria-hidden="true" className="ods-pagination-bar__info" data-slot="info" />
       )}
       <div className="ods-pagination-bar__controls" data-slot="controls">
         <Pagination
@@ -52,7 +57,11 @@ export const PaginationBar = forwardRef<HTMLDivElement, PaginationBarProps>(func
           page={page}
           pageCount={pageCount}
         />
-        {trailing}
+        {trailing ? (
+          <div className="ods-pagination-bar__trailing" data-slot="trailing">
+            {trailing}
+          </div>
+        ) : null}
       </div>
     </div>
   )

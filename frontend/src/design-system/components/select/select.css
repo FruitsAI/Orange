@@ -28,6 +28,11 @@
   height: var(--ods-control-height-lg);
 }
 
+.ods-select[data-width='content'] {
+  width: auto;
+  min-width: 0;
+}
+
 .ods-select:hover:not(:disabled) {
   border-color: var(--ods-color-border-strong);
 }
@@ -74,6 +79,11 @@
 
 .ods-select__popover {
   min-width: 12rem;
+}
+
+.ods-select__popover[data-width='content'] {
+  width: max-content;
+  min-width: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

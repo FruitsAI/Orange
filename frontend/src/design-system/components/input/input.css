@@ -20,14 +20,8 @@
 }
 
 .ods-input[type='password'] {
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
-  letter-spacing: 0.12em;
+  font-family: var(--ods-font-family-body);
+  letter-spacing: 0;
 }
 
 .ods-textarea {
@@ -45,6 +39,7 @@
 
 .ods-input[data-size='lg'],
 .ods-native-select[data-size='lg'] {
+  font-size: var(--ods-font-size-lg);
   height: var(--ods-control-height-lg);
   padding-inline: var(--ods-control-padding-inline-lg);
 }
@@ -56,6 +51,7 @@
 }
 
 .ods-textarea[data-size='lg'] {
+  font-size: var(--ods-font-size-lg);
   min-height: calc(var(--ods-control-height-lg) * 2);
   padding: var(--ods-space-4) var(--ods-control-padding-inline-lg);
 }
@@ -71,6 +67,10 @@
   .ods-native-select:hover:not(:disabled) {
     background: var(--ods-color-bg-surface-hover);
     border-color: var(--ods-color-border-strong);
+  }
+
+  .ods-input-group > .ods-input:hover:not(:disabled) {
+    background: transparent;
   }
 }
 
@@ -125,6 +125,12 @@
   padding-inline: var(--ods-space-0);
 }
 
+.ods-input-group > .ods-input:focus,
+.ods-input-group > .ods-input:focus-visible,
+.ods-input-group > .ods-input:active {
+  background: transparent;
+}
+
 .ods-input:-webkit-autofill,
 .ods-input:-webkit-autofill:hover,
 .ods-input:-webkit-autofill:focus,
@@ -142,4 +148,25 @@
   display: inline-flex;
   flex: 0 0 auto;
   font-size: var(--ods-font-size-sm);
+}
+
+.ods-input-group[data-size='sm'] {
+  padding-inline: var(--ods-control-padding-inline-sm);
+}
+
+.ods-input-group[data-size='lg'] {
+  padding-inline: var(--ods-control-padding-inline-lg);
+}
+
+.ods-input-group[data-size='lg'] .ods-input-group__content {
+  font-size: var(--ods-font-size-lg);
+}
+
+.ods-input-group[data-adornment-spacing='balanced'][data-size='lg'] {
+  gap: var(--ods-space-4);
+  padding-inline: var(--ods-space-4);
+}
+
+.ods-input-group[data-focus-adornment-tone='accent']:focus-within > [data-slot='start-content'] {
+  color: var(--ods-color-border-focus);
 }

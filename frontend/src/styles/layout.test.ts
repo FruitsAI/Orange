@@ -13,11 +13,15 @@ describe('topbar window interaction boundaries', () => {
   test('keeps a compact draggable topbar clear of the macOS window controls', () => {
     const rootRule = findStyleRule(':root')
     const dragRegionRule = findStyleRule('.app-titlebar-drag-region')
+    const iconButtonRule = findStyleRule('.app-topbar__icon-button')
+    const navLinkRule = findStyleRule('.app-topbar__nav-link')
     const topbarRule = findStyleRule('.app-topbar')
+    const userButtonRule = findStyleRule('.app-topbar__user-button')
     const contentRule = findStyleRule('.app-view-content')
 
     expect(rootRule?.style.getPropertyValue('--app-topbar-top-inset')).toBe('12px')
-    expect(rootRule?.style.getPropertyValue('--app-topbar-inset')).toBe('76px')
+    expect(rootRule?.style.getPropertyValue('--app-topbar-height')).toBe('68px')
+    expect(rootRule?.style.getPropertyValue('--app-topbar-inset')).toBe('79px')
     expect(dragRegionRule?.style.position).toBe('fixed')
     expect(dragRegionRule?.style.top).toBe('0px')
     expect(dragRegionRule?.style.left).toBe('0px')
@@ -29,6 +33,10 @@ describe('topbar window interaction boundaries', () => {
     expect(topbarRule?.style.left).toBe('var(--app-topbar-inset)')
     expect(topbarRule?.style.right).toBe('var(--app-topbar-inset)')
     expect(topbarRule?.style.getPropertyValue('--wails-draggable')).toBe('drag')
+    expect(iconButtonRule?.style.height).toBe('44px')
+    expect(iconButtonRule?.style.width).toBe('44px')
+    expect(navLinkRule?.style.height).toBe('36px')
+    expect(userButtonRule?.style.height).toBe('44px')
     expect(contentRule?.style.padding).toContain('var(--app-topbar-top-inset)')
   })
 
@@ -41,6 +49,19 @@ describe('topbar window interaction boundaries', () => {
     )
 
     expect(scrolledRule).toBeUndefined()
+  })
+
+  test('uses responsive thresholds that preserve the wider typography', () => {
+    const mediaConditions = rules
+      .filter((rule): rule is CSSMediaRule => rule instanceof CSSMediaRule)
+      .map((rule) => rule.conditionText)
+
+    expect(mediaConditions).toEqual(
+      expect.arrayContaining(['(max-width: 1240px)', '(max-width: 1120px)', '(max-width: 1010px)']),
+    )
+    expect(mediaConditions).not.toEqual(
+      expect.arrayContaining(['(max-width: 1180px)', '(max-width: 920px)', '(max-width: 768px)']),
+    )
   })
 
   test('marks portal content as non-draggable without a bespoke full-window overlay', () => {

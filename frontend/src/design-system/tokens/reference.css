@@ -44,8 +44,10 @@
   --ods-ref-color-teal-300: #43c7bd;
 
   /* Typography */
-  --ods-ref-font-family-display: 'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif;
-  --ods-ref-font-family-body: 'Inter', 'SF Pro Text', system-ui, -apple-system, sans-serif;
+  --ods-ref-font-family-display:
+    'MiSans VF', 'MiSans', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+  --ods-ref-font-family-body:
+    'MiSans VF', 'MiSans', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
   --ods-ref-font-family-mono: 'JetBrains Mono', 'SF Mono', monospace;
   --ods-ref-font-weight-regular: 400;
   --ods-ref-font-weight-medium: 500;
@@ -57,18 +59,20 @@
   --ods-ref-font-size-14: 0.875rem;
   --ods-ref-font-size-16: 1rem;
   --ods-ref-font-size-17: 1.0625rem;
+  --ods-ref-font-size-18: 1.125rem;
   --ods-ref-font-size-20: 1.25rem;
   --ods-ref-font-size-24: 1.5rem;
   --ods-ref-font-size-30: 1.875rem;
+  --ods-ref-font-size-32: 2rem;
   --ods-ref-font-size-40: 2.5rem;
   --ods-ref-font-size-56: 3.5rem;
-  --ods-ref-line-height-tight: 1.1;
-  --ods-ref-line-height-heading: 1.25;
-  --ods-ref-line-height-body: 1.47059;
-  --ods-ref-line-height-relaxed: 1.65;
-  --ods-ref-letter-spacing-tight: -0.025em;
-  --ods-ref-letter-spacing-body: -0.022em;
-  --ods-ref-letter-spacing-wide: 0.08em;
+  --ods-ref-line-height-tight: 1.15;
+  --ods-ref-line-height-heading: 1.3;
+  --ods-ref-line-height-body: 1.5;
+  --ods-ref-line-height-relaxed: 1.7;
+  --ods-ref-letter-spacing-tight: 0;
+  --ods-ref-letter-spacing-body: 0;
+  --ods-ref-letter-spacing-wide: 0;
 
   /* Four-pixel spacing grid */
   --ods-ref-space-0: 0;

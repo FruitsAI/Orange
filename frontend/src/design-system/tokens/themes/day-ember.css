@@ -12,6 +12,7 @@
   --ods-color-bg-surface-pressed: rgba(91, 67, 43, 0.09);
   --ods-color-fg-default: var(--ods-ref-color-warm-800);
   --ods-color-fg-default-rgb: 36, 27, 21;
+  --ods-color-fg-relaxed: rgba(51, 39, 31, 0.86);
   --ods-color-fg-muted: rgba(51, 39, 31, 0.7);
   --ods-color-fg-subtle: rgba(70, 53, 41, 0.48);
   --ods-color-fg-disabled: rgba(70, 53, 41, 0.28);

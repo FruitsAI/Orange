@@ -438,6 +438,7 @@ export default function DataSyncPanel() {
                   className="sync-empty-state"
                   description="请在上方点击「重新对比」按钮开始分析"
                   icon={<i className="ri-inbox-archive-line" />}
+                  size="md"
                   title="暂无对比数据"
                 />
               ) : (

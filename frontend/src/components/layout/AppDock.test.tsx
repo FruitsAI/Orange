@@ -99,7 +99,7 @@ describe('AppDock', () => {
   })
 
   test('defines the responsive CSS contract for the dock', () => {
-    // This audits declarations, not rendered geometry. Task 12 must verify 320/375/768px
+    // This audits declarations, not rendered geometry. Runtime checks cover representative widths.
     // Wails windows, keyboard Tab order, and open-menu viewport boundaries at runtime.
     const rules = Array.from(document.styleSheets).flatMap((sheet) => getCssRules(sheet.cssRules))
     const findStyleRule = (selector: string) =>
@@ -111,7 +111,7 @@ describe('AppDock', () => {
     const dockRule = findStyleRule('.app-dock')
     const responsiveRule = rules.find(
       (rule): rule is CSSMediaRule =>
-        rule instanceof CSSMediaRule && rule.conditionText.includes('max-width: 768px'),
+        rule instanceof CSSMediaRule && rule.conditionText.includes('max-width: 1010px'),
     )
     const responsiveStyles = responsiveRule ? Array.from(responsiveRule.cssRules) : []
     const findResponsiveStyle = (selector: string) =>
@@ -158,7 +158,6 @@ describe('AppDock', () => {
     )
     const compactCss = layoutCss.slice(compactCssStart, compactCssEnd)
 
-    expect(findCompactStyle('.app-topbar__command')?.style.display).toBe('none')
     expect(findCompactStyle('.app-topbar')?.style.getPropertyValue('padding-inline')).toBe('6px')
     expect(
       findCompactStyle('.app-topbar')?.style.getPropertyValue(

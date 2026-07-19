@@ -15,6 +15,14 @@ describe('SearchField', () => {
     expect(onValueChange).toHaveBeenLastCalledWith('e')
   })
 
+  it('keeps the input and its group on the same control size', () => {
+    render(<SearchField onValueChange={() => undefined} size="lg" value="" />)
+
+    const input = screen.getByRole('searchbox', { name: '搜索' })
+    expect(input).toHaveAttribute('data-size', 'lg')
+    expect(input.closest('.ods-input-group')).toHaveAttribute('data-size', 'lg')
+  })
+
   it('clears through the controlled callback and optional notification', async () => {
     const onClear = vi.fn()
     const onValueChange = vi.fn()

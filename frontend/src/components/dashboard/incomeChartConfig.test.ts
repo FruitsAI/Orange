@@ -31,7 +31,7 @@ describe('income chart configuration', () => {
     expect(incomePeriodOptions).toEqual([
       { label: '周', period: 'week', subtitle: '近7天计划与实际回款' },
       { label: '月', period: 'month', subtitle: '近30天计划与实际回款' },
-      { label: '季度', period: 'quarter', subtitle: '近3个月计划与实际回款' },
+      { label: '季', period: 'quarter', subtitle: '近3个月计划与实际回款' },
       { label: '年', period: 'year', subtitle: '近12个月计划与实际回款' },
     ])
   })

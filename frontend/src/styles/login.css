@@ -103,11 +103,34 @@
 }
 
 .login-wrapper .login-logo-icon {
+  position: relative;
   display: grid;
   width: 4.5rem;
   height: 4.5rem;
   margin: 0 auto var(--ods-space-4);
+  animation: login-logo-float 4s var(--ods-ease-in-out) infinite;
+  filter: drop-shadow(0 12px 24px rgba(var(--ods-color-accent-rgb), 0.34));
   place-items: center;
+  isolation: isolate;
+  will-change: transform;
+}
+
+.login-wrapper .login-logo-icon::before {
+  position: absolute;
+  z-index: -1;
+  inset: -0.65rem;
+  border-radius: var(--ods-radius-pill);
+  animation: login-logo-glow 3s var(--ods-ease-in-out) infinite;
+  background: radial-gradient(
+    circle,
+    rgba(var(--ods-color-accent-rgb), 0.34) 0%,
+    rgba(var(--ods-color-accent-rgb), 0.08) 48%,
+    transparent 72%
+  );
+  content: '';
+  filter: blur(2px);
+  pointer-events: none;
+  will-change: opacity, transform;
 }
 
 .login-wrapper .login-logo h1 {
@@ -161,6 +184,30 @@
   }
 }
 
+@keyframes login-logo-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 0.88;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes login-logo-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
 @keyframes login-drift-a {
   to {
     transform: translate3d(2rem, 1.25rem, 0);
@@ -192,6 +239,13 @@
 
   .login-wrapper .shape {
     animation: none;
+    will-change: auto;
+  }
+
+  .login-wrapper .login-logo-icon::before,
+  .login-wrapper .login-logo-icon {
+    animation: none;
+    transform: none;
     will-change: auto;
   }
 }

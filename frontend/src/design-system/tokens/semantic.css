@@ -13,13 +13,14 @@
   --ods-font-weight-medium: var(--ods-ref-font-weight-medium);
   --ods-font-weight-semibold: var(--ods-ref-font-weight-semibold);
   --ods-font-weight-bold: var(--ods-ref-font-weight-bold);
-  --ods-font-size-xs: var(--ods-ref-font-size-11);
-  --ods-font-size-sm: var(--ods-ref-font-size-12);
-  --ods-font-size-md: var(--ods-ref-font-size-14);
-  --ods-font-size-lg: var(--ods-ref-font-size-16);
-  --ods-font-size-xl: var(--ods-ref-font-size-17);
-  --ods-font-size-2xl: var(--ods-ref-font-size-20);
-  --ods-font-size-3xl: var(--ods-ref-font-size-30);
+  --ods-font-size-xs: var(--ods-ref-font-size-12);
+  --ods-font-size-sm: var(--ods-ref-font-size-14);
+  --ods-font-size-md: var(--ods-ref-font-size-16);
+  --ods-font-size-lg: var(--ods-ref-font-size-18);
+  --ods-font-size-xl: var(--ods-ref-font-size-20);
+  --ods-font-size-2xl: var(--ods-ref-font-size-24);
+  --ods-font-size-3xl: var(--ods-ref-font-size-32);
+  --ods-font-size-4xl: var(--ods-ref-font-size-40);
   --ods-font-size-display: var(--ods-ref-font-size-56);
   --ods-line-height-tight: var(--ods-ref-line-height-tight);
   --ods-line-height-heading: var(--ods-ref-line-height-heading);
@@ -85,7 +86,7 @@
 
   /* Desktop shell */
   --ods-shell-titlebar-clearance: 52px;
-  --ods-shell-topbar-height: 64px;
+  --ods-shell-topbar-height: 68px;
   --ods-shell-topbar-inline-inset: 14px;
   --ods-shell-content-gap: var(--ods-space-6);
 }

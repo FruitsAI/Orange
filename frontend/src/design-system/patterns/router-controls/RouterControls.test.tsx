@@ -39,7 +39,7 @@ describe('RouterButton', () => {
 describe('RouterIconButton', () => {
   it('combines router navigation with the ODS icon-button contract', () => {
     render(
-      <RouterIconButton label="系统设置" to="/settings" variant="secondary">
+      <RouterIconButton label="系统设置" to="/settings" tone="accent" variant="secondary">
         <i aria-hidden="true" className="ri-settings-4-line" />
       </RouterIconButton>,
     )
@@ -47,7 +47,9 @@ describe('RouterIconButton', () => {
     const link = screen.getByRole('link', { name: '系统设置' })
     expect(link).toHaveAttribute('href', '/settings')
     expect(link).toHaveClass('ods-button', 'ods-icon-button', 'ods-router-button')
+    expect(link).toHaveAttribute('data-tone', 'accent')
     expect(link).toHaveAttribute('data-variant', 'secondary')
+    expect(link.querySelector('[data-slot="icon"]')).toHaveClass('ods-icon-button__icon')
   })
 })
 
@@ -84,7 +86,11 @@ describe('RouterLink', () => {
     expect(link).toHaveAttribute('data-tone', 'foreground')
     expect(link).toHaveAttribute('data-underline', 'none')
     expect(link.querySelector('[data-slot="icon"]')).toBeInTheDocument()
+    expect(link.lastElementChild).toHaveAttribute('data-slot', 'icon')
     expect(routerControlsCss).toMatch(/\.ods-router-link\[data-appearance='row'\]/)
+    expect(routerControlsCss).toMatch(
+      /\.ods-router-link\[data-appearance='row'\] > \.ods-link__icon \{[^}]*justify-self: end;/,
+    )
     expect(routerControlsCss).toMatch(/@media \(hover: hover\) and \(pointer: fine\)/)
   })
 })

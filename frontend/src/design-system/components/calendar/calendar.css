@@ -6,8 +6,17 @@
   padding: var(--ods-space-4);
   border: 1px solid var(--ods-color-border-default);
   border-radius: var(--ods-radius-panel);
-  background: var(--ods-color-bg-surface-raised);
   font-family: var(--ods-font-family-body);
+}
+
+.ods-calendar[data-variant='secondary'] {
+  background: var(--ods-color-bg-surface-raised);
+  box-shadow: var(--ods-shadow-soft);
+}
+
+.ods-calendar[data-variant='tertiary'] {
+  background: var(--ods-color-bg-surface-glass);
+  box-shadow: var(--ods-shadow-panel);
 }
 
 .ods-calendar[data-layout='fluid'] {
@@ -29,39 +38,6 @@
   color: var(--ods-color-fg-default);
   font-size: var(--ods-font-size-md);
   font-weight: var(--ods-font-weight-semibold);
-}
-
-.ods-calendar__today {
-  padding: var(--ods-space-1) var(--ods-space-2);
-  border: 1px solid var(--ods-color-border-default);
-  border-radius: var(--ods-radius-sm);
-  background: var(--ods-color-bg-surface);
-  color: var(--ods-color-fg-muted);
-  font-family: var(--ods-font-family-body);
-  font-size: var(--ods-font-size-xs);
-  font-weight: var(--ods-font-weight-medium);
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    background-color var(--ods-duration-fast) var(--ods-ease-standard),
-    border-color var(--ods-duration-fast) var(--ods-ease-standard),
-    color var(--ods-duration-fast) var(--ods-ease-standard);
-}
-
-.ods-calendar__today:hover:not(:disabled) {
-  border-color: var(--ods-color-border-strong);
-  background: var(--ods-color-bg-surface-hover);
-  color: var(--ods-color-fg-default);
-}
-
-.ods-calendar__today:disabled {
-  color: var(--ods-color-fg-disabled);
-  cursor: not-allowed;
-}
-
-.ods-calendar__today:focus-visible {
-  outline: var(--ods-focus-ring-width) solid var(--ods-color-border-focus);
-  outline-offset: var(--ods-focus-ring-offset);
 }
 
 .ods-calendar__nav {
@@ -143,6 +119,30 @@
   height: 5px;
   border-radius: var(--ods-radius-pill);
   background: currentColor;
+}
+
+.ods-calendar__marker[data-tone='accent'] {
+  background: var(--ods-color-accent);
+  box-shadow: 0 0 6px rgba(var(--ods-color-accent-rgb), 0.55);
+}
+
+.ods-calendar__marker[data-tone='success'] {
+  background: var(--ods-color-status-success);
+}
+
+.ods-calendar__marker[data-tone='warning'] {
+  background: var(--ods-color-status-warning);
+}
+
+.ods-calendar__marker[data-tone='danger'] {
+  background: var(--ods-color-status-danger);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--ods-color-status-danger) 55%, transparent);
+}
+
+/* Selected day inverts to accent-fg; keep tone marks legible on the glow fill. */
+.ods-calendar__day[data-selected='true'] .ods-calendar__marker {
+  background: currentColor;
+  box-shadow: none;
 }
 
 .ods-calendar__day:hover:not(:disabled) {

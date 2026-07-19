@@ -2,7 +2,7 @@ import ActionQueue from '@/components/dashboard/ActionQueue'
 import FinancialHero, { type FinancialHeroProps } from '@/components/dashboard/FinancialHero'
 import IncomeChart from '@/components/dashboard/IncomeChart'
 import ProjectList from '@/components/dashboard/ProjectList'
-import SummaryMetric, { type SummaryMetricProps } from '@/components/dashboard/SummaryMetric'
+import { SummaryMetric, type SummaryMetricProps } from '@/design-system'
 import { formatCurrency } from '@/utils/format'
 import DashboardError from './dashboard/DashboardError'
 import DashboardSkeleton, { DashboardSectionSkeleton } from './dashboard/DashboardSkeleton'
@@ -126,7 +126,7 @@ export default function DashboardView() {
         data-motion-group="summary-metrics"
       >
         {summaryMetrics.map((metric) => (
-          <SummaryMetric key={metric.label} {...metric} />
+          <SummaryMetric key={String(metric.label)} {...metric} />
         ))}
       </div>
 

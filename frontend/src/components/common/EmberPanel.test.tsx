@@ -23,7 +23,7 @@ describe('EmberPanel', () => {
     const panel = screen.getByLabelText('财务面板')
     expect(panel).toHaveClass('ods-card', 'ember-panel', 'custom-panel')
     expect(panel).toHaveAttribute('data-gap', 'md')
-    expect(panel).toHaveAttribute('data-variant', 'secondary')
+    expect(panel).toHaveAttribute('data-variant', 'tertiary')
     expect(panel).toHaveAttribute('data-panel', 'income')
     expect(panel).toHaveTextContent('面板内容')
   })

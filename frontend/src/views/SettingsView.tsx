@@ -36,6 +36,26 @@ const techStack = [
   { key: 'go', label: 'Go' },
 ]
 
+const compactSettingsNavigationQuery = '(max-width: 48rem)'
+
+const useCompactSettingsNavigation = () => {
+  const [isCompact, setIsCompact] = useState(() =>
+    typeof window === 'undefined'
+      ? false
+      : window.matchMedia(compactSettingsNavigationQuery).matches,
+  )
+
+  useEffect(() => {
+    const media = window.matchMedia(compactSettingsNavigationQuery)
+    const sync = () => setIsCompact(media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
+
+  return isCompact
+}
+
 interface ReleaseInfo {
   html_url: string
   tag_name: string
@@ -94,6 +114,7 @@ export default function SettingsView() {
   const changePassword = useAuthStore((state) => state.changePassword)
   const theme = useThemeStore((state) => state.theme)
   const setTheme = useThemeStore((state) => state.setTheme)
+  const compactNavigation = useCompactSettingsNavigation()
   const isAdmin = user?.role === 'admin'
   const [profileForm, setProfileForm] = useState(() => createProfileFormState(user))
   const profile = profileForm.draft
@@ -151,6 +172,7 @@ export default function SettingsView() {
   const requestedTab = searchParams.get('tab')
   const activeTab =
     requestedTab && settingsNav.some((item) => item.key === requestedTab) ? requestedTab : 'profile'
+  const profileDirty = !profilesMatch(profile, originalProfile)
 
   const selectTab = (tab: string) => {
     if (tab === activeTab || !settingsNav.some((item) => item.key === tab)) return
@@ -269,39 +291,39 @@ export default function SettingsView() {
   const activePanel = () => {
     if (activeTab === 'users' && isAdmin) {
       return (
-        <Card.Root className="h-fit flex flex-col overflow-hidden" gap="lg" padding="lg">
+        <section className="settings-management-panel" aria-label="用户管理设置">
           <UserManagement />
-        </Card.Root>
+        </section>
       )
     }
 
     if (activeTab === 'dictionary') {
       return (
-        <Card.Root className="flex flex-col" gap="lg" padding="lg">
+        <section className="settings-management-panel" aria-label="字典管理设置">
           <DictionaryManagement />
-        </Card.Root>
+        </section>
       )
     }
 
     if (activeTab === 'data-sync') {
       return (
-        <Card.Root className="h-full" gap="lg" padding="lg">
+        <section className="settings-management-panel" aria-label="数据同步设置">
           <DataSyncPanel />
-        </Card.Root>
+        </section>
       )
     }
 
     if (activeTab === 'developer') {
       return (
-        <Card.Root className="h-full" gap="lg" padding="lg">
+        <section className="settings-management-panel" aria-label="开发设置">
           <TokenManagement />
-        </Card.Root>
+        </section>
       )
     }
 
     if (activeTab === 'security') {
       return (
-        <Card.Root className="security-card" gap="lg" padding="lg">
+        <Card.Root className="security-card" gap="lg" padding="lg" variant="secondary">
           <SectionHeader
             actions={
               <Button onClick={handlePasswordChange}>
@@ -377,15 +399,15 @@ export default function SettingsView() {
 
     if (activeTab === 'notification') {
       return (
-        <Card.Root className="h-full" gap="lg" padding="lg">
+        <section className="settings-management-panel" aria-label="通知设置">
           <NotificationManagement isAdmin={isAdmin} />
-        </Card.Root>
+        </section>
       )
     }
 
     if (activeTab === 'appearance') {
       return (
-        <Card.Root className="appearance-card" gap="lg" padding="lg">
+        <Card.Root className="appearance-card" gap="lg" padding="lg" variant="secondary">
           <SectionHeader
             description="自定义界面主题，打造专属的使用体验"
             icon={<i className="ri-palette-line" />}
@@ -402,7 +424,7 @@ export default function SettingsView() {
           >
             {THEME_OPTIONS.map((item) => (
               <Radio key={item.value} value={item.value} variant="card">
-                <span className="theme-card-content">
+                <span className="theme-card-content" data-active={theme === item.value}>
                   <span className="theme-icon">
                     <i className={item.icon} />
                   </span>
@@ -422,7 +444,7 @@ export default function SettingsView() {
 
     if (activeTab === 'about') {
       return (
-        <Card.Root className="about-page h-auto min-h-full">
+        <section className="about-page">
           <div className="about-container">
             <div className="about-hero">
               <div className="logo-wrapper">
@@ -512,12 +534,12 @@ export default function SettingsView() {
               <span className="copyright-rights">All rights reserved</span>
             </div>
           </div>
-        </Card.Root>
+        </section>
       )
     }
 
     return (
-      <Card.Root className="profile-card" gap="lg" padding="lg">
+      <Card.Root className="profile-card" gap="lg" padding="lg" variant="secondary">
         <SectionHeader
           actions={
             <Button onClick={saveProfile}>
@@ -598,24 +620,52 @@ export default function SettingsView() {
   }
 
   return (
-    <Tabs.Root className="settings-view" onValueChange={selectTab} value={activeTab}>
-      <Card.Root className="h-fit nav-card" gap="sm" padding="sm">
-        <Card.Header>
-          <SectionHeader density="compact" title="设置" />
-        </Card.Header>
-        <Tabs.List aria-label="设置分类" orientation="vertical" variant="navigation">
-          {settingsNav.map((item) => (
-            <Tabs.Tab key={item.key} value={item.key}>
-              <i aria-hidden="true" className={`${item.icon} nav-icon`} />{' '}
-              <span className="nav-label">{item.label}</span>
-            </Tabs.Tab>
-          ))}
-        </Tabs.List>
-      </Card.Root>
+    <div className="settings-workspace" data-motion-scope="settings">
+      <Tabs.Root className="settings-view" onValueChange={selectTab} value={activeTab}>
+        <aside className="settings-navigation" aria-label="设置导航">
+          <Card.Root className="nav-card" gap="sm" padding="sm" variant="secondary">
+            <div className="settings-nav-header">
+              <span aria-hidden="true" className="settings-nav-header__icon">
+                <i className="ri-equalizer-2-line" />
+              </span>
+              <span className="settings-nav-header__copy">
+                <strong>设置分类</strong>
+                <span>{settingsNav.length} 个可用分区</span>
+              </span>
+            </div>
 
-      <Tabs.Panel className="settings-content" value={activeTab}>
-        {activePanel()}
-      </Tabs.Panel>
-    </Tabs.Root>
+            <Tabs.List
+              aria-label="设置分类"
+              orientation={compactNavigation ? 'horizontal' : 'vertical'}
+              variant="rail"
+            >
+              {settingsNav.map((item) => (
+                <Tabs.Tab key={item.key} value={item.key}>
+                  <i aria-hidden="true" className={item.icon} />
+                  <span>{item.label}</span>
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+
+            <div className="settings-nav-footer">
+              <i aria-hidden="true" className="ri-shield-check-line" />
+              <span>{isAdmin ? '管理权限已启用' : '账户配置受保护'}</span>
+            </div>
+          </Card.Root>
+        </aside>
+
+        <Tabs.Panel className="settings-content" value={activeTab}>
+          <div className="settings-panel-frame" key={activeTab}>
+            {activeTab === 'profile' && profileDirty ? (
+              <div className="settings-unsaved-indicator" role="status">
+                <i aria-hidden="true" className="ri-edit-circle-line" />
+                有尚未保存的个人信息更改
+              </div>
+            ) : null}
+            {activePanel()}
+          </div>
+        </Tabs.Panel>
+      </Tabs.Root>
+    </div>
   )
 }

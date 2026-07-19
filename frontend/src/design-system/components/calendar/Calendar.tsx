@@ -9,8 +9,11 @@ import {
   type MutableRefObject,
   type Ref,
 } from 'react'
+import { Button } from '../button'
 
 export type CalendarLayout = 'compact' | 'fluid'
+export type CalendarMarkTone = 'accent' | 'success' | 'warning' | 'danger'
+export type CalendarVariant = 'secondary' | 'tertiary'
 
 export interface CalendarDayState {
   isDisabled: boolean
@@ -22,6 +25,7 @@ export interface CalendarDayState {
 
 export interface CalendarProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
   getDateAriaLabel?: (date: string, state: CalendarDayState) => string
+  getDateTone?: (date: string) => CalendarMarkTone | undefined
   isDateMarked?: (date: string) => boolean
   layout?: CalendarLayout
   max?: string
@@ -31,6 +35,7 @@ export interface CalendarProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onC
   showTodayAction?: boolean
   todayActionLabel?: string
   value?: string
+  variant?: CalendarVariant
   visibleMonth?: string
 }
 
@@ -80,6 +85,7 @@ export const Calendar = forwardRef<HTMLDivElement, CalendarProps>(function Calen
   {
     className,
     getDateAriaLabel,
+    getDateTone,
     isDateMarked,
     layout = 'compact',
     max,
@@ -89,6 +95,7 @@ export const Calendar = forwardRef<HTMLDivElement, CalendarProps>(function Calen
     showTodayAction = false,
     todayActionLabel = '今天',
     value,
+    variant = 'secondary',
     visibleMonth: controlledVisibleMonth,
     ...props
   },
@@ -224,6 +231,7 @@ export const Calendar = forwardRef<HTMLDivElement, CalendarProps>(function Calen
       className={['ods-calendar', className].filter(Boolean).join(' ')}
       data-layout={layout}
       data-slot="calendar"
+      data-variant={variant}
       data-view={view}
       ref={(node) => {
         calendarRef.current = node
@@ -263,14 +271,15 @@ export const Calendar = forwardRef<HTMLDivElement, CalendarProps>(function Calen
           ) : null}
         </span>
         {showTodayAction ? (
-          <button
+          <Button
             className="ods-calendar__today"
             disabled={todayDisabled}
             onClick={selectToday}
-            type="button"
+            size="sm"
+            variant="outline"
           >
             {todayActionLabel}
-          </button>
+          </Button>
         ) : null}
         <button
           aria-label={view === 'days' ? '下个月' : view === 'months' ? '下一年' : '后 12 年'}
@@ -306,7 +315,8 @@ export const Calendar = forwardRef<HTMLDivElement, CalendarProps>(function Calen
                   const isSelected = selected ? day.isSame(selected, 'day') : false
                   const isToday = day.isSame(dayjs(), 'day')
                   const disabled = isDisabled(day)
-                  const isMarked = isDateMarked?.(date) ?? false
+                  const markTone = getDateTone?.(date)
+                  const isMarked = (isDateMarked?.(date) ?? false) || markTone !== undefined
                   const state: CalendarDayState = {
                     isDisabled: disabled,
                     isMarked,
@@ -347,6 +357,7 @@ export const Calendar = forwardRef<HTMLDivElement, CalendarProps>(function Calen
                             aria-hidden="true"
                             className="ods-calendar__marker"
                             data-slot="marker"
+                            data-tone={markTone}
                           />
                         ) : null}
                       </button>

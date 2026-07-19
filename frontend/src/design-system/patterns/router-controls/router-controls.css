@@ -67,6 +67,7 @@
 
 .ods-router-link[data-appearance='row'] > .ods-link__icon {
   color: var(--ods-color-fg-subtle);
+  justify-self: end;
   transition: transform var(--ods-duration-instant) var(--ods-ease-standard);
 }
 

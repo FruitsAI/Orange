@@ -90,7 +90,7 @@ describe('SettingsView', () => {
     expect(screen.getByRole('tablist', { name: '设置分类' })).toHaveClass('ods-tabs__list')
     expect(screen.getByRole('tablist', { name: '设置分类' })).toHaveAttribute(
       'data-variant',
-      'navigation',
+      'rail',
     )
     expect(automatic.closest('.ods-radio')).not.toBeNull()
     expect(automatic.closest('.ods-radio')).toHaveAttribute('data-variant', 'card')
@@ -110,6 +110,14 @@ describe('SettingsView', () => {
     expect(screen.getByRole('button', { name: '保存更改' })).toHaveClass('ods-button')
     expect(screen.getByRole('textbox', { name: '姓名' })).toHaveClass('ods-input')
     expect(screen.getByRole('textbox', { name: '部门' }).closest('.ods-field')).not.toBeNull()
+  })
+
+  it('starts directly with settings navigation without a redundant overview', () => {
+    render(<SettingsView />, { initialEntries: ['/settings?tab=profile'] })
+
+    expect(screen.queryByRole('heading', { level: 1, name: '系统设置' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('当前设置状态')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('设置导航')).toBeInTheDocument()
   })
 
   it('derives the authorized active tab from the URL and follows same-route history', async () => {

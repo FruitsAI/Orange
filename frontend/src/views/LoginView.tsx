@@ -69,6 +69,7 @@ export default function LoginView() {
         label={effectiveTheme === 'dark' ? '切换至亮色主题' : '切换至深色主题'}
         onClick={toggleTheme}
         title="切换主题"
+        tone="accent"
         variant="secondary"
       >
         <i className={effectiveTheme === 'dark' ? 'ri-moon-line' : 'ri-sun-line'} />
@@ -96,13 +97,19 @@ export default function LoginView() {
             <form className="login-form" onSubmit={handleLogin}>
               <Field.Root id="username">
                 <Field.Label>用户名 / 邮箱 / 手机号</Field.Label>
-                <InputGroup startContent={<i aria-hidden="true" className="ri-mail-line" />}>
+                <InputGroup
+                  adornmentSpacing="balanced"
+                  focusAdornmentTone="accent"
+                  size="lg"
+                  startContent={<i aria-hidden="true" className="ri-mail-line" />}
+                >
                   <Input
                     autoCapitalize="off"
                     autoComplete="username"
                     autoCorrect="off"
                     onChange={(event) => setUsername(event.target.value)}
                     placeholder="请输入用户名或邮箱"
+                    size="lg"
                     spellCheck={false}
                     type="text"
                     value={username}
@@ -113,16 +120,19 @@ export default function LoginView() {
               <Field.Root id="password">
                 <Field.Label>密码</Field.Label>
                 <InputGroup
+                  adornmentSpacing="balanced"
                   endContent={
                     <IconButton
                       label={showPassword ? '隐藏密码' : '显示密码'}
                       onClick={() => setShowPassword((value) => !value)}
-                      size="sm"
+                      size="md"
                       variant="ghost"
                     >
                       <i className={showPassword ? 'ri-eye-line' : 'ri-eye-off-line'} />
                     </IconButton>
                   }
+                  focusAdornmentTone="accent"
+                  size="lg"
                   startContent={<i aria-hidden="true" className="ri-lock-line" />}
                 >
                   <Input
@@ -131,6 +141,7 @@ export default function LoginView() {
                     autoCorrect="off"
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="请输入密码"
+                    size="lg"
                     spellCheck={false}
                     type={showPassword ? 'text' : 'password'}
                     value={password}
@@ -156,7 +167,7 @@ export default function LoginView() {
                 />
               ) : null}
 
-              <Button fullWidth pending={loading} type="submit" variant="primary">
+              <Button fullWidth pending={loading} size="lg" type="submit" variant="primary">
                 {loading ? '登录中...' : '登录'}
               </Button>
             </form>

@@ -1,5 +1,12 @@
 import dayjs from 'dayjs'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { paymentApi, projectApi, type Payment, type Project } from '@/api/project'
 import { PaymentStatusChip, ProjectStatusChip } from '@/components/project/ProjectStatusChip'
@@ -11,7 +18,6 @@ import {
   EmptyState,
   IconButton,
   PageHeader,
-  ProgressBar,
   RouterButton,
   SectionHeader,
   Skeleton,
@@ -21,6 +27,35 @@ import {
 import { useToastStore } from '@/composables/useToast'
 import { formatCurrency, formatDate } from '@/utils/format'
 import '@/styles/project-domain.css'
+
+const paymentStageLabels: Record<string, string> = {
+  all: '全款',
+  deposit: '预付款',
+  final: '尾款',
+  milestone: '阶段款',
+  progress: '进度款',
+}
+
+const paymentMethodLabels: Record<string, string> = {
+  alipay: '支付宝',
+  bank_transfer: '银行转账',
+  cash: '现金',
+  wechat: '微信',
+}
+
+const projectTypeLabels: Record<string, string> = {
+  consulting: '技术咨询',
+  other: '其他',
+  service: '运营服务',
+  software: '软件开发',
+}
+
+const isPaymentSettled = (payment: Payment) =>
+  payment.status === 'paid' || payment.status === 'confirmed'
+
+const getPaymentStageLabel = (stage: string) => paymentStageLabels[stage] || stage || '款项'
+
+const getPaymentMethodLabel = (method: string) => paymentMethodLabels[method] || method || '未设置'
 
 export default function ProjectDetailView() {
   const { id } = useParams()
@@ -148,11 +183,30 @@ export default function ProjectDetailView() {
     )
   }
 
-  const paidAmount = project.received_amount || 0
-  const progress = project.total_amount ? Math.round((paidAmount / project.total_amount) * 100) : 0
+  const paidAmount = Math.max(project.received_amount || 0, 0)
+  const remainingAmount = Math.max(project.total_amount - paidAmount, 0)
+  const progress = project.total_amount
+    ? Math.min(100, Math.max(0, Math.round((paidAmount / project.total_amount) * 100)))
+    : 0
+  const settledPaymentCount = payments.filter(isPaymentSettled).length
+  const nextPayment = [...payments]
+    .filter((payment) => !isPaymentSettled(payment))
+    .sort((left, right) => left.plan_date.localeCompare(right.plan_date))[0]
+  const runwayStage =
+    project.status === 'completed' || project.status === 'archived'
+      ? 3
+      : project.status === 'notstarted'
+        ? 1
+        : 2
+  const runwayProgress = ((runwayStage - 1) / 2) * 100
+  const runwayItems = [
+    { date: project.contract_date, label: '合同签署' },
+    { date: project.start_date, label: '项目启动' },
+    { date: project.end_date, label: '预计完成' },
+  ]
 
   return (
-    <div className="project-detail-view">
+    <div className="project-detail-view" data-motion-scope="project-detail">
       <PageHeader
         actions={
           <ButtonGroup aria-label="项目操作" className="project-detail-actions">
@@ -180,6 +234,13 @@ export default function ProjectDetailView() {
             <ProjectStatusChip status={project.status} />
           </span>
         }
+        eyebrow={
+          <span className="project-detail-kicker">
+            <i aria-hidden="true" className="ri-folder-chart-line" />
+            项目台账
+            <span>{project.contract_number || `#${project.id}`}</span>
+          </span>
+        }
         leading={
           <IconButton label="返回项目列表" onClick={() => navigate('/projects')} variant="ghost">
             <i aria-hidden="true" className="ri-arrow-left-line" />
@@ -189,11 +250,19 @@ export default function ProjectDetailView() {
       />
 
       <Tabs.Root className="project-detail-tabs" onValueChange={selectTab} value={activeTab}>
-        <Tabs.List aria-label="项目详情视图">
-          <Tabs.Tab className={activeTab === 'overview' ? 'active' : undefined} value="overview">
+        <Tabs.List aria-label="项目详情视图" className="project-detail-tab-list" variant="accent">
+          <Tabs.Tab
+            className={`project-detail-tab${activeTab === 'overview' ? ' active' : ''}`}
+            value="overview"
+          >
+            <i aria-hidden="true" className="ri-layout-grid-line" />
             项目概览
           </Tabs.Tab>
-          <Tabs.Tab className={activeTab === 'payments' ? 'active' : undefined} value="payments">
+          <Tabs.Tab
+            className={`project-detail-tab${activeTab === 'payments' ? ' active' : ''}`}
+            value="payments"
+          >
+            <i aria-hidden="true" className="ri-secure-payment-line" />
             收款计划
           </Tabs.Tab>
         </Tabs.List>
@@ -201,90 +270,189 @@ export default function ProjectDetailView() {
         <Tabs.Panel value="overview">
           {activeTab === 'overview' ? (
             <div className="project-detail-content">
-              <Card.Root className="project-detail-card">
-                <div className="progress-card-content">
-                  <CircularProgress
-                    aria-label="项目总进度"
-                    className="project-overview-progress"
-                    showValueLabel
-                    size="lg"
-                    value={progress}
-                  />
-
-                  <div className="progress-info">
-                    <Card.Title>项目整体进度</Card.Title>
-                    <Card.Description>
+              <Card.Root
+                aria-label="项目结算概览"
+                className="project-settlement-board"
+                data-motion="entrance"
+                gap="none"
+                padding="none"
+                variant="secondary"
+              >
+                <div className="project-settlement-board__main">
+                  <div className="project-settlement-board__headline">
+                    <span className="project-settlement-board__eyebrow">
+                      <span aria-hidden="true" className="project-live-dot" />
+                      项目结算盘面
+                    </span>
+                    <span className="project-settlement-board__label">待回款</span>
+                    <strong className="project-settlement-board__amount">
+                      {formatCurrency(remainingAmount)}
+                    </strong>
+                    <p>
                       {progress >= 100
-                        ? '项目已全部完成，等待最终交付确认。'
-                        : '当前项目正如期进行中，已完成关键里程碑。'}
-                    </Card.Description>
-                    <div className="info-grid">
-                      <div className="info-item">
-                        <div className="label">开始日期</div>
-                        <div className="value">{formatDate(project.start_date)}</div>
-                      </div>
-                      <div className="info-item">
-                        <div className="label">预计完成</div>
-                        <div className="value">{formatDate(project.end_date)}</div>
-                      </div>
-                      <div className="info-item">
-                        <div className="label">合同编号</div>
-                        <div className="value font-mono">{project.contract_number || '-'}</div>
-                      </div>
-                      <div className="info-item">
-                        <div className="label">签约日期</div>
-                        <div className="value">{formatDate(project.contract_date)}</div>
-                      </div>
+                        ? '合同款项已全部回收，项目财务闭环已完成。'
+                        : `已回收合同金额的 ${progress}%，剩余款项按计划持续跟进。`}
+                    </p>
+                  </div>
+
+                  <div className="project-settlement-progress">
+                    <CircularProgress
+                      aria-label="项目总进度"
+                      className="project-overview-progress"
+                      showValueLabel
+                      size="lg"
+                      tone={progress >= 100 ? 'success' : 'accent'}
+                      value={progress}
+                    />
+                    <div>
+                      <strong className="project-settlement-progress__label">项目整体进度</strong>
+                      <span>以合同回款计算</span>
                     </div>
                   </div>
+
+                  <dl className="project-settlement-stats">
+                    <div>
+                      <dt>合同总额</dt>
+                      <dd>{formatCurrency(project.total_amount)}</dd>
+                    </div>
+                    <div>
+                      <dt>已收款</dt>
+                      <dd className="project-settlement-stats__success">
+                        {formatCurrency(paidAmount)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>收款节点</dt>
+                      <dd>
+                        {settledPaymentCount}
+                        <span> / {payments.length}</span>
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div
+                  className="project-runway"
+                  style={{ '--project-runway-scale': runwayProgress / 100 } as CSSProperties}
+                >
+                  <div className="project-runway__header">
+                    <strong>项目履约轨道</strong>
+                    <span>{project.status === 'completed' ? '已完成' : '按合同周期推进'}</span>
+                  </div>
+                  <ol className="project-runway__track">
+                    {runwayItems.map((item, index) => (
+                      <li data-reached={index + 1 <= runwayStage} key={item.label}>
+                        <span aria-hidden="true" className="project-runway__node">
+                          {index + 1 <= runwayStage ? <i className="ri-check-line" /> : index + 1}
+                        </span>
+                        <strong>{item.label}</strong>
+                        <time dateTime={item.date}>{formatDate(item.date)}</time>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
               </Card.Root>
 
-              <Card.Root className="project-detail-card">
-                <Card.Header>
-                  <Card.Title>收款概况</Card.Title>
-                </Card.Header>
-                <Card.Content>
-                  <div className="financial-grid">
-                    <Card.Root className="finance-card" gap="none" padding="md" variant="secondary">
-                      <span className="label">合同总额</span>
-                      <span className="amount">{formatCurrency(project.total_amount)}</span>
-                    </Card.Root>
-                    <Card.Root className="finance-card" gap="none" padding="md" tone="success">
-                      <span className="label">已收款</span>
-                      <span className="amount">{formatCurrency(paidAmount)}</span>
-                    </Card.Root>
-                    <Card.Root className="finance-card" gap="none" padding="md" tone="warning">
-                      <span className="label">待收款</span>
-                      <span className="amount">
-                        {formatCurrency(project.total_amount - paidAmount)}
-                      </span>
-                    </Card.Root>
-                  </div>
+              <div className="project-overview-grid" data-motion="entrance">
+                <Card.Root className="project-record-card" padding="lg">
+                  <Card.Header>
+                    <Card.Title>项目档案</Card.Title>
+                    <Card.Description>合同与交付的核心信息</Card.Description>
+                  </Card.Header>
+                  <Card.Content>
+                    <dl className="project-record-list">
+                      <div>
+                        <dt>项目类型</dt>
+                        <dd>{projectTypeLabels[project.type] || project.type || '-'}</dd>
+                      </div>
+                      <div>
+                        <dt>付款方式</dt>
+                        <dd>{project.payment_method || '-'}</dd>
+                      </div>
+                      <div>
+                        <dt>合同编号</dt>
+                        <dd className="font-mono">{project.contract_number || '-'}</dd>
+                      </div>
+                      <div>
+                        <dt>签约日期</dt>
+                        <dd>{formatDate(project.contract_date)}</dd>
+                      </div>
+                      <div>
+                        <dt>项目周期</dt>
+                        <dd>
+                          {formatDate(project.start_date)} - {formatDate(project.end_date)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>建档日期</dt>
+                        <dd>{formatDate(project.create_time)}</dd>
+                      </div>
+                    </dl>
+                  </Card.Content>
+                </Card.Root>
 
-                  <div className="project-payment-progress">
-                    <div className="project-payment-progress__header">
-                      <span>收款进度</span>
-                      <strong>{progress}%</strong>
-                    </div>
-                    <ProgressBar
-                      label="项目收款进度"
-                      tone="success"
-                      value={progress}
-                      valueLabel={`${progress}%`}
-                    />
-                  </div>
-                </Card.Content>
-              </Card.Root>
+                <div className="project-overview-aside">
+                  <Card.Root className="project-next-payment-card" padding="lg">
+                    <Card.Header>
+                      <div className="project-card-heading-row">
+                        <div>
+                          <Card.Title>下一笔计划</Card.Title>
+                          <Card.Description>当前最需要跟进的收款节点</Card.Description>
+                        </div>
+                        <Surface
+                          className="project-card-heading-icon"
+                          padding="none"
+                          radius="control"
+                          tone="accent"
+                          variant="inset"
+                        >
+                          <i aria-hidden="true" className="ri-calendar-check-line" />
+                        </Surface>
+                      </div>
+                    </Card.Header>
+                    <Card.Content>
+                      {nextPayment ? (
+                        <div className="project-next-payment">
+                          <div>
+                            <span>{getPaymentStageLabel(nextPayment.stage)}</span>
+                            <strong>{formatCurrency(nextPayment.amount)}</strong>
+                          </div>
+                          <time dateTime={nextPayment.plan_date}>
+                            {formatDate(nextPayment.plan_date)}
+                          </time>
+                          <RouterButton
+                            size="sm"
+                            to={`/projects/${project.id}?tab=payments&payment=${nextPayment.id}`}
+                            variant="secondary"
+                          >
+                            查看收款节点
+                            <i aria-hidden="true" className="ri-arrow-right-line" />
+                          </RouterButton>
+                        </div>
+                      ) : (
+                        <div className="project-next-payment project-next-payment--empty">
+                          <i aria-hidden="true" className="ri-checkbox-circle-line" />
+                          <strong>
+                            {payments.length ? '所有款项均已完成' : '尚未安排收款节点'}
+                          </strong>
+                          <span>
+                            {payments.length ? '无需继续跟进收款。' : '添加计划后可在此追踪。'}
+                          </span>
+                        </div>
+                      )}
+                    </Card.Content>
+                  </Card.Root>
 
-              <Card.Root>
-                <Card.Header>
-                  <Card.Title>项目描述</Card.Title>
-                </Card.Header>
-                <Card.Content>
-                  <p className="project-description">{project.description || '暂无项目描述'}</p>
-                </Card.Content>
-              </Card.Root>
+                  <Card.Root className="project-notes-card" padding="lg" variant="secondary">
+                    <Card.Header>
+                      <Card.Title>项目说明</Card.Title>
+                    </Card.Header>
+                    <Card.Content>
+                      <p className="project-description">{project.description || '暂无项目描述'}</p>
+                    </Card.Content>
+                  </Card.Root>
+                </div>
+              </div>
             </div>
           ) : null}
         </Tabs.Panel>
@@ -315,14 +483,16 @@ export default function ProjectDetailView() {
                     }
                     description="创建收款节点后，可在这里跟踪到账进度。"
                     icon={<i className="ri-secure-payment-line" />}
+                    size="lg"
                     title="暂无收款计划"
                   />
                 </Card.Root>
               ) : (
                 <div className="payments-list">
-                  {payments.map((payment) => (
+                  {payments.map((payment, index) => (
                     <Card.Root
                       className="payment-item"
+                      data-motion-item
                       data-payment-id={payment.id}
                       data-testid={`payment-${payment.id}`}
                       id={`payment-${payment.id}`}
@@ -331,6 +501,9 @@ export default function ProjectDetailView() {
                       tabIndex={-1}
                       tone={String(payment.id) === requestedPayment ? 'accent' : 'neutral'}
                     >
+                      <span aria-hidden="true" className="payment-sequence">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
                       <div className="payment-left">
                         <Surface
                           className="payment-icon"
@@ -343,22 +516,24 @@ export default function ProjectDetailView() {
                         </Surface>
                         <div>
                           <div className="payment-title-row">
-                            <strong>{payment.stage}</strong>
+                            <strong>{getPaymentStageLabel(payment.stage)}</strong>
                             <PaymentStatusChip status={payment.status} />
                           </div>
-                          <div className="payment-date">
-                            {payment.status === 'paid' || payment.status === 'confirmed'
-                              ? '实际收款'
-                              : '预计收款'}
-                            ：{formatDate(payment.actual_date || payment.plan_date)}
+                          <div className="payment-meta-row">
+                            <span className="payment-date">
+                              {isPaymentSettled(payment) ? '实际收款' : '预计收款'}：
+                              {formatDate(payment.actual_date || payment.plan_date)}
+                            </span>
+                            <span aria-hidden="true">·</span>
+                            <span>{getPaymentMethodLabel(payment.method)}</span>
                           </div>
                         </div>
                       </div>
                       <div className="payment-right">
                         <div className="amount-text">{formatCurrency(payment.amount)}</div>
-                        {payment.status !== 'paid' && payment.status !== 'confirmed' ? (
+                        {!isPaymentSettled(payment) ? (
                           <Button
-                            aria-label={`${payment.stage}：确认收款`}
+                            aria-label={`${getPaymentStageLabel(payment.stage)}：确认收款`}
                             onClick={() => void confirmPayment(payment.id)}
                             size="sm"
                             variant="ghost"

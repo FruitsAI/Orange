@@ -247,6 +247,7 @@ export default function DictionaryManagement() {
                 className="dict-empty"
                 description="点击右上角按钮添加新条目"
                 icon={<i className="ri-file-list-3-line" />}
+                size="md"
                 title="暂无数据"
               />
             ) : (

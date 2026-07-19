@@ -1,0 +1,147 @@
+/* Analytics page composition and motion. ODS owns component paint and anatomy. */
+.analytics-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ods-space-6);
+  min-width: 0;
+}
+
+.analytics-page-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ods-space-3);
+  justify-content: flex-end;
+  margin-bottom: 0;
+}
+
+.analytics-period-panel {
+  display: grid;
+  gap: var(--ods-space-6);
+  min-width: 0;
+}
+
+.analytics-metrics {
+  display: grid;
+  gap: var(--ods-space-4);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.analytics-metric-item {
+  min-width: 0;
+}
+
+.analytics-metric-item > * {
+  height: 100%;
+}
+
+.analytics-chart-layout {
+  align-items: stretch;
+  display: grid;
+  gap: var(--ods-space-6);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.analytics-chart-card {
+  min-width: 0;
+  min-height: 0;
+}
+
+.analytics-chart-card__content {
+  display: flex;
+  height: 22rem;
+  min-height: 22rem;
+  position: relative;
+  flex-direction: column;
+  gap: var(--ods-space-4);
+}
+
+.analytics-chart-card__content canvas {
+  display: block;
+  max-width: 100%;
+}
+
+.analytics-chart-state {
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+}
+
+.analytics-chart-empty {
+  flex: 1;
+  justify-content: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .analytics-view [data-motion='entrance'] {
+    animation: ember-enter-up var(--ods-duration-page) var(--ods-ease-emphasized) both;
+  }
+
+  .analytics-metrics > :nth-child(2) > [data-motion='entrance'] {
+    animation-delay: 60ms;
+  }
+
+  .analytics-metrics > :nth-child(3) > [data-motion='entrance'] {
+    animation-delay: 100ms;
+  }
+
+  .analytics-metrics > :nth-child(4) > [data-motion='entrance'] {
+    animation-delay: 140ms;
+  }
+
+  .analytics-chart-layout > :first-child {
+    animation-delay: 180ms;
+  }
+
+  .analytics-chart-layout > :last-child {
+    animation-delay: 220ms;
+  }
+}
+
+@media (max-width: 1120px) {
+  .analytics-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-chart-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .analytics-page-toolbar {
+    align-items: stretch;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .analytics-page-toolbar > * {
+    min-width: 0;
+  }
+
+  .analytics-page-toolbar > [role='tablist'] {
+    flex: 1 1 100%;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  .analytics-export-button {
+    flex: 1 1 auto;
+  }
+
+  .analytics-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .analytics-chart-card__content {
+    height: 18rem;
+    min-height: 18rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analytics-view [data-motion='entrance'] {
+    animation: none;
+    transform: none;
+  }
+}

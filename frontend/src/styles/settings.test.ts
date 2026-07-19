@@ -42,10 +42,24 @@ describe('settings design-system ownership contract', () => {
     expect(settingsProductionSource.match(/variant="card"/g)).toHaveLength(3)
   })
 
-  it('uses the shared navigation Tabs treatment for both settings sidebars', () => {
+  it('uses shared Tabs treatments for the workspace rail and dictionary sidebar', () => {
+    expect(tabsCss).toContain(".ods-tabs__list[data-variant='rail']")
     expect(tabsCss).toContain(".ods-tabs__list[data-variant='navigation']")
-    expect(settingsSource).toContain('variant="navigation"')
+    expect(tabsCss).toMatch(
+      /data-variant='navigation'\] \.ods-tabs__tab\s*\{[\s\S]*gap:\s*var\(--ods-space-2\)/,
+    )
+    expect(tabsCss).toMatch(
+      /data-variant='rail'\] \.ods-tabs__tab > i\s*\{[\s\S]*width:\s*1\.25rem/,
+    )
+    expect(settingsSource).toContain('variant="rail"')
     expect(dictionarySource).toContain('variant="navigation"')
+  })
+
+  it('uses the relaxed foreground and lighter heading weights within settings', () => {
+    expect(settingsCss).toContain('--ods-color-fg-default: var(--ods-color-fg-relaxed)')
+    expect(settingsCss).toContain('--ods-font-weight-semibold: var(--ods-font-weight-medium)')
+    expect(settingsCss).toContain('--ods-font-weight-bold: 600')
+    expect(settingsSource).not.toContain('className="settings-overview"')
   })
 
   it('does not attach legacy primitive classes to ODS controls', () => {
@@ -71,7 +85,7 @@ describe('settings design-system ownership contract', () => {
   })
 
   it('composes every settings panel heading from the shared SectionHeader pattern', () => {
-    expect(settingsProductionSource.match(/<SectionHeader\b/g)).toHaveLength(11)
+    expect(settingsProductionSource.match(/<SectionHeader\b/g)).toHaveLength(10)
     expect(settingsProductionSource).not.toMatch(
       /className="(?:nav-header|dev-header|dev-header-content|dev-title-section|dev-title-info|dev-title|dev-subtitle|dev-icon-wrapper|appearance-header|appearance-header-main|appearance-title-wrapper|appearance-title-content|appearance-title|appearance-subtitle|appearance-icon|sync-title-wrapper|sync-title|sync-subtitle|sync-icon)"/,
     )

@@ -2,7 +2,7 @@ import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'outline' | 'ghost' | 'danger'
 export type ButtonSize = 'sm' | 'md' | 'lg'
-export type ButtonTone = 'neutral' | 'danger'
+export type ButtonTone = 'neutral' | 'accent' | 'danger'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   autoHeight?: boolean
@@ -70,7 +70,9 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       className={joinClasses('ods-icon-button', className)}
       ref={ref}
     >
-      {children}
+      <span className="ods-icon-button__icon" data-slot="icon">
+        {children}
+      </span>
     </Button>
   )
 })

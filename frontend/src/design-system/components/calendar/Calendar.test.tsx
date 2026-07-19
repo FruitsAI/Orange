@@ -14,6 +14,7 @@ describe('Calendar', () => {
   it('renders the selected month and selects a day', async () => {
     render(<Controlled />)
     expect(screen.getByRole('button', { name: '选择年份' })).toHaveTextContent('2026 年')
+    expect(document.querySelector('.ods-calendar')).toHaveAttribute('data-variant', 'secondary')
 
     await userEvent.click(screen.getByRole('button', { name: /2026年7月20日/ }))
     expect(screen.getByRole('button', { name: /2026年7月20日/ })).toHaveAttribute(
@@ -83,11 +84,18 @@ describe('Calendar', () => {
         showTodayAction
         todayActionLabel="回到今天"
         value="2025-01-10"
+        variant="tertiary"
         visibleMonth="2025-01-01"
       />,
     )
 
-    await userEvent.click(screen.getByRole('button', { name: '回到今天' }))
+    const todayAction = screen.getByRole('button', { name: '回到今天' })
+    expect(todayAction).toHaveClass('ods-button')
+    expect(todayAction).toHaveAttribute('data-size', 'sm')
+    expect(todayAction).toHaveAttribute('data-variant', 'outline')
+    expect(todayAction.closest('.ods-calendar')).toHaveAttribute('data-variant', 'tertiary')
+
+    await userEvent.click(todayAction)
     expect(onVisibleMonthChange).toHaveBeenCalledWith(todayMonth)
     expect(onValueChange).toHaveBeenCalledWith(todayValue)
   })
@@ -154,5 +162,23 @@ describe('Calendar', () => {
     expect(markedDate).toHaveAttribute('data-marked', 'true')
     expect(markedDate.querySelector('.ods-calendar__marker')).toBeInTheDocument()
     expect(markedDate.closest('.ods-calendar')).toHaveAttribute('data-layout', 'fluid')
+  })
+
+  it('colors marks by tone and marks toned dates without isDateMarked', () => {
+    render(
+      <Calendar
+        getDateTone={(date) => (date === '2026-07-21' ? 'danger' : undefined)}
+        onValueChange={vi.fn()}
+        value="2026-07-15"
+        visibleMonth="2026-07-01"
+      />,
+    )
+
+    const tonedDate = screen.getByRole('button', { name: /2026年7月21日/ })
+    expect(tonedDate).toHaveAttribute('data-marked', 'true')
+    expect(tonedDate.querySelector('.ods-calendar__marker')).toHaveAttribute('data-tone', 'danger')
+    expect(
+      screen.getByRole('button', { name: /2026年7月22日/ }).querySelector('.ods-calendar__marker'),
+    ).not.toBeInTheDocument()
   })
 })

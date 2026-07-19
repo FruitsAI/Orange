@@ -28,6 +28,7 @@ const themeContract = [
   '--ods-color-bg-surface-hover',
   '--ods-color-bg-surface-pressed',
   '--ods-color-fg-default',
+  '--ods-color-fg-relaxed',
   '--ods-color-fg-muted',
   '--ods-color-fg-subtle',
   '--ods-color-fg-disabled',

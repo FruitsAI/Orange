@@ -59,8 +59,8 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
       aria-busy={pending || undefined}
       className={['ods-search-field', className].filter(Boolean).join(' ')}
       data-pending={pending || undefined}
-      data-size={size}
       endContent={endContent}
+      size={size}
       startContent={<i aria-hidden="true" className="ri-search-line ods-search-field__icon" />}
     >
       <Input

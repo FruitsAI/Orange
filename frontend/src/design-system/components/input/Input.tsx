@@ -71,18 +71,33 @@ export const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(fun
 })
 
 export interface InputGroupProps extends HTMLAttributes<HTMLDivElement> {
+  adornmentSpacing?: 'default' | 'balanced'
   endContent?: ReactNode
+  focusAdornmentTone?: 'neutral' | 'accent'
+  size?: ControlSize
   startContent?: ReactNode
 }
 
 export const InputGroup = forwardRef<HTMLDivElement, InputGroupProps>(function InputGroup(
-  { children, className, endContent, startContent, ...props },
+  {
+    adornmentSpacing = 'default',
+    children,
+    className,
+    endContent,
+    focusAdornmentTone = 'neutral',
+    size = 'md',
+    startContent,
+    ...props
+  },
   ref,
 ) {
   return (
     <div
       {...props}
       className={['ods-input-group', className].filter(Boolean).join(' ')}
+      data-adornment-spacing={adornmentSpacing}
+      data-focus-adornment-tone={focusAdornmentTone}
+      data-size={size}
       data-slot="group"
       ref={ref}
     >

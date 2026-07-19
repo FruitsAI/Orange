@@ -59,7 +59,7 @@ export const TabsRoot = forwardRef<HTMLDivElement, TabsRootProps>(function TabsR
 
 export interface TabsListProps extends HTMLAttributes<HTMLDivElement> {
   orientation?: 'horizontal' | 'vertical'
-  variant?: 'navigation' | 'pill'
+  variant?: 'accent' | 'navigation' | 'pill' | 'rail'
 }
 
 export const TabsList = forwardRef<HTMLDivElement, TabsListProps>(function TabsList(

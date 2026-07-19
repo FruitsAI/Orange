@@ -11,13 +11,17 @@ import {
   TextArea,
   type SelectOption,
 } from '@/design-system'
+import type { ReactNode } from 'react'
 import { createPaymentPlanItem, type PaymentPlanItem } from './paymentPlan'
 
 export interface PaymentPlanEditorProps {
+  className?: string
+  description?: ReactNode
   installment: boolean
   items: PaymentPlanItem[]
   onItemsChange: (items: PaymentPlanItem[]) => void
   stageOptions?: SelectOption[]
+  title?: ReactNode
 }
 
 const defaultStageOptions: SelectOption[] = [
@@ -41,10 +45,13 @@ const statusOptions: SelectOption[] = [
 ]
 
 export function PaymentPlanEditor({
+  className,
+  description,
   installment,
   items,
   onItemsChange,
   stageOptions = defaultStageOptions,
+  title = '收款计划',
 }: PaymentPlanEditorProps) {
   const updateItem = (index: number, patch: Partial<PaymentPlanItem>) => {
     onItemsChange(
@@ -62,7 +69,12 @@ export function PaymentPlanEditor({
     ) : null
 
   return (
-    <FormSection actions={actions} className="payment-plan-editor" title="收款计划">
+    <FormSection
+      actions={actions}
+      className={['payment-plan-editor', className].filter(Boolean).join(' ')}
+      description={description}
+      title={title}
+    >
       {items.length === 0 ? (
         <EmptyState
           action={
@@ -75,6 +87,7 @@ export function PaymentPlanEditor({
           }
           description="当前项目还没有可保存的收款节点。"
           icon={<i className="ri-secure-payment-line" />}
+          size="md"
           title="暂无收款计划"
         />
       ) : (

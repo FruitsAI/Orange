@@ -46,7 +46,7 @@ describe('input primitives', () => {
 
   it('only enables input-family hover feedback for fine pointers', () => {
     const finePointerMedia = inputCss.match(
-      /@media \(hover: hover\) and \(pointer: fine\)\s*\{[\s\S]*?\n\}/,
+      /@media \(hover: hover\) and \(pointer: fine\)\s*\{[\s\S]*?\n\}(?=\n\n\.ods-input:focus-visible)/,
     )?.[0]
     const cssOutsideFinePointerMedia = inputCss.replace(finePointerMedia ?? '', '')
     const hoverSelectors = [
@@ -60,6 +60,7 @@ describe('input primitives', () => {
       expect(finePointerMedia).toContain(selector)
       expect(cssOutsideFinePointerMedia).not.toContain(selector)
     }
+    expect(finePointerMedia).toContain('.ods-input-group > .ods-input:hover:not(:disabled)')
   })
 
   it('forwards refs and native props while exposing a size contract', () => {
@@ -83,13 +84,23 @@ describe('input primitives', () => {
     expect(input).toHaveClass('ods-input')
   })
 
-  it('composes start and end content without hiding the native input', () => {
+  it('composes start and end content with a shared group size contract', () => {
     render(
-      <InputGroup endContent={<span>.00</span>} startContent={<span>¥</span>}>
-        <Input aria-label="金额" />
+      <InputGroup
+        adornmentSpacing="balanced"
+        endContent={<span>.00</span>}
+        focusAdornmentTone="accent"
+        size="lg"
+        startContent={<span>¥</span>}
+      >
+        <Input aria-label="金额" size="lg" />
       </InputGroup>,
     )
 
+    const group = screen.getByText('¥').closest('.ods-input-group')
+    expect(group).toHaveAttribute('data-size', 'lg')
+    expect(group).toHaveAttribute('data-adornment-spacing', 'balanced')
+    expect(group).toHaveAttribute('data-focus-adornment-tone', 'accent')
     expect(screen.getByText('¥').closest('[data-slot]')).toHaveAttribute(
       'data-slot',
       'start-content',
@@ -99,13 +110,31 @@ describe('input primitives', () => {
       'end-content',
     )
     expect(screen.getByRole('textbox', { name: '金额' })).toBeInTheDocument()
+    expect(inputCss).toMatch(
+      /\.ods-input-group\[data-adornment-spacing='balanced'\]\[data-size='lg'\][\s\S]*gap:\s*var\(--ods-space-4\)[\s\S]*padding-inline:\s*var\(--ods-space-4\)/,
+    )
+    expect(inputCss).toMatch(
+      /\.ods-input-group\[data-focus-adornment-tone='accent'\]:focus-within[\s\S]*color:\s*var\(--ods-color-border-focus\)/,
+    )
+    expect(inputCss).not.toMatch(
+      /\.ods-input-group\[data-focus-adornment-tone='accent'\] \.ods-input-group__content\s*\{[^}]*transition:/,
+    )
+  })
+
+  it('keeps grouped focus and WebKit autofill backgrounds owned by the input primitive', () => {
+    expect(inputCss).toMatch(
+      /\.ods-input-group > \.ods-input:hover:not\(:disabled\)[\s\S]*background:\s*transparent/,
+    )
+    expect(inputCss).toMatch(
+      /\.ods-input:-webkit-autofill[\s\S]*box-shadow:\s*0 0 0 1000px var\(--ods-color-bg-surface\) inset/,
+    )
   })
 
   it('owns password typography inside the input primitive', () => {
     render(<Input aria-label="密码" type="password" />)
 
     expect(screen.getByLabelText('密码')).toHaveAttribute('type', 'password')
-    expect(inputCss).toMatch(/\.ods-input\[type='password'\]\s*\{[\s\S]*letter-spacing:\s*0\.12em/)
+    expect(inputCss).toMatch(/\.ods-input\[type='password'\]\s*\{[\s\S]*letter-spacing:\s*0(?:;|\s)/)
   })
 
   it('provides textarea and native select variants with forwarded native behavior', () => {

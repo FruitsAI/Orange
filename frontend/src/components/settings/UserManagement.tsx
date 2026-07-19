@@ -286,6 +286,7 @@ export default function UserManagement() {
             className="dev-empty"
             description="点击右上角按钮添加新用户"
             icon={<i className="ri-user-unfollow-line" />}
+            size="lg"
             title="暂无用户"
           />
         ) : (

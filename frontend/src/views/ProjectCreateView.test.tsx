@@ -131,6 +131,11 @@ describe('ProjectCreateView design system migration', () => {
     expect(container.querySelectorAll('.ods-form-section').length).toBeGreaterThanOrEqual(3)
     expect(container.querySelectorAll('.ods-form-grid').length).toBeGreaterThanOrEqual(3)
     expect(container.querySelector('.ods-form-actions')).toBeInTheDocument()
+    expect(container.querySelector('.project-compose-layout')).toBeInTheDocument()
+    expect(screen.getByRole('complementary', { name: '项目草稿摘要' })).toBeInTheDocument()
+    expect(screen.getByText('PROJECT DRAFT')).toBeInTheDocument()
+    expect(screen.getByText('档案完整度')).toBeInTheDocument()
+    expect(screen.getByText('计划金额')).toBeInTheDocument()
     expect(screen.getByLabelText(/项目名称/)).toHaveClass('ods-input')
     expect(screen.getByLabelText(/合同总金额/)).toHaveClass('ods-number-input__field')
 

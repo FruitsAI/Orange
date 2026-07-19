@@ -40,6 +40,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
           }
           description="创建第一个项目，开始追踪合同与回款进度。"
           icon={<i className="ri-folder-add-line" />}
+          size="md"
           title="还没有近期项目"
         />
       ) : (
@@ -49,6 +50,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
             return (
               <DataList.Item key={project.id}>
                 <DataList.Link
+                  identityWidth="md"
                   icon={<i className="ri-arrow-right-s-line" />}
                   to={`/projects/${project.id}`}
                 >

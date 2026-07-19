@@ -3,6 +3,10 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const dashboardCss = readFileSync(resolve('src/styles/dashboard.css'), 'utf8')
+const summaryMetricCss = readFileSync(
+  resolve('src/design-system/patterns/summary-metric/summary-metric.css'),
+  'utf8',
+)
 const actionQueueSource = readFileSync(resolve('src/components/dashboard/ActionQueue.tsx'), 'utf8')
 const dayThemeCss = readFileSync(resolve('src/design-system/tokens/themes/day-ember.css'), 'utf8')
 const emberPanelSource = readFileSync(resolve('src/components/common/EmberPanel.tsx'), 'utf8')
@@ -85,6 +89,23 @@ describe('dashboard visual contract', () => {
     )
   })
 
+  it('uses the shared type scale without viewport-sized text or negative tracking', () => {
+    expect(dashboardCss).toMatch(
+      /\.financial-hero__amount\s*\{[\s\S]*font-size:\s*var\(--ods-font-size-display\)/,
+    )
+    expect(dashboardCss).toMatch(
+      /@media \(max-width: 720px\)[\s\S]*\.financial-hero__amount\s*\{[\s\S]*font-size:\s*var\(--ods-font-size-4xl\)/,
+    )
+    expect(dashboardCss).not.toMatch(/font-size:\s*clamp\(/)
+    expect(dashboardCss).not.toMatch(/letter-spacing:\s*-/)
+    expect(statCardCss).toMatch(
+      /\.stat-card-value\s*\{[\s\S]*font-size:\s*var\(--ods-font-size-3xl\)/,
+    )
+    expect(summaryMetricCss).toMatch(
+      /\.ods-summary-metric__value\s*\{[\s\S]*font-size:\s*var\(--ods-font-size-2xl\)/,
+    )
+  })
+
   it('uses an action-oriented two-to-one grid that collapses at 1000px', () => {
     expect(dashboardCss).toMatch(
       /\.dashboard-action-grid\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 2fr\) minmax\(280px, 1fr\)/,
@@ -95,9 +116,9 @@ describe('dashboard visual contract', () => {
     )
   })
 
-  it('keeps dashboard content cards opaque and motion restrained', () => {
+  it('keeps dashboard content cards on the shared panel material and motion restrained', () => {
     expect(emberPanelSource).toMatch(/gap = 'md'/)
-    expect(emberPanelSource).toMatch(/variant = 'secondary'/)
+    expect(emberPanelSource).toMatch(/variant = 'tertiary'/)
     expect(statCardSource).toMatch(/<Card\.Root[^>]*gap="none"[^>]*variant="tertiary"/)
     expect(routerControlsCss).toMatch(
       /@media \(hover: hover\) and \(pointer: fine\)[\s\S]*data-appearance='row'[\s\S]*translateX\(3px\)/,
@@ -204,8 +225,8 @@ describe('dashboard visual contract', () => {
     expect(dashboardCss).toMatch(
       /\.financial-hero__supporting-copy\s*\{[\s\S]*color:\s*var\(--ods-color-fg-muted\)/,
     )
-    expect(dashboardCss).toMatch(
-      /\.summary-metric__label\s*\{[\s\S]*color:\s*var\(--ods-color-fg-muted\)/,
+    expect(summaryMetricCss).toMatch(
+      /\.ods-summary-metric__label\s*\{[\s\S]*color:\s*var\(--ods-color-fg-muted\)/,
     )
   })
 })

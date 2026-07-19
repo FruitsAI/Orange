@@ -44,6 +44,7 @@ export default function ActionQueue({ payments, limit = 5 }: ActionQueueProps) {
           }
           description="可以前往收款日历查看更远日期的计划。"
           icon={<i className="ri-checkbox-circle-line" />}
+          size="lg"
           title="未来七天暂无待处理收款"
         />
       ) : (

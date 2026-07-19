@@ -6,7 +6,7 @@ export type EmberPanelProps = ComponentProps<typeof Card.Root>
 export default function EmberPanel({
   className = '',
   gap = 'md',
-  variant = 'secondary',
+  variant = 'tertiary',
   ...props
 }: EmberPanelProps) {
   return (

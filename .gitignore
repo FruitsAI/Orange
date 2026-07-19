@@ -63,3 +63,5 @@ code-review-report.json
 .agents/
 .claude/
 .vercel
+output/
+.superpowers/

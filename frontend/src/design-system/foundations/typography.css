@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'MiSans VF';
+  src: url('/fonts/misans/MiSansVF.ttf') format('truetype-variations');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 100 900;
+}
+
 h1,
 h2,
 h3,

@@ -4,6 +4,7 @@ import { Popover, usePopoverClose } from '../popover'
 import { Listbox } from '../listbox'
 
 export type SelectSize = 'sm' | 'md' | 'lg'
+export type SelectWidth = 'content' | 'default'
 
 const SELECT_INITIAL_FOCUS = [
   '[role="option"][aria-selected="true"]:not([aria-disabled="true"])',
@@ -64,6 +65,7 @@ export interface SelectProps {
   required?: boolean
   size?: SelectSize
   value?: string
+  width?: SelectWidth
 }
 
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select(
@@ -80,6 +82,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
     required = false,
     size = 'md',
     value,
+    width = 'default',
   },
   ref,
 ) {
@@ -106,6 +109,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
           data-invalid={controlProps['aria-invalid'] || undefined}
           data-size={size}
           data-slot="select"
+          data-width={width}
           disabled={controlProps.disabled}
           id={controlProps.id}
           ref={ref}
@@ -121,6 +125,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
       </Popover.Trigger>
       <Popover.Content
         className="ods-select__popover"
+        data-width={width}
         initialFocus={SELECT_INITIAL_FOCUS}
         role="presentation"
       >

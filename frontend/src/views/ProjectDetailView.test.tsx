@@ -115,9 +115,14 @@ describe('ProjectDetailView payment deep links', () => {
   })
 
   it('gives icon-only project controls explicit accessible labels', async () => {
-    renderProjectDetail('/projects/42')
+    const { container } = renderProjectDetail('/projects/42')
 
     await waitFor(() => expect(screen.getByText('项目整体进度')).toBeInTheDocument())
+    expect(container.querySelector('.project-settlement-board')).toBeInTheDocument()
+    expect(container.querySelector('.project-runway')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '项目档案' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '下一笔计划' })).toBeInTheDocument()
+    expect(screen.getByText('¥80,000.00')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '返回项目列表' })).toHaveAttribute(
       'aria-label',
       '返回项目列表',

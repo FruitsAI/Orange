@@ -42,6 +42,7 @@ describe('FinancialHero', () => {
     )
     expect(screen.getByRole('heading', { level: 1, name: '近30天预计回款' })).toBeInTheDocument()
     expect(screen.getByText('人民币 12,345 元')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: /本地时间/ })).toBeInTheDocument()
   })
 
   it('shows overdue risk and the next payment countdown', () => {

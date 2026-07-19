@@ -79,7 +79,9 @@ export const RouterIconButton = forwardRef<HTMLAnchorElement, RouterIconButtonPr
         className={['ods-icon-button', className].filter(Boolean).join(' ')}
         ref={ref}
       >
-        {children}
+        <span className="ods-icon-button__icon" data-slot="icon">
+          {children}
+        </span>
       </RouterButton>
     )
   },

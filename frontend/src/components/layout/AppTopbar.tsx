@@ -218,18 +218,6 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
       </Surface>
 
       <div className="app-topbar__utilities">
-        <Button
-          aria-label="命令入口即将推出"
-          className="app-topbar__command"
-          disabled
-          size="sm"
-          title="命令入口即将推出"
-          variant="secondary"
-        >
-          <i aria-hidden="true" className="ri-search-line" />
-          <span>⌘ K</span>
-        </Button>
-
         <ThemeSelector
           onBeforeOpen={closeMenus}
           onOpenChange={(open) => setActiveMenu(open ? 'theme' : null)}
@@ -250,6 +238,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
               className="app-topbar__icon-button"
               label="查看通知"
               ref={notificationTriggerRef}
+              tone="accent"
               variant="secondary"
             >
               <Badge dot invisible={unreadCount === 0} tone="danger">
@@ -280,7 +269,12 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
             <Divider />
             <div className="app-topbar__notification-list">
               {recentNotifications.length === 0 ? (
-                <EmptyState className="app-topbar__empty" headingLevel={4} title="暂无通知" />
+                <EmptyState
+                  className="app-topbar__empty"
+                  headingLevel={4}
+                  size="sm"
+                  title="暂无通知"
+                />
               ) : (
                 recentNotifications.map((item, index) => (
                   <Fragment key={item.id}>
@@ -316,6 +310,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
           label="系统设置"
           onClick={closeMenus}
           to="/settings"
+          tone="accent"
           variant="secondary"
         >
           <i aria-hidden="true" className="ri-settings-4-line" />

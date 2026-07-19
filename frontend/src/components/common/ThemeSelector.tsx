@@ -54,6 +54,7 @@ export default function ThemeSelector({ onBeforeOpen, onOpenChange, open }: Them
           label={triggerLabel}
           ref={triggerRef}
           title={triggerLabel}
+          tone="accent"
           variant="secondary"
         >
           <i

@@ -42,6 +42,8 @@ describe('ProjectList compact dashboard list', () => {
     expect(screen.getByRole('heading', { level: 2, name: '近期项目' })).toBeInTheDocument()
     expect(screen.getByText('最近创建的项目')).toBeInTheDocument()
     const link = screen.getByRole('link', { name: /未来展厅/ })
+    expect(link).toHaveAttribute('data-identity-width', 'md')
+    expect(link.lastElementChild).toHaveAttribute('data-slot', 'icon')
     expect(link).toHaveTextContent('橙子科技')
     expect(link).toHaveTextContent('¥100,000.00')
     expect(link).toHaveTextContent('回款 75%')

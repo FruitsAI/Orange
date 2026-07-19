@@ -1,4 +1,5 @@
 import { RouterButton, Surface } from '@/design-system'
+import DashboardClock from './DashboardClock'
 
 type ExpectedDisplay =
   | { status: 'error' }
@@ -139,6 +140,8 @@ export default function FinancialHero({
           </div>
         </div>
       </div>
+
+      <DashboardClock />
 
       <RouterButton className="financial-hero__cta" size="lg" to={cta.to} variant="primary">
         {cta.label}

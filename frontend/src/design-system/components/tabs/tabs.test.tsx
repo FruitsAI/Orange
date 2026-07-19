@@ -99,4 +99,43 @@ describe('Tabs', () => {
       'navigation',
     )
   })
+
+  it('exposes the top-navigation accent treatment for compact period controls', () => {
+    render(
+      <Tabs.Root onValueChange={() => {}} value="month">
+        <Tabs.List aria-label="趋势周期" variant="accent">
+          <Tabs.Tab value="week">周</Tabs.Tab>
+          <Tabs.Tab value="month">月</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="month">月度趋势</Tabs.Panel>
+      </Tabs.Root>,
+    )
+
+    expect(screen.getByRole('tablist', { name: '趋势周期' })).toHaveAttribute(
+      'data-variant',
+      'accent',
+    )
+    expect(screen.getByRole('tab', { name: '月' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('exposes a responsive rail treatment for settings navigation', () => {
+    render(
+      <Tabs.Root onValueChange={() => {}} value="profile">
+        <Tabs.List aria-label="设置分类" orientation="vertical" variant="rail">
+          <Tabs.Tab value="profile">个人信息</Tabs.Tab>
+          <Tabs.Tab value="security">安全设置</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="profile">个人资料</Tabs.Panel>
+      </Tabs.Root>,
+    )
+
+    expect(screen.getByRole('tablist', { name: '设置分类' })).toHaveAttribute(
+      'data-variant',
+      'rail',
+    )
+    expect(screen.getByRole('tablist', { name: '设置分类' })).toHaveAttribute(
+      'aria-orientation',
+      'vertical',
+    )
+  })
 })

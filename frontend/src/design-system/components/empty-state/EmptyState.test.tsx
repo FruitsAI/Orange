@@ -9,6 +9,7 @@ describe('EmptyState', () => {
         action={<button type="button">新建项目</button>}
         description="创建第一条记录后，数据会显示在这里。"
         icon={<i className="ri-folder-add-line" />}
+        size="lg"
         title="暂无项目"
       />,
     )
@@ -16,6 +17,7 @@ describe('EmptyState', () => {
     expect(screen.getByRole('heading', { name: '暂无项目' })).toBeInTheDocument()
     expect(screen.getByText('创建第一条记录后，数据会显示在这里。')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '新建项目' })).toBeInTheDocument()
+    expect(container.firstChild).toHaveAttribute('data-size', 'lg')
     expect(container.querySelector('.ods-empty-state__icon')).toHaveAttribute('aria-hidden', 'true')
   })
 
@@ -23,6 +25,8 @@ describe('EmptyState', () => {
     const { container } = render(<EmptyState className="custom-empty" title="暂无数据" />)
 
     expect(container.firstChild).toHaveClass('ods-empty-state', 'custom-empty')
+    expect(container.firstChild).toHaveAttribute('data-size', 'md')
+    expect(container.querySelector('.ods-empty-state__icon')).toBeInTheDocument()
     expect(container.querySelector('.ods-empty-state__description')).not.toBeInTheDocument()
     expect(container.querySelector('.ods-empty-state__action')).not.toBeInTheDocument()
   })

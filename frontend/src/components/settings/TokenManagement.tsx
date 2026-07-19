@@ -218,6 +218,7 @@ export default function TokenManagement() {
             className="dev-empty"
             description="生成您的第一个个人访问令牌，开始集成 API"
             icon={<i className="ri-key-2-line" />}
+            size="lg"
             title="暂无访问令牌"
           />
         ) : (

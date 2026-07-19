@@ -42,7 +42,7 @@ describe('DataList', () => {
     render(
       <DataList.Root aria-label="近期项目">
         <DataList.Item>
-          <DataList.Link to="/projects/9">
+          <DataList.Link identityWidth="md" to="/projects/9">
             <DataList.Identity>
               <DataList.Primary title="未来展厅">未来展厅</DataList.Primary>
               <DataList.Secondary>橙子科技</DataList.Secondary>
@@ -60,6 +60,10 @@ describe('DataList', () => {
     )
 
     const amount = screen.getByText('¥100,000.00')
+    expect(screen.getByRole('link', { name: /未来展厅/ })).toHaveAttribute(
+      'data-identity-width',
+      'md',
+    )
     expect(amount).toHaveAttribute('data-emphasis', 'strong')
     expect(amount).toHaveAttribute('data-hide-below', 'sm')
     expect(amount).toHaveAttribute('data-numeric', 'true')
@@ -67,6 +71,9 @@ describe('DataList', () => {
     expect(screen.getByText('回款 75%').parentElement).toHaveAttribute('data-layout', 'meter')
     expect(dataListCss).toMatch(/\[data-marker-tone='danger'\]/)
     expect(dataListCss).toMatch(/\[data-hide-below='sm'\]/)
+    expect(dataListCss).toMatch(
+      /\[data-layout='meter'\][\s\S]*grid-template-columns:\s*7rem 4\.25rem/,
+    )
     expect(dataListCss).toContain('@media (max-width: 45rem)')
   })
 })

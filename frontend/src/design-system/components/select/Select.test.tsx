@@ -68,4 +68,25 @@ describe('Select', () => {
     await userEvent.click(screen.getByRole('button', { name: '结算周期' }))
     expect(screen.getByRole('option', { name: '按月' })).toHaveFocus()
   })
+
+  it('supports content-width triggers and option popovers', async () => {
+    render(
+      <Select
+        aria-label="每页条数"
+        onValueChange={() => undefined}
+        options={options}
+        value="monthly"
+        width="content"
+      />,
+    )
+
+    const trigger = screen.getByRole('button', { name: '每页条数' })
+    expect(trigger).toHaveAttribute('data-width', 'content')
+
+    await userEvent.click(trigger)
+    expect(screen.getByRole('listbox').closest('.ods-select__popover')).toHaveAttribute(
+      'data-width',
+      'content',
+    )
+  })
 })

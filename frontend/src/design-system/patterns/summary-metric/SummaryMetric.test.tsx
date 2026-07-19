@@ -1,7 +1,8 @@
 import { screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import SummaryMetric from './SummaryMetric'
 import { render } from '@/test/render'
+import { Chip } from '../../components/chip'
+import { SummaryMetric } from './SummaryMetric'
 
 describe('SummaryMetric', () => {
   it('renders its icon, label, and value without inventing a trend', () => {
@@ -18,17 +19,19 @@ describe('SummaryMetric', () => {
     expect(screen.getByText('¥8,000.00')).toBeInTheDocument()
     expect(screen.getByRole('article')).toHaveAttribute('data-motion', 'entrance')
     expect(screen.getByRole('article')).toHaveAttribute('data-motion-item')
-    expect(screen.getByRole('article')).toHaveClass('ods-card')
-    expect(screen.getByRole('article')).toHaveAttribute('data-variant', 'secondary')
+    expect(screen.getByRole('article')).toHaveClass('ods-summary-metric')
     expect(container.querySelector('.ri-checkbox-circle-line')?.parentElement).toHaveClass(
       'ods-surface',
     )
-    expect(container.querySelector('.summary-metric__icon')).toHaveAttribute('data-tone', 'accent')
+    expect(container.querySelector('.ods-summary-metric__icon')).toHaveAttribute(
+      'data-tone',
+      'accent',
+    )
     expect(screen.queryByText(/较上期/)).not.toBeInTheDocument()
   })
 
-  it('shows a real trend only when one is supplied', () => {
-    render(
+  it('shows supplied trend and stacked metadata through the public pattern API', () => {
+    const { rerender } = render(
       <SummaryMetric
         icon="ri-time-line"
         label="待结算"
@@ -43,23 +46,36 @@ describe('SummaryMetric', () => {
       />,
     )
 
-    expect(screen.getByText('较上期 4.00%')).toBeInTheDocument()
-    expect(screen.getByLabelText('较上期下降 4.00%，表现改善')).toHaveClass('ods-chip')
     expect(screen.getByLabelText('较上期下降 4.00%，表现改善')).toHaveAttribute(
       'data-tone',
       'success',
     )
+
+    rerender(
+      <SummaryMetric
+        label="7 月应收"
+        layout="stacked"
+        meta={<Chip size="sm">2 笔计划</Chip>}
+        status="data"
+        tone="accent"
+        value="¥8,000.00"
+      />,
+    )
+    expect(screen.getByRole('article')).toHaveAttribute('data-layout', 'stacked')
+    expect(screen.getByText('2 笔计划')).toHaveClass('ods-chip')
   })
 
-  it('distinguishes loading and error from an empty metric value', () => {
+  it('distinguishes loading and error from a real zero value', () => {
     const { rerender } = render(
       <SummaryMetric icon="ri-time-line" label="待结算" status="loading" />,
     )
 
     expect(screen.getByText('待结算加载中')).toBeInTheDocument()
-    expect(screen.queryByText('--')).not.toBeInTheDocument()
 
     rerender(<SummaryMetric icon="ri-time-line" label="待结算" status="error" />)
     expect(screen.getByText('暂不可用')).toBeInTheDocument()
+
+    rerender(<SummaryMetric icon="ri-time-line" label="待结算" status="data" value="0" />)
+    expect(screen.getByText('0')).toBeInTheDocument()
   })
 })

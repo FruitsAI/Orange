@@ -37,11 +37,12 @@ export const DataListItem = forwardRef<HTMLLIElement, HTMLAttributes<HTMLLIEleme
 )
 
 export interface DataListLinkProps extends Omit<RouterLinkProps, 'appearance'> {
+  identityWidth?: 'auto' | 'md' | 'sm'
   markerTone?: DataListTone
 }
 
 export const DataListLink = forwardRef<HTMLAnchorElement, DataListLinkProps>(function DataListLink(
-  { className, markerTone, ...props },
+  { className, identityWidth = 'auto', markerTone, ...props },
   ref,
 ) {
   return (
@@ -49,6 +50,7 @@ export const DataListLink = forwardRef<HTMLAnchorElement, DataListLinkProps>(fun
       {...props}
       appearance="row"
       className={joinClasses('ods-data-list__link', className)}
+      data-identity-width={identityWidth}
       data-marker-tone={markerTone}
       data-slot="link"
       ref={ref}

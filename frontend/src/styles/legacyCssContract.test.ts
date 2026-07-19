@@ -123,16 +123,7 @@ describe('legacy CSS ownership contract', () => {
   it('keeps the transitional main stylesheet limited to page composition', () => {
     const classNames = [...mainCss.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((match) => match[1])
 
-    expect([...new Set(classNames)].sort()).toEqual(
-      [
-        'analytics-toolbar',
-        'analytics-view',
-        'calendar-view',
-        'chart-container',
-        'chart-layout',
-        'main-layout',
-      ].sort(),
-    )
+    expect([...new Set(classNames)].sort()).toEqual([])
     expect(mainCss).not.toMatch(
       /\.(?:btn-primary-login|data-table|dropdown-item|form-tab|input-wrapper|page-number|password-toggle|remember-me|search-input-wrapper)(?:[.\s:{]|$)/,
     )

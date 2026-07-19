@@ -102,23 +102,29 @@ describe('AppTopbar', () => {
       'ods-button',
       'ods-icon-button',
     )
-    expect(screen.getByRole('button', { name: '命令入口即将推出' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: '命令入口即将推出' })).toHaveAttribute(
-      'title',
-      '命令入口即将推出',
-    )
+    expect(screen.queryByRole('button', { name: '命令入口即将推出' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: '查看通知' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /主题：跟随系统/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '打开用户菜单' })).toBeInTheDocument()
     for (const control of [
       screen.getByRole('link', { name: '系统设置' }),
-      screen.getByRole('button', { name: '命令入口即将推出' }),
       screen.getByRole('button', { name: '查看通知' }),
       screen.getByRole('button', { name: /主题：跟随系统/ }),
       screen.getByRole('button', { name: '打开用户菜单' }),
     ]) {
       expect(control).toHaveAttribute('data-variant', 'secondary')
     }
+    for (const control of [
+      screen.getByRole('link', { name: '系统设置' }),
+      screen.getByRole('button', { name: '查看通知' }),
+      screen.getByRole('button', { name: /主题：跟随系统/ }),
+    ]) {
+      expect(control).toHaveAttribute('data-tone', 'accent')
+    }
+    expect(screen.getByRole('button', { name: '打开用户菜单' })).toHaveAttribute(
+      'data-tone',
+      'neutral',
+    )
   })
 
   test('provides a dedicated notification anchor for compact-window positioning', () => {

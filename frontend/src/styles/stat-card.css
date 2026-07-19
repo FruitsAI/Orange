@@ -11,17 +11,17 @@
 .stat-card-value {
   color: var(--ods-color-fg-default);
   font-family: var(--ods-font-family-display);
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+  font-size: var(--ods-font-size-3xl);
+  font-weight: var(--ods-font-weight-bold);
+  letter-spacing: 0;
+  line-height: var(--ods-line-height-tight);
 }
 
 .stat-card-label {
   margin-top: var(--ods-space-1);
   color: var(--ods-color-fg-muted);
-  font-size: 14px;
-  letter-spacing: -0.01em;
+  font-size: var(--ods-font-size-sm);
+  letter-spacing: 0;
 }
 
 .stat-card-trend {
@@ -42,10 +42,10 @@
   }
 
   .stat-card-value {
-    font-size: 22px;
+    font-size: var(--ods-font-size-2xl);
   }
 
   .stat-card-label {
-    font-size: 12px;
+    font-size: var(--ods-font-size-xs);
   }
 }

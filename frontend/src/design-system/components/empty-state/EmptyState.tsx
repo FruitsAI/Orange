@@ -8,11 +8,23 @@ export interface EmptyStateProps extends Omit<
   description?: ReactNode
   headingLevel?: 2 | 3 | 4
   icon?: ReactNode
+  size?: 'lg' | 'md' | 'sm'
   title: ReactNode
 }
 
+const defaultIcon = <i className="ri-inbox-2-line" />
+
 export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(function EmptyState(
-  { action, className, description, headingLevel = 3, icon, title, ...props },
+  {
+    action,
+    className,
+    description,
+    headingLevel = 3,
+    icon = defaultIcon,
+    size = 'md',
+    title,
+    ...props
+  },
   ref,
 ) {
   const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4'
@@ -21,6 +33,7 @@ export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(function E
     <div
       {...props}
       className={['ods-empty-state', className].filter(Boolean).join(' ')}
+      data-size={size}
       data-slot="empty-state"
       ref={ref}
     >

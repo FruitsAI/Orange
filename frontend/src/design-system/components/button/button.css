@@ -1,4 +1,5 @@
 .ods-button {
+  --ods-button-border-duration: var(--ods-duration-fast);
   --ods-button-transform-duration: var(--ods-duration-release);
 
   position: relative;
@@ -23,7 +24,7 @@
   cursor: pointer;
   transition:
     background-color var(--ods-duration-fast) var(--ods-ease-standard),
-    border-color var(--ods-duration-fast) var(--ods-ease-standard),
+    border-color var(--ods-button-border-duration) var(--ods-ease-standard),
     color var(--ods-duration-fast) var(--ods-ease-standard),
     transform var(--ods-button-transform-duration) var(--ods-ease-standard);
 }
@@ -96,6 +97,26 @@
 
 .ods-button[data-variant='secondary']:active:not(:disabled) {
   background: var(--ods-color-bg-surface-pressed);
+}
+
+.ods-button[aria-expanded] {
+  --ods-button-border-duration: 0ms;
+}
+
+.ods-button[data-variant='secondary'][data-tone='accent'][aria-expanded='true'] {
+  --ods-icon-button-fg: var(--ods-color-border-focus);
+
+  border-color: var(--ods-color-border-focus);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ods-button[data-variant='secondary'][data-tone='accent']:hover:not(:disabled):not(
+      [aria-disabled='true']
+    ) {
+    --ods-icon-button-fg: var(--ods-color-border-focus);
+
+    border-color: var(--ods-color-border-focus);
+  }
 }
 
 /* Soft ember tint, like the dashboard metric icons. */
@@ -220,9 +241,29 @@
   width: var(--ods-control-height-lg);
 }
 
+.ods-icon-button__icon {
+  align-items: center;
+  color: var(--ods-icon-button-fg, currentColor);
+  display: inline-flex;
+  justify-content: center;
+  transition: color var(--ods-duration-fast) var(--ods-ease-standard);
+}
+
+.ods-button[aria-expanded] .ods-icon-button__icon {
+  transition: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ods-button {
     transition-duration: var(--ods-duration-instant);
+  }
+
+  .ods-button[aria-expanded] {
+    transition-duration:
+      var(--ods-duration-instant),
+      0ms,
+      var(--ods-duration-instant),
+      var(--ods-duration-instant);
   }
 
   .ods-button[data-variant]:hover:not(:disabled),

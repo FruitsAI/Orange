@@ -38,8 +38,17 @@ describe('LoginView', () => {
     expect(window.localStorage.getItem('lastUsername')).toBe('admin')
     expect(container.querySelectorAll('.ods-field')).toHaveLength(2)
     expect(container.querySelectorAll('.ods-input')).toHaveLength(2)
+    expect(container.querySelectorAll('.ods-input[data-size="lg"]')).toHaveLength(2)
+    expect(container.querySelectorAll('.ods-input-group[data-size="lg"]')).toHaveLength(2)
+    expect(container.querySelectorAll('[data-adornment-spacing="balanced"]')).toHaveLength(2)
+    expect(container.querySelectorAll('[data-focus-adornment-tone="accent"]')).toHaveLength(2)
     expect(container.querySelector('.ods-checkbox')).toBeInTheDocument()
-    expect(container.querySelector('.ods-button[type="submit"]')).toBeInTheDocument()
+    expect(container.querySelector('.ods-button[type="submit"]')).toHaveAttribute('data-size', 'lg')
+    expect(screen.getByRole('button', { name: '显示密码' })).toHaveAttribute('data-size', 'md')
+    expect(screen.getByRole('button', { name: '切换至深色主题' })).toHaveAttribute(
+      'data-tone',
+      'accent',
+    )
     expect(container.querySelector('.input-wrapper')).not.toBeInTheDocument()
     expect(container.querySelector('.btn-primary-login')).not.toBeInTheDocument()
   })

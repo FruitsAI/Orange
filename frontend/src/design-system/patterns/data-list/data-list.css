@@ -16,6 +16,14 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.ods-data-list__link[data-identity-width='sm'] {
+  grid-template-columns: minmax(8rem, 12rem);
+}
+
+.ods-data-list__link[data-identity-width='md'] {
+  grid-template-columns: minmax(10rem, 18rem);
+}
+
 .ods-data-list__link[data-marker-tone]::before {
   position: absolute;
   width: 3px;
@@ -128,10 +136,14 @@
 
 .ods-data-list__cell[data-layout='meter'] {
   display: grid;
-  grid-template-columns: minmax(3.5rem, 1fr) auto;
+  grid-template-columns: 7rem 4.25rem;
   gap: var(--ods-space-2);
   color: var(--ods-color-fg-muted);
   font-size: var(--ods-font-size-xs);
+}
+
+.ods-data-list__cell[data-layout='meter'] .ods-data-list__secondary {
+  text-align: start;
 }
 
 @media (max-width: 45rem) {

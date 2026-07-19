@@ -293,6 +293,7 @@ export default function NotificationManagement({ isAdmin = false }: Notification
             className="dev-empty"
             description="目前没有收到任何系统消息"
             icon={<i className="ri-notification-off-line" />}
+            size="lg"
             title="暂无通知"
           />
         ) : (

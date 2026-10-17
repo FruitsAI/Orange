@@ -84,6 +84,7 @@ export function SummaryMetric({
       data-motion="entrance"
       data-motion-item
       data-status={status}
+      hoverable
       tone={tone}
       variant={variant}
     >

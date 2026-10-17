@@ -7,6 +7,7 @@ import CalendarView from '@/views/CalendarView'
 import DashboardView from '@/views/DashboardView'
 import DesignSystemView from '@/views/DesignSystemView'
 import LoginView from '@/views/LoginView'
+import NotificationsView from '@/views/NotificationsView'
 import PaymentCreateView from '@/views/PaymentCreateView'
 import ProjectCreateView from '@/views/ProjectCreateView'
 import ProjectDetailView from '@/views/ProjectDetailView'
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
               { path: 'payment/create', element: <PaymentCreateView /> },
               { path: 'calendar', element: <CalendarView /> },
               { path: 'analytics', element: <AnalyticsView /> },
+              { path: 'notifications', element: <NotificationsView /> },
               { path: 'design-system', element: <DesignSystemView /> },
               { path: 'settings', element: <SettingsView /> },
             ],

@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Browser } from '@wailsio/runtime'
 import api, { type ApiResponse } from '@/api'
 import type { User } from '@/api/auth'
 import DataSyncPanel from '@/components/settings/DataSyncPanel'
 import DictionaryManagement from '@/components/settings/DictionaryManagement'
-import NotificationManagement from '@/components/settings/NotificationManagement'
 import TokenManagement from '@/components/settings/TokenManagement'
 import UserManagement from '@/components/settings/UserManagement'
 import { useConfirm } from '@/composables/useConfirm'
@@ -20,6 +19,7 @@ import {
   Input,
   Radio,
   RadioGroup,
+  RouterButton,
   SectionHeader,
   Surface,
   Tabs,
@@ -103,6 +103,7 @@ const createProfileFormState = (user: User | null): ProfileFormState => {
 
 export default function SettingsView() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const { confirm } = useConfirm()
   const toastError = useToastStore((state) => state.error)
   const toastInfo = useToastStore((state) => state.info)
@@ -125,6 +126,12 @@ export default function SettingsView() {
     oldPassword: '',
   })
   const [checkingUpdate, setCheckingUpdate] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'notification') {
+      void navigate('/notifications', { replace: true })
+    }
+  }, [navigate, searchParams])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -162,7 +169,6 @@ export default function SettingsView() {
       { icon: 'ri-lock-line', key: 'security', label: '安全设置' },
       { icon: 'ri-cloud-line', key: 'data-sync', label: '数据同步' },
       { icon: 'ri-palette-line', key: 'appearance', label: '外观设置' },
-      { icon: 'ri-notification-3-line', key: 'notification', label: '通知设置' },
       { icon: 'ri-terminal-box-line', key: 'developer', label: '开发设置' },
       { icon: 'ri-information-line', key: 'about', label: '关于' },
     ]
@@ -316,6 +322,10 @@ export default function SettingsView() {
     if (activeTab === 'developer') {
       return (
         <section className="settings-management-panel" aria-label="开发设置">
+          <RouterButton size="sm" to="/design-system" variant="secondary">
+            <i aria-hidden="true" className="ri-palette-line" />
+            查看设计系统
+          </RouterButton>
           <TokenManagement />
         </section>
       )
@@ -397,19 +407,11 @@ export default function SettingsView() {
       )
     }
 
-    if (activeTab === 'notification') {
-      return (
-        <section className="settings-management-panel" aria-label="通知设置">
-          <NotificationManagement isAdmin={isAdmin} />
-        </section>
-      )
-    }
-
     if (activeTab === 'appearance') {
       return (
         <Card.Root className="appearance-card" gap="lg" padding="lg" variant="secondary">
           <SectionHeader
-            description="自定义界面主题，打造专属的使用体验"
+            description="选择适合自己的主题，切换后立即生效。"
             icon={<i className="ri-palette-line" />}
             size="lg"
             title="外观设置"
@@ -425,6 +427,14 @@ export default function SettingsView() {
             {THEME_OPTIONS.map((item) => (
               <Radio key={item.value} value={item.value} variant="card">
                 <span className="theme-card-content" data-active={theme === item.value}>
+                  <span aria-hidden="true" className="theme-card-preview" data-theme-preview={item.value}>
+                    {item.value !== 'dark' ? (
+                      <Image alt="" fit="cover" src="/theme-previews/warm-ledger.png" />
+                    ) : null}
+                    {item.value !== 'light' ? (
+                      <Image alt="" fit="cover" src="/theme-previews/night-orbit.png" />
+                    ) : null}
+                  </span>
                   <span className="theme-icon">
                     <i className={item.icon} />
                   </span>
@@ -438,6 +448,10 @@ export default function SettingsView() {
               </Radio>
             ))}
           </RadioGroup>
+          <p className="appearance-save-note" role="status">
+            <i aria-hidden="true" className="ri-check-line" />
+            外观设置会自动保存
+          </p>
         </Card.Root>
       )
     }

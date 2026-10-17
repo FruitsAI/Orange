@@ -4,36 +4,22 @@
   gap: var(--ods-space-6);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  [data-motion-scope='dashboard'] [data-motion='entrance'] {
-    animation: ember-enter-up var(--ods-duration-page) var(--ods-ease-emphasized) both;
-  }
+/* Entrance rhythm: shared choreography lives in styles/motion.css; this view
+   only declares region offsets. */
+[data-motion-group='summary-metrics'] {
+  --ember-motion-base: 60ms;
+}
 
-  [data-motion-scope='dashboard'] [data-motion-group] > [data-motion-item] {
-    animation-name: ember-fade-in;
-    animation-duration: var(--ods-duration-fast);
-    animation-delay: 60ms;
-  }
+.dashboard-action-grid > section {
+  --ember-motion-order: 4;
+}
 
-  [data-motion-group='summary-metrics'] > :nth-child(2) {
-    animation-delay: 100ms;
-  }
+.dashboard-action-grid > section:nth-child(2) {
+  --ember-motion-order: 5;
+}
 
-  [data-motion-group='summary-metrics'] > :nth-child(3) {
-    animation-delay: 140ms;
-  }
-
-  .dashboard-action-grid > section[data-motion='entrance'] {
-    animation-delay: 160ms;
-  }
-
-  .dashboard-action-grid > section:nth-child(2)[data-motion='entrance'] {
-    animation-delay: 200ms;
-  }
-
-  .dashboard-recent-projects[data-motion='entrance'] {
-    animation-delay: 240ms;
-  }
+.dashboard-recent-projects {
+  --ember-motion-order: 6;
 }
 
 @keyframes financial-hero-busy-pulse {
@@ -105,16 +91,12 @@
   color: var(--ods-color-fg-muted);
   font-size: var(--ods-font-size-xs);
   font-weight: var(--ods-font-weight-semibold);
-  letter-spacing: 0;
+  letter-spacing: var(--ods-letter-spacing-wide);
   text-transform: uppercase;
 }
 
 .financial-hero__pulse {
-  width: 7px;
-  height: 7px;
-  border-radius: var(--ods-radius-pill);
-  background: var(--ods-color-accent);
-  box-shadow: 0 0 18px rgba(var(--ods-color-accent-rgb), 0.72);
+  --ember-live-dot-glow: 18px;
 }
 
 .financial-hero[aria-busy='true'] .financial-hero__pulse {
@@ -350,12 +332,6 @@
   z-index: 1;
 }
 
-.ember-dashboard__metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--ods-space-4);
-}
-
 .ember-dashboard__error {
   margin-top: calc(var(--ods-space-2) * -1);
 }
@@ -403,11 +379,7 @@
 }
 
 .dashboard-skeleton__hero {
-  min-height: 360px;
-}
-
-.dashboard-skeleton__metric {
-  min-height: 112px;
+  min-height: 220px;
 }
 
 .dashboard-skeleton__chart,
@@ -458,10 +430,6 @@
 @media (max-width: 980px) {
   .financial-hero {
     min-height: 330px;
-  }
-
-  .ember-dashboard__metrics {
-    grid-template-columns: 1fr;
   }
 }
 

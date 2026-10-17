@@ -105,6 +105,16 @@ func (r *PaymentRepository) ListUpcoming(userID int64, days int, limit int) ([]m
 	return payments, nil
 }
 
+// ListOverdue returns pending payments whose planned date has passed, oldest first.
+func (r *PaymentRepository) ListOverdue(userID int64) ([]models.Payment, error) {
+	var payments []models.Payment
+	today := time.Now().Format("2006-01-02")
+	err := r.db.Scopes(UserScope(userID)).Preload("Project").
+		Where("status = ? AND plan_date < ?", "pending", today).
+		Order("plan_date ASC").Find(&payments).Error
+	return payments, err
+}
+
 // SumOverdue 统计逾期金额
 func (r *PaymentRepository) SumOverdue(userID int64) (float64, error) {
 	var sum float64

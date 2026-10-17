@@ -75,6 +75,14 @@ describe('ActionQueue', () => {
     expect(screen.getByRole('link', { name: '查看全部' })).toHaveAttribute('href', '/calendar')
   })
 
+  it('opens the overdue list when the queue includes overdue receivables', () => {
+    render(<ActionQueue overdueAmount={1_000} payments={[payment(1, -2)]} />)
+    expect(screen.getByRole('link', { name: '查看全部' })).toHaveAttribute(
+      'href',
+      '/calendar?view=overdue',
+    )
+  })
+
   it('renders a positive empty state when there is nothing to collect', () => {
     render(<ActionQueue payments={[]} />)
 

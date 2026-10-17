@@ -11,7 +11,7 @@ const projectStatusMeta: Record<string, { icon: string; label: string; tone: Chi
 
 const paymentStatusMeta: Record<string, { label: string; tone: ChipTone }> = {
   confirmed: { label: '已收款', tone: 'success' },
-  overdue: { label: '已逾期', tone: 'warning' },
+  overdue: { label: '已逾期', tone: 'danger' },
   paid: { label: '已收款', tone: 'success' },
   pending: { label: '待收款', tone: 'neutral' },
 }

@@ -248,10 +248,11 @@ export default function NotificationManagement({ isAdmin = false }: Notification
             ) : null
           }
           description={`查看系统消息${isAdmin ? '，管理员可发送通知' : ''}`}
+          headingLevel={1}
           icon={<i className="ri-notification-3-line" />}
           iconTone="warning"
           size="lg"
-          title="通知管理"
+          title="通知中心"
         />
 
         <div className="dev-stats">
@@ -270,7 +271,7 @@ export default function NotificationManagement({ isAdmin = false }: Notification
             </Surface>
             <div className="dev-stat-info">
               <span className="dev-stat-value">{unreadNotifications}</span>
-              <span className="dev-stat-label">未读</span>
+              <span className="dev-stat-label">本页未读</span>
             </div>
           </Card.Root>
           <Card.Root className="dev-stat-card" gap="sm" orientation="horizontal" padding="sm">
@@ -279,7 +280,7 @@ export default function NotificationManagement({ isAdmin = false }: Notification
             </Surface>
             <div className="dev-stat-info">
               <span className="dev-stat-value">{systemNotifications}</span>
-              <span className="dev-stat-label">系统</span>
+              <span className="dev-stat-label">本页系统</span>
             </div>
           </Card.Root>
         </div>
@@ -384,7 +385,8 @@ export default function NotificationManagement({ isAdmin = false }: Notification
                           onClick={() => void handleDeleteNotification(notification.id)}
                           size="sm"
                           title="删除"
-                          variant="danger"
+                          tone="danger"
+                          variant="ghost"
                         >
                           <i className="ri-delete-bin-line" />
                         </IconButton>

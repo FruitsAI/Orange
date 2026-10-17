@@ -6,6 +6,7 @@ import type { PaymentDisplayItem } from '@/views/dashboard/dashboardModel'
 interface ActionQueueProps {
   payments: PaymentDisplayItem[]
   limit?: number
+  overdueAmount?: number
 }
 
 function dueLabel(daysLeft: number) {
@@ -14,7 +15,7 @@ function dueLabel(daysLeft: number) {
   return `${daysLeft}天后`
 }
 
-export default function ActionQueue({ payments, limit = 5 }: ActionQueueProps) {
+export default function ActionQueue({ payments, limit = 5, overdueAmount = 0 }: ActionQueueProps) {
   const visiblePayments = [...payments]
     .sort((left, right) => left.days_left - right.days_left)
     .slice(0, limit)
@@ -24,13 +25,17 @@ export default function ActionQueue({ payments, limit = 5 }: ActionQueueProps) {
       <SectionHeader
         actions={
           payments.length > 0 ? (
-            <RouterButton size="sm" to="/calendar" variant="ghost">
+            <RouterButton
+              size="sm"
+              to={overdueAmount > 0 ? '/calendar?view=overdue' : '/calendar'}
+              variant="ghost"
+            >
               查看全部
             </RouterButton>
           ) : undefined
         }
         density="compact"
-        description="按到期紧迫度排序"
+        description="按到期时间排序，优先处理逾期款项"
         headingLevel={2}
         title="待处理收款"
       />
@@ -38,14 +43,22 @@ export default function ActionQueue({ payments, limit = 5 }: ActionQueueProps) {
       {visiblePayments.length === 0 ? (
         <EmptyState
           action={
-            <RouterButton size="sm" to="/calendar" variant="ghost">
-              查看收款日历
+            <RouterButton
+              size="sm"
+              to={overdueAmount > 0 ? '/calendar?view=overdue' : '/calendar'}
+              variant="secondary"
+            >
+              {overdueAmount > 0 ? '处理逾期款项' : '查看收款日历'}
             </RouterButton>
           }
-          description="可以前往收款日历查看更远日期的计划。"
+          description={
+            overdueAmount > 0
+              ? `仍有 ${formatCurrency(overdueAmount)} 逾期待收，请先跟进。`
+              : '可以前往收款日历查看更远日期的计划。'
+          }
           icon={<i className="ri-checkbox-circle-line" />}
           size="lg"
-          title="未来七天暂无待处理收款"
+          title={overdueAmount > 0 ? '逾期款项需要跟进' : '未来七天暂无待处理收款'}
         />
       ) : (
         <DataList.Root as="ol">

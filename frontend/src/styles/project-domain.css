@@ -142,7 +142,7 @@
   font-family: var(--ods-font-family-mono);
   font-size: var(--ods-font-size-11);
   font-weight: var(--ods-font-weight-semibold);
-  letter-spacing: 0;
+  letter-spacing: var(--ods-letter-spacing-wide);
 }
 
 .project-draft-card__heading h2 {
@@ -538,11 +538,7 @@
 }
 
 .project-live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: var(--ods-radius-pill);
-  background: var(--ods-color-accent);
-  box-shadow: 0 0 12px rgba(var(--ods-color-accent-rgb), 0.55);
+  --ember-live-dot-glow: 12px;
 }
 
 .project-settlement-board__label {
@@ -639,8 +635,8 @@
   font-weight: var(--ods-font-weight-regular);
 }
 
-.project-settlement-stats__success {
-  color: var(--ods-color-status-success) !important;
+.project-settlement-stats .project-settlement-stats__success {
+  color: var(--ods-color-status-success);
 }
 
 .project-runway {
@@ -975,53 +971,24 @@
   }
 }
 
+/* Entrance rhythm: shared choreography lives in styles/motion.css; regions
+   declare offsets only. */
+.project-overview-grid {
+  --ember-motion-base: 100ms;
+}
+
+.projects-workspace {
+  --ember-motion-base: 130ms;
+}
+
+.project-form-aside {
+  --ember-motion-order: 1;
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  [data-motion-scope='project-detail'] .project-settlement-board,
-  [data-motion-scope='project-detail'] .project-overview-grid,
-  [data-motion-scope='project-create'] .project-form-card,
-  [data-motion-scope='project-create'] .project-form-aside {
-    animation: ember-enter-up var(--ods-duration-page) var(--ods-ease-emphasized) both;
-  }
-
-  [data-motion-scope='project-detail'] .project-overview-grid {
-    animation-delay: 100ms;
-  }
-
   [data-motion-scope='project-detail'] .project-runway__track::after {
     animation: project-runway-reveal var(--ods-duration-page) var(--ods-ease-emphasized) both;
     animation-delay: 180ms;
-  }
-
-  [data-motion-scope='project-detail'] [data-motion-item] {
-    animation: ember-enter-up var(--ods-duration-fast) var(--ods-ease-emphasized) both;
-  }
-
-  [data-motion-scope='project-detail'] [data-motion-item]:nth-child(2) {
-    animation-delay: 40ms;
-  }
-
-  [data-motion-scope='project-detail'] [data-motion-item]:nth-child(3) {
-    animation-delay: 80ms;
-  }
-
-  [data-motion-scope='projects'] > [data-motion='entrance'] {
-    animation: ember-enter-up var(--ods-duration-page) var(--ods-ease-emphasized) both;
-  }
-
-  [data-motion-scope='projects'] > .projects-workspace {
-    animation-delay: 130ms;
-  }
-
-  [data-motion-scope='projects'] [data-motion-item] {
-    animation: ember-enter-up var(--ods-duration-fast) var(--ods-ease-emphasized) both;
-  }
-
-  [data-motion-scope='projects'] [data-motion-item]:nth-child(2) {
-    animation-delay: 40ms;
-  }
-
-  [data-motion-scope='projects'] [data-motion-item]:nth-child(3) {
-    animation-delay: 80ms;
   }
 }
 
@@ -1180,19 +1147,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .project-detail-content,
-  [data-motion-scope='project-detail'] [data-motion-item],
-  [data-motion-scope='project-detail'] .project-settlement-board,
-  [data-motion-scope='project-detail'] .project-overview-grid,
-  [data-motion-scope='project-detail'] .project-runway__track::after,
-  [data-motion-scope='project-create'] .project-form-card,
-  [data-motion-scope='project-create'] .project-form-aside,
-  [data-motion-scope='projects'] [data-motion-item],
-  [data-motion-scope='projects'] [data-motion='entrance'] {
+  .project-detail-content {
     animation: none;
   }
 
   [data-motion-scope='project-detail'] .project-runway__track::after {
+    animation: none;
     transform: scaleX(var(--project-runway-scale));
   }
 }

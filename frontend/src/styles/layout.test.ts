@@ -20,8 +20,8 @@ describe('topbar window interaction boundaries', () => {
     const contentRule = findStyleRule('.app-view-content')
 
     expect(rootRule?.style.getPropertyValue('--app-topbar-top-inset')).toBe('12px')
-    expect(rootRule?.style.getPropertyValue('--app-topbar-height')).toBe('68px')
-    expect(rootRule?.style.getPropertyValue('--app-topbar-inset')).toBe('79px')
+    expect(rootRule?.style.getPropertyValue('--app-topbar-height')).toBe('64px')
+    expect(rootRule?.style.getPropertyValue('--app-topbar-inset')).toBe('clamp(18px, 3vw, 44px)')
     expect(dragRegionRule?.style.position).toBe('fixed')
     expect(dragRegionRule?.style.top).toBe('0px')
     expect(dragRegionRule?.style.left).toBe('0px')
@@ -103,13 +103,11 @@ describe('topbar window interaction boundaries', () => {
     expect(bespokeButtonRules.map((rule) => rule.selectorText)).toEqual([])
   })
 
-  test('uses one tokenized warm ambient light for the shell', () => {
+  test('uses a quiet tokenized canvas without ambient decoration', () => {
     expect(findStyleRule('.app-background')?.style.background).toContain(
       'var(--ods-color-bg-canvas)',
     )
-    expect(findStyleRule('.app-background::before')?.style.background).toContain(
-      'var(--ods-color-ambient-glow)',
-    )
+    expect(findStyleRule('.app-background::before')?.style.content).toBe('none')
     expect(findStyleRule('.app-background::after')?.style.content).toBe('none')
   })
 })

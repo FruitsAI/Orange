@@ -68,11 +68,14 @@ describe('CalendarView', () => {
 
     // The plan date carries a status-toned mark.
     const markedDay = screen.getByRole('button', {
-      name: `${todayPayment.plan_date}，收款计划状态：待收`,
+      name: `${todayPayment.plan_date}，1笔收款计划，最紧急状态：待收`,
     })
-    expect(markedDay).toHaveAccessibleName(`${todayPayment.plan_date}，收款计划状态：待收`)
+    expect(markedDay).toHaveAccessibleName(
+      `${todayPayment.plan_date}，1笔收款计划，最紧急状态：待收`,
+    )
     expect(markedDay).toHaveAttribute('data-marked', 'true')
     expect(markedDay.querySelector('.ods-calendar__marker')).toHaveAttribute('data-tone', 'warning')
+    expect(markedDay.querySelector('.ods-calendar__count')).toHaveTextContent('1笔')
 
     const nextMonth = dayjs().add(1, 'month')
     await user.click(screen.getByRole('button', { name: '下个月' }))
@@ -113,7 +116,7 @@ describe('CalendarView', () => {
 
     await waitFor(() => expect(screen.getAllByText(/逾期 1 笔/)).toHaveLength(2))
     const markedDay = screen.getByRole('button', {
-      name: `${overduePayment.plan_date}，收款计划状态：逾期`,
+      name: `${overduePayment.plan_date}，1笔收款计划，最紧急状态：逾期`,
     })
     expect(markedDay.querySelector('.ods-calendar__marker')).toHaveAttribute('data-tone', 'danger')
   })

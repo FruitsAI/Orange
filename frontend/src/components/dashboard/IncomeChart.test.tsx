@@ -88,6 +88,8 @@ describe('IncomeChart', () => {
 
     expect(screen.getByRole('heading', { level: 2, name: '现金流趋势' })).toBeInTheDocument()
     expect(screen.getByText('近30天计划与实际回款')).toBeInTheDocument()
+    expect(screen.getByText('这个周期暂无回款趋势')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '查看收款日历' })).toHaveAttribute('href', '/calendar')
     expect(screen.getByRole('tablist', { name: '趋势周期' })).toHaveAttribute(
       'data-variant',
       'accent',

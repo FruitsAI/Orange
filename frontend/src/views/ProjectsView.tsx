@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { projectApi, type Project } from '@/api/project'
 import { ProjectStatusChip } from '@/components/project/ProjectStatusChip'
+import { getProjectCollectionSummary } from '@/components/project/projectCollection'
 import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import {
   Alert,
   AlertDialog,
   Button,
   Card,
+  Chip,
   Dropdown,
   EmptyState,
   IconButton,
@@ -25,7 +27,6 @@ import {
   type SummaryMetricProps,
 } from '@/design-system'
 import { useToastStore } from '@/composables/useToast'
-import { useAuthStore } from '@/stores/auth'
 import { downloadCsv } from '@/utils/csv'
 import { formatCurrency, formatDate } from '@/utils/format'
 import '@/styles/project-domain.css'
@@ -35,7 +36,6 @@ const filters = [
   { key: 'active', label: '进行中' },
   { key: 'completed', label: '已完成' },
   { key: 'notstarted', label: '未开始' },
-  { key: 'overdue', label: '已逾期' },
   { key: 'archived', label: '已归档' },
 ]
 
@@ -59,10 +59,10 @@ interface ConfirmationState {
 
 export default function ProjectsView() {
   const navigate = useNavigate()
+  const [routeSearchParams, setRouteSearchParams] = useSearchParams()
+  const routeKeyword = routeSearchParams.get('search') || ''
   const toastError = useToastStore((state) => state.error)
   const toastSuccess = useToastStore((state) => state.success)
-  const user = useAuthStore((state) => state.user)
-  const isAdmin = user?.role === 'admin'
 
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,17 +71,27 @@ export default function ProjectsView() {
   const [totalItems, setTotalItems] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const [keyword, setKeyword] = useState('')
-  const [searchKeyword, setSearchKeyword] = useState('')
+  const [keyword, setKeyword] = useState(routeKeyword)
+  const [searchKeyword, setSearchKeyword] = useState(routeKeyword)
   const [activeFilter, setActiveFilter] = useState('all')
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null)
   const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null)
   const [confirming, setConfirming] = useState(false)
   const mountedRef = useRef(false)
   const requestIdRef = useRef(0)
+  const previousRouteKeywordRef = useRef(routeKeyword)
+
+  useEffect(() => {
+    if (previousRouteKeywordRef.current === routeKeyword) return
+    previousRouteKeywordRef.current = routeKeyword
+    // The global search can target this mounted route with a new query.
+    setKeyword(routeKeyword)
+    setSearchKeyword(routeKeyword)
+    setCurrentPage(1)
+  }, [routeKeyword])
 
   const totalPages = Math.ceil(totalItems / pageSize)
-  const colSpan = isAdmin ? 11 : 10
+  const colSpan = 8
 
   const pageMetrics = useMemo(() => {
     const contractAmount = projects.reduce((sum, project) => sum + (project.total_amount || 0), 0)
@@ -89,11 +99,16 @@ export default function ProjectsView() {
       (sum, project) => sum + (project.received_amount || 0),
       0,
     )
-    const collectionRate = contractAmount
-      ? `${Math.round((receivedAmount / contractAmount) * 100)}%`
-      : '0%'
+    const overdueAmount = projects.reduce((sum, project) => {
+      const collection = getProjectCollectionSummary(project)
+      return sum + (collection.state === 'overdue' ? collection.overdueAmount : 0)
+    }, 0)
 
-    return { collectionRate, contractAmount }
+    return {
+      contractAmount,
+      overdueAmount,
+      remainingAmount: Math.max(contractAmount - receivedAmount, 0),
+    }
   }, [projects])
 
   const paginationInfo = useMemo(() => {
@@ -140,8 +155,15 @@ export default function ProjectsView() {
   }, [fetchProjects])
 
   const handleSearch = () => {
+    const query = keyword.trim()
     setCurrentPage(1)
-    setSearchKeyword(keyword)
+    setSearchKeyword(query)
+    if (query !== routeKeyword) {
+      const next = new URLSearchParams(routeSearchParams)
+      if (query) next.set('search', query)
+      else next.delete('search')
+      setRouteSearchParams(next, { replace: true })
+    }
   }
 
   const handleFilterChange = (filter: string) => {
@@ -181,6 +203,11 @@ export default function ProjectsView() {
     setKeyword('')
     setSearchKeyword('')
     setCurrentPage(1)
+    if (routeKeyword) {
+      const next = new URLSearchParams(routeSearchParams)
+      next.delete('search')
+      setRouteSearchParams(next, { replace: true })
+    }
   }
 
   const exportProject = (project: Project) => {
@@ -225,16 +252,17 @@ export default function ProjectsView() {
           value: `${totalItems} 个`,
         },
         {
-          icon: 'ri-contract-line',
-          label: '当前页合同额',
+          icon: 'ri-wallet-3-line',
+          label: '当前页待收',
           status: 'data',
-          value: formatCurrency(pageMetrics.contractAmount),
+          value: formatCurrency(pageMetrics.remainingAmount),
         },
         {
-          icon: 'ri-pie-chart-line',
-          label: '当前页收款率',
+          icon: 'ri-error-warning-line',
+          label: '当前页逾期',
           status: 'data',
-          value: pageMetrics.collectionRate,
+          tone: pageMetrics.overdueAmount > 0 ? 'danger' : 'neutral',
+          value: formatCurrency(pageMetrics.overdueAmount),
         },
       ]
 
@@ -254,8 +282,8 @@ export default function ProjectsView() {
               ? '项目数据暂不可用，请重试'
               : `${totalItems} 个项目 · ${paginationInfo}`
         }
-        eyebrow="WORKSPACE / PROJECTS"
-        title="项目管理"
+        eyebrow="项目与回款"
+        title="项目"
       />
 
       <section aria-label="项目概览" className="projects-summary-grid">
@@ -272,7 +300,7 @@ export default function ProjectsView() {
         >
           <div className="projects-toolbar">
             <div className="projects-toolbar__context">
-              <span className="projects-toolbar__eyebrow">PROJECT LEDGER</span>
+              <span className="projects-toolbar__eyebrow">项目台账</span>
               <span className="projects-toolbar__summary">{paginationInfo}</span>
             </div>
             <Tabs.List
@@ -287,6 +315,16 @@ export default function ProjectsView() {
               ))}
             </Tabs.List>
 
+            <RouterButton
+              className="projects-followup-link"
+              size="sm"
+              to="/calendar?view=overdue"
+              variant="ghost"
+            >
+              <i aria-hidden="true" className="ri-error-warning-line" />
+              需跟进的收款
+            </RouterButton>
+
             <div className="project-list-actions">
               <SearchField
                 aria-label="搜索项目"
@@ -297,7 +335,7 @@ export default function ProjectsView() {
                 }}
                 onValueChange={setKeyword}
                 pending={loading}
-                placeholder="搜索项目…"
+                placeholder="搜索项目或客户…"
                 value={keyword}
               />
             </div>
@@ -322,16 +360,13 @@ export default function ProjectsView() {
                       >
                         <Table.Header>
                           <Table.Row>
-                            <Table.Column className="project-name-column">项目名称</Table.Column>
-                            <Table.Column>客户</Table.Column>
-                            <Table.Column>开始日期</Table.Column>
-                            <Table.Column>截止日期</Table.Column>
-                            <Table.Column>创建日期</Table.Column>
-                            {isAdmin ? <Table.Column>创建人</Table.Column> : null}
+                            <Table.Column className="project-name-column">项目 / 客户</Table.Column>
                             <Table.Column align="end">合同金额</Table.Column>
                             <Table.Column align="end">已收款</Table.Column>
-                            <Table.Column>收款进度</Table.Column>
-                            <Table.Column>状态</Table.Column>
+                            <Table.Column align="end">待收款</Table.Column>
+                            <Table.Column>下次到期</Table.Column>
+                            <Table.Column>项目状态</Table.Column>
+                            <Table.Column>收款状态</Table.Column>
                             <Table.Column align="end" sticky="end">
                               操作
                             </Table.Column>
@@ -367,6 +402,7 @@ export default function ProjectsView() {
 
                           {projects.map((project) => {
                             const progress = getProgress(project)
+                            const collection = getProjectCollectionSummary(project)
                             return (
                               <Table.Row
                                 data-motion-item
@@ -374,7 +410,11 @@ export default function ProjectsView() {
                                 key={project.id}
                                 onClick={() => navigate(`/projects/${project.id}`)}
                               >
-                                <Table.Cell className="project-name-column" title={project.name}>
+                                <Table.Cell
+                                  className="project-name-column"
+                                  data-label="项目 / 客户"
+                                  title={project.name}
+                                >
                                   <RouterLink
                                     className="project-name-link"
                                     onClick={(event) => event.stopPropagation()}
@@ -382,38 +422,54 @@ export default function ProjectsView() {
                                   >
                                     <strong>{project.name}</strong>
                                   </RouterLink>
+                                  <span className="project-client-name">{project.company}</span>
                                 </Table.Cell>
-                                <Table.Cell>{project.company}</Table.Cell>
-                                <Table.Cell>{formatDate(project.start_date)}</Table.Cell>
-                                <Table.Cell>{formatDate(project.end_date)}</Table.Cell>
-                                <Table.Cell>{formatDate(project.create_time)}</Table.Cell>
-                                {isAdmin ? (
-                                  <Table.Cell>{project.user?.name || '-'}</Table.Cell>
-                                ) : null}
-                                <Table.Cell align="end">
+                                <Table.Cell align="end" data-label="合同金额">
                                   {formatCurrency(project.total_amount)}
                                 </Table.Cell>
-                                <Table.Cell align="end">
-                                  {formatCurrency(project.received_amount || 0)}
-                                </Table.Cell>
-                                <Table.Cell>
-                                  <div className="project-progress-cell">
+                                <Table.Cell align="end" data-label="已收款">
+                                  <div className="project-paid-cell">
+                                    <span>{formatCurrency(project.received_amount || 0)}</span>
                                     <ProgressBar
                                       className="project-table-progress"
                                       label={`${project.name} 收款进度`}
                                       motion="reveal"
                                       size="sm"
-                                      tone={project.status === 'completed' ? 'success' : 'accent'}
+                                      tone={collection.state === 'settled' ? 'success' : 'accent'}
                                       value={progress}
                                       valueLabel={`${progress}%`}
                                     />
-                                    <span>{progress}%</span>
                                   </div>
                                 </Table.Cell>
-                                <Table.Cell>
+                                <Table.Cell align="end" data-label="待收款">
+                                  {formatCurrency(collection.remainingAmount)}
+                                </Table.Cell>
+                                <Table.Cell data-label="下次到期">
+                                  {collection.nextDueDate
+                                    ? formatDate(collection.nextDueDate)
+                                    : '—'}
+                                </Table.Cell>
+                                <Table.Cell data-label="项目状态">
                                   <ProjectStatusChip status={project.status} />
                                 </Table.Cell>
-                                <Table.Cell align="end" sticky="end">
+                                <Table.Cell data-label="收款状态">
+                                  <Chip
+                                    size="sm"
+                                    tone={
+                                      collection.state === 'settled'
+                                        ? 'success'
+                                        : collection.state === 'overdue' ||
+                                            collection.state === 'review'
+                                          ? 'danger'
+                                          : collection.state === 'pending'
+                                            ? 'warning'
+                                            : 'neutral'
+                                    }
+                                  >
+                                    {collection.label}
+                                  </Chip>
+                                </Table.Cell>
+                                <Table.Cell align="end" data-label="操作" sticky="end">
                                   <div className="project-row-actions">
                                     <IconButton
                                       label={`${project.name}：编辑项目`}
@@ -426,18 +482,6 @@ export default function ProjectsView() {
                                       variant="ghost"
                                     >
                                       <i aria-hidden="true" className="ri-edit-line" />
-                                    </IconButton>
-                                    <IconButton
-                                      label={`${project.name}：删除项目`}
-                                      onClick={(event) => {
-                                        event.stopPropagation()
-                                        setConfirmation({ action: 'delete', projectId: project.id })
-                                      }}
-                                      size="sm"
-                                      title="删除"
-                                      variant="ghost"
-                                    >
-                                      <i aria-hidden="true" className="ri-delete-bin-line" />
                                     </IconButton>
                                     <Dropdown
                                       onOpenChange={(open) =>
@@ -498,6 +542,21 @@ export default function ProjectsView() {
                                           }
                                         >
                                           归档项目
+                                        </Dropdown.Item>
+                                        <Dropdown.Item
+                                          onSelect={() => {
+                                            setActiveDropdownId(null)
+                                            setConfirmation({
+                                              action: 'delete',
+                                              projectId: project.id,
+                                            })
+                                          }}
+                                          startContent={
+                                            <i aria-hidden="true" className="ri-delete-bin-line" />
+                                          }
+                                          tone="danger"
+                                        >
+                                          删除项目
                                         </Dropdown.Item>
                                       </Dropdown.Menu>
                                     </Dropdown>

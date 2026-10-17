@@ -52,7 +52,7 @@ func (r *ProjectRepository) List(userID int64, status, keyword string, page, pag
 	var total int64
 
 	// 构建基础查询：使用UserScope实现数据隔离，预加载关联
-	query := r.db.Model(&models.Project{}).Scopes(UserScope(userID)).Preload("User")
+	query := r.db.Model(&models.Project{}).Scopes(UserScope(userID)).Preload("User").Preload("Payments")
 
 	// 动态条件筛选
 	if status != "" && status != "all" {

@@ -19,6 +19,11 @@ describe('SectionHeader', () => {
     expect(screen.getByRole('button', { name: '编辑' })).toBeInTheDocument()
   })
 
+  it('supports a page-level heading for standalone screens', () => {
+    render(<SectionHeader headingLevel={1} title="通知中心" />)
+    expect(screen.getByRole('heading', { level: 1, name: '通知中心' })).toBeInTheDocument()
+  })
+
   it('exposes compact density without leaking internal anatomy to consumers', () => {
     render(<SectionHeader density="compact" description="最近创建" title="近期项目" />)
 

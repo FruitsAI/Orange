@@ -127,6 +127,8 @@ export const projectApi = {
 
 // 收款 API 集合
 export const paymentApi = {
+  // 获取全部逾期待收款项，供工作台和日历的风险入口使用
+  overdue: () => api.get<ApiResponse<Payment[]>>('/payments/overdue'),
   // 获取收款列表
   list: (params?: { project_id?: number; status?: string; start_date?: string; end_date?: string; _t?: number }) =>
     api.get<ApiResponse<Payment[]>>('/payments', { params }),

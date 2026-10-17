@@ -92,7 +92,7 @@ describe('ProjectsView design system migration', () => {
     )
     expect(screen.getByRole('tab', { name: '全部项目' })).toHaveAttribute('aria-selected', 'true')
     const panels = container.querySelectorAll('.project-filter-tabs__panel')
-    expect(panels).toHaveLength(6)
+    expect(panels).toHaveLength(5)
     expect([...panels].filter((panel) => !panel.hasAttribute('hidden'))).toHaveLength(1)
     expect(
       [...panels]
@@ -135,7 +135,8 @@ describe('ProjectsView design system migration', () => {
     render(<ProjectsView />, { initialEntries: ['/projects'] })
 
     await waitFor(() => expect(screen.getByText('星轨项目')).toBeInTheDocument())
-    await user.click(screen.getByRole('button', { name: '星轨项目：删除项目' }))
+    await user.click(screen.getByRole('button', { name: '星轨项目：更多项目操作' }))
+    await user.click(screen.getByRole('menuitem', { name: '删除项目' }))
 
     expect(screen.getByRole('alertdialog')).toBeInTheDocument()
     expect(screen.getByText('删除项目？')).toBeInTheDocument()
@@ -152,8 +153,9 @@ describe('ProjectsView design system migration', () => {
       { initialEntries: ['/projects'] },
     )
 
-    const deleteButton = await screen.findByRole('button', { name: '星轨项目：删除项目' })
-    deleteButton.focus()
+    await user.click(await screen.findByRole('button', { name: '星轨项目：更多项目操作' }))
+    const deleteAction = screen.getByRole('menuitem', { name: '删除项目' })
+    deleteAction.focus()
     await user.keyboard('{Enter}')
 
     expect(screen.getByLabelText('当前位置')).toHaveTextContent('/projects')

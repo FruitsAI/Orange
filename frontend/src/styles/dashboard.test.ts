@@ -168,8 +168,8 @@ describe('dashboard visual contract', () => {
   })
 
   it('keeps full-dashboard skeleton dimensions aligned with loaded regions', () => {
-    expect(dashboardCss).toMatch(/\.dashboard-skeleton__hero\s*\{[\s\S]*min-height:\s*360px/)
-    expect(dashboardCss).toMatch(/\.dashboard-skeleton__metric\s*\{[\s\S]*min-height:\s*112px/)
+    expect(dashboardCss).toMatch(/\.dashboard-skeleton__hero\s*\{[\s\S]*min-height:\s*220px/)
+    expect(dashboardCss).not.toContain('.dashboard-skeleton__metric')
     expect(dashboardCss).toMatch(
       /\.dashboard-skeleton__chart,[\s\S]*\.dashboard-skeleton__queue\s*\{[\s\S]*min-height:\s*360px/,
     )

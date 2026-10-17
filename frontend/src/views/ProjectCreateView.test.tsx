@@ -127,14 +127,15 @@ describe('ProjectCreateView design system migration', () => {
       { initialEntries: ['/projects/create'] },
     )
 
-    expect(screen.getByRole('heading', { name: '创建项目' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '新建项目' })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: '项目表单章节' })).toBeInTheDocument()
     expect(container.querySelectorAll('.ods-form-section').length).toBeGreaterThanOrEqual(3)
     expect(container.querySelectorAll('.ods-form-grid').length).toBeGreaterThanOrEqual(3)
     expect(container.querySelector('.ods-form-actions')).toBeInTheDocument()
     expect(container.querySelector('.project-compose-layout')).toBeInTheDocument()
     expect(screen.getByRole('complementary', { name: '项目草稿摘要' })).toBeInTheDocument()
-    expect(screen.getByText('PROJECT DRAFT')).toBeInTheDocument()
-    expect(screen.getByText('档案完整度')).toBeInTheDocument()
+    expect(screen.getByText('填写进度')).toBeInTheDocument()
+    expect(screen.getByText('已完成 0/8 项')).toBeInTheDocument()
     expect(screen.getByText('计划金额')).toBeInTheDocument()
     expect(screen.getByLabelText(/项目名称/)).toHaveClass('ods-input')
     expect(screen.getByLabelText(/合同总金额/)).toHaveClass('ods-number-input__field')

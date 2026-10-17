@@ -25,6 +25,7 @@ export interface CalendarDayState {
 
 export interface CalendarProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
   getDateAriaLabel?: (date: string, state: CalendarDayState) => string
+  getDateCount?: (date: string) => number
   getDateTone?: (date: string) => CalendarMarkTone | undefined
   isDateMarked?: (date: string) => boolean
   layout?: CalendarLayout
@@ -85,6 +86,7 @@ export const Calendar = forwardRef<HTMLDivElement, CalendarProps>(function Calen
   {
     className,
     getDateAriaLabel,
+    getDateCount,
     getDateTone,
     isDateMarked,
     layout = 'compact',
@@ -316,6 +318,7 @@ export const Calendar = forwardRef<HTMLDivElement, CalendarProps>(function Calen
                   const isToday = day.isSame(dayjs(), 'day')
                   const disabled = isDisabled(day)
                   const markTone = getDateTone?.(date)
+                  const dateCount = getDateCount?.(date) ?? 0
                   const isMarked = (isDateMarked?.(date) ?? false) || markTone !== undefined
                   const state: CalendarDayState = {
                     isDisabled: disabled,
@@ -336,6 +339,7 @@ export const Calendar = forwardRef<HTMLDivElement, CalendarProps>(function Calen
                         aria-label={getDateAriaLabel?.(date, state) ?? getDefaultDateAriaLabel(day)}
                         className="ods-calendar__day"
                         data-date={date}
+                        data-has-count={dateCount > 0 || undefined}
                         data-marked={isMarked || undefined}
                         data-outside={outside || undefined}
                         data-selected={isSelected || undefined}
@@ -359,6 +363,11 @@ export const Calendar = forwardRef<HTMLDivElement, CalendarProps>(function Calen
                             data-slot="marker"
                             data-tone={markTone}
                           />
+                        ) : null}
+                        {layout === 'fluid' && dateCount > 0 ? (
+                          <span aria-hidden="true" className="ods-calendar__count">
+                            {dateCount}笔
+                          </span>
                         ) : null}
                       </button>
                     </div>

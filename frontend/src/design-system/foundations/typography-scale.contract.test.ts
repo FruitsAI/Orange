@@ -23,14 +23,15 @@ describe('Orange Design System typography scale', () => {
     )
   })
 
-  it('uses readable line heights and neutral tracking for mixed Chinese and Latin text', () => {
+  it('uses readable line heights, neutral body tracking, and open tracking for uppercase micro-labels', () => {
     expect(referenceTokens).toContain('--ods-ref-line-height-tight: 1.15;')
     expect(referenceTokens).toContain('--ods-ref-line-height-heading: 1.3;')
     expect(referenceTokens).toContain('--ods-ref-line-height-body: 1.5;')
     expect(referenceTokens).toContain('--ods-ref-line-height-relaxed: 1.7;')
 
-    for (const token of ['tight', 'body', 'wide']) {
+    for (const token of ['tight', 'body']) {
       expect(referenceTokens).toContain(`--ods-ref-letter-spacing-${token}: 0;`)
     }
+    expect(referenceTokens).toContain('--ods-ref-letter-spacing-wide: 0.05em;')
   })
 })

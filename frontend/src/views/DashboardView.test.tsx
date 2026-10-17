@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { dashboardApi, type DashboardStats, type IncomeTrend } from '@/api/dashboard'
-import type { Payment, Project } from '@/api/project'
+import { paymentApi, type Payment, type Project } from '@/api/project'
 import { render } from '@/test/render'
 import DashboardView from './DashboardView'
 
@@ -13,6 +13,17 @@ vi.mock('@/api/dashboard', () => ({
     getUpcomingPayments: vi.fn(),
   },
 }))
+
+vi.mock('@/api/project', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/api/project')>()
+  return {
+    ...original,
+    paymentApi: {
+      ...original.paymentApi,
+      overdue: vi.fn().mockResolvedValue({ data: { data: [] } }),
+    },
+  }
+})
 
 vi.mock('@/components/dashboard/IncomeChart', () => ({
   default: ({
@@ -73,6 +84,7 @@ const apiResponse = <T,>(data: T) => ({ data: { data } })
 describe('DashboardView resource rendering', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(paymentApi.overdue).mockResolvedValue({ data: { data: [] } } as never)
   })
 
   it('reveals successful regions while one initial request remains pending', async () => {
@@ -84,21 +96,18 @@ describe('DashboardView resource rendering', () => {
     const { container } = render(<DashboardView />)
 
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: '近30天预计回款' })).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: '今日回款概览' })).toBeInTheDocument(),
     )
+    expect(screen.getByText('近30天预计回款')).toBeInTheDocument()
     expect(screen.getByText('¥120.00')).toBeInTheDocument()
     expect(screen.getByText('同期已回款 ¥100.00')).toBeInTheDocument()
-    expect(screen.getByText('已结算')).toBeInTheDocument()
+    expect(screen.getByText('已回款')).toBeInTheDocument()
     expect(screen.getByText('¥700.00')).toBeInTheDocument()
-    expect(screen.getByText('待结算')).toBeInTheDocument()
-    expect(screen.getByText('平均回款')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '处理待收款' })).toHaveAttribute(
+    expect(screen.getByText('逾期待收')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '处理逾期' })).toHaveAttribute(
       'href',
-      '/projects/1?tab=payments&payment=1',
+      '/calendar?view=overdue',
     )
-    expect(screen.getByLabelText('较上期上升 3.00%，表现改善')).toBeInTheDocument()
-    expect(screen.getByLabelText('较上期上升 4.00%，表现承压')).toBeInTheDocument()
-    expect(screen.getByLabelText('较上期上升 2.00%，表现承压')).toBeInTheDocument()
     expect(screen.getByText('趋势数据 计划 120 实际 100')).toBeInTheDocument()
     expect(screen.getByText('行动队列 1')).toBeInTheDocument()
     expect(container.querySelector('[data-motion-scope="dashboard"]')).toBeInTheDocument()
@@ -109,9 +118,7 @@ describe('DashboardView resource rendering', () => {
     expect(screen.getByLabelText('现金流趋势')).toHaveAttribute('data-motion', 'entrance')
     expect(screen.getByLabelText('待处理收款')).toHaveAttribute('data-motion', 'entrance')
     expect(screen.getByLabelText('近期项目')).toHaveAttribute('data-motion', 'entrance')
-    expect(
-      container.querySelectorAll('[data-motion-group="summary-metrics"] [data-motion-item]'),
-    ).toHaveLength(3)
+    expect(container.querySelector('.ember-dashboard__metrics')).not.toBeInTheDocument()
     expect(screen.queryByText('快捷操作')).not.toBeInTheDocument()
     expect(screen.getByLabelText('正在加载近期项目')).toBeInTheDocument()
     expect(screen.queryByLabelText('正在加载仪表盘')).not.toBeInTheDocument()
@@ -126,7 +133,7 @@ describe('DashboardView resource rendering', () => {
     const { container } = render(<DashboardView />)
 
     expect(screen.getByRole('status', { name: '正在加载仪表盘' })).toBeInTheDocument()
-    expect(container.querySelector('.dashboard-skeleton__hero')).toBeInTheDocument()
+    expect(container.querySelectorAll('.dashboard-skeleton__hero')).toHaveLength(3)
     expect(container.querySelector('.dashboard-action-grid')).toBeInTheDocument()
     expect(container.querySelector('.dashboard-recent-projects')).toBeInTheDocument()
     expect(screen.queryByText('未来七天暂无待处理收款')).not.toBeInTheDocument()
@@ -146,7 +153,7 @@ describe('DashboardView resource rendering', () => {
     expect(screen.queryByText('暂无待收款计划')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: '查看项目' })).toHaveAttribute('href', '/projects')
     expect(screen.getByText('--')).toBeInTheDocument()
-    expect(screen.getAllByText('暂不可用')).toHaveLength(3)
+    expect(screen.getAllByText('暂不可用')).toHaveLength(1)
     expect(screen.getByText('统计数据加载失败')).toBeInTheDocument()
     expect(screen.getByText('收入趋势加载失败')).toBeInTheDocument()
     expect(screen.getByText('收款计划加载失败')).toBeInTheDocument()
@@ -166,7 +173,7 @@ describe('DashboardView resource rendering', () => {
     expect(screen.getByText('预计回款加载中')).toBeInTheDocument()
     expect(screen.getByText('逾期风险加载中')).toBeInTheDocument()
     expect(screen.getByText('收款计划加载中')).toBeInTheDocument()
-    expect(screen.getByText('已结算加载中')).toBeInTheDocument()
+    expect(screen.getByText('已回款加载中')).toBeInTheDocument()
     expect(screen.queryByText('暂无待收款计划')).not.toBeInTheDocument()
     expect(screen.queryByText('--')).not.toBeInTheDocument()
   })

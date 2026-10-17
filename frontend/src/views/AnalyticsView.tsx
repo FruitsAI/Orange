@@ -8,6 +8,7 @@ import {
   Card,
   EmptyState,
   PageHeader,
+  RouterButton,
   SectionHeader,
   Skeleton,
   SummaryMetric,
@@ -27,10 +28,10 @@ type Period = 'week' | 'month' | 'quarter' | 'year'
 const periods: Period[] = ['week', 'month', 'quarter', 'year']
 
 const metricDefinitions = [
-  { icon: 'ri-timer-line', label: '平均收款周期' },
-  { icon: 'ri-funds-line', label: '预期收款' },
+  { icon: 'ri-funds-line', label: '应收' },
+  { icon: 'ri-checkbox-circle-line', label: '已收' },
   { icon: 'ri-percent-line', label: '收款率' },
-  { icon: 'ri-error-warning-line', label: '逾期比例' },
+  { icon: 'ri-error-warning-line', label: '逾期' },
 ] as const
 
 const emptyStats: DashboardStats = {
@@ -57,6 +58,13 @@ const periodLabel = (period: Period) => {
   if (period === 'month') return '月'
   if (period === 'quarter') return '季'
   return '年'
+}
+
+const periodRangeLabel = (period: Period) => {
+  if (period === 'week') return '近7天'
+  if (period === 'month') return '近30天'
+  if (period === 'quarter') return '近3个月'
+  return '近12个月'
 }
 
 const formatWholeCurrency = (amount: number) => `¥${Math.round(amount).toLocaleString('zh-CN')}`
@@ -97,7 +105,7 @@ export default function AnalyticsView() {
   const toastError = useToastStore((state) => state.error)
   const effectiveTheme = useThemeStore((state) => state.effectiveTheme)
   const reducedMotion = useReducedMotion()
-  const [activePeriod, setActivePeriod] = useState<Period>('month')
+  const [activePeriod, setActivePeriod] = useState<Period>('year')
   const [stats, setStats] = useState<DashboardStats>(emptyStats)
   const [trend, setTrend] = useState<IncomeTrend>(emptyTrend)
   const [isLoading, setIsLoading] = useState(true)
@@ -141,13 +149,16 @@ export default function AnalyticsView() {
 
   const hasBreakdownData = stats.paid_amount + pendingNotOverdue + stats.overdue_amount > 0
 
-  const trendPrefix = useMemo(() => `较上${periodLabel(activePeriod)}`, [activePeriod])
+  const trendPrefix = useMemo(
+    () => (activePeriod === 'year' ? '较前12个月' : `较上${periodLabel(activePeriod)}`),
+    [activePeriod],
+  )
 
   const chartTitle = useMemo(() => {
     if (activePeriod === 'week') return '周度收入对比'
     if (activePeriod === 'month') return '月度收入对比'
     if (activePeriod === 'quarter') return '季度收入对比'
-    return '年度收入对比'
+    return '近12个月回款对比'
   }, [activePeriod])
 
   const colors = useMemo(() => {
@@ -417,18 +428,18 @@ export default function AnalyticsView() {
 
     return [
       {
-        icon: 'ri-timer-line',
-        label: '平均收款周期',
+        icon: 'ri-funds-line',
+        label: '应收',
         status: 'data' as const,
-        trend: makeTrend(stats.avg_collection_days_trend, trendPrefix, '平均周期', true),
-        value: `${Math.round(stats.avg_collection_days)} 天`,
+        trend: makeTrend(stats.total_trend, trendPrefix, '应收'),
+        value: formatWholeCurrency(stats.total_amount),
       },
       {
-        icon: 'ri-funds-line',
-        label: '预期收款',
+        icon: 'ri-checkbox-circle-line',
+        label: '已收',
         status: 'data' as const,
-        trend: makeTrend(stats.total_trend, trendPrefix, '预期收款'),
-        value: formatWholeCurrency(stats.total_amount),
+        trend: makeTrend(stats.paid_trend, trendPrefix, '已收'),
+        value: formatWholeCurrency(stats.paid_amount),
       },
       {
         icon: 'ri-percent-line',
@@ -438,12 +449,12 @@ export default function AnalyticsView() {
       },
       {
         icon: 'ri-error-warning-line',
-        label: '逾期比例',
+        label: '逾期',
         status: 'data' as const,
-        value: `${overdueRate}%`,
+        value: formatWholeCurrency(stats.overdue_amount),
       },
     ]
-  }, [collectionRate, isLoading, loadError, overdueRate, stats, trendPrefix])
+  }, [collectionRate, isLoading, loadError, stats, trendPrefix])
 
   const handlePeriodChange = (value: string) => {
     const period = periods.find((candidate) => candidate === value)
@@ -454,10 +465,10 @@ export default function AnalyticsView() {
   }
 
   const description = loadError
-    ? `${periodLabel(activePeriod)}度回款概览 · 数据暂不可用`
+    ? `${periodRangeLabel(activePeriod)}回款概览 · 数据暂不可用`
     : isLoading
-      ? `${periodLabel(activePeriod)}度回款概览 · 正在加载`
-      : `${periodLabel(activePeriod)}度回款概览 · 已收 ${formatWholeCurrency(stats.paid_amount)} / 应收 ${formatWholeCurrency(stats.total_amount)}`
+      ? `${periodRangeLabel(activePeriod)}回款概览 · 正在加载`
+      : `${periodRangeLabel(activePeriod)}回款概览 · 已收 ${formatWholeCurrency(stats.paid_amount)} / 应收 ${formatWholeCurrency(stats.total_amount)}`
 
   const retryAction = (
     <Button onClick={() => void fetchAnalytics(activePeriod)} size="sm" variant="secondary">
@@ -468,7 +479,7 @@ export default function AnalyticsView() {
   const handleExport = useCallback(() => {
     const rows: Array<Array<number | string>> = [
       ['Orange 数据分析'],
-      ['统计周期', `${periodLabel(activePeriod)}度`],
+      ['统计周期', periodRangeLabel(activePeriod)],
       ['平均收款周期（天）', stats.avg_collection_days],
       ['应收金额', stats.total_amount],
       ['已收金额', stats.paid_amount],
@@ -499,7 +510,7 @@ export default function AnalyticsView() {
           <div className="analytics-page-toolbar">
             <Tabs.List aria-label="统计周期" variant="accent">
               {periods.map((period) => (
-                <Tabs.Tab key={period} value={period}>
+                <Tabs.Tab key={period} title={periodRangeLabel(period)} value={period}>
                   {periodLabel(period)}
                 </Tabs.Tab>
               ))}
@@ -518,8 +529,8 @@ export default function AnalyticsView() {
         }
         data-motion="entrance"
         description={description}
-        eyebrow="INSIGHTS / 回款表现"
-        title="数据分析"
+        eyebrow="回款表现"
+        title="回款分析"
       />
 
       {periods.map((period) => (
@@ -532,8 +543,16 @@ export default function AnalyticsView() {
                 data-motion-group="metrics"
                 role="list"
               >
-                {summaryMetrics.map((metric) => (
-                  <div className="analytics-metric-item" key={String(metric.label)} role="listitem">
+                {summaryMetrics.map((metric, index) => (
+                  <div
+                    className={
+                      index === 0
+                        ? 'analytics-metric-item analytics-metric-item--anchor'
+                        : 'analytics-metric-item'
+                    }
+                    key={String(metric.label)}
+                    role="listitem"
+                  >
                     <SummaryMetric {...metric} />
                   </div>
                 ))}
@@ -575,42 +594,24 @@ export default function AnalyticsView() {
                       />
                     ) : !hasTrendData ? (
                       <EmptyState
+                        action={
+                          activePeriod !== 'year' ? (
+                            <Button
+                              onClick={() => handlePeriodChange('year')}
+                              size="sm"
+                              variant="secondary"
+                            >
+                              查看年度
+                            </Button>
+                          ) : undefined
+                        }
                         className="analytics-chart-empty"
                         icon={<i className="ri-line-chart-line" />}
                         size="sm"
                         title="本期暂无回款趋势"
                       />
                     ) : (
-                      <>
-                        <canvas aria-hidden="true" ref={barChartCanvas} />
-                        <Table.Root visuallyHidden>
-                          <caption>{chartTitle}数据</caption>
-                          <Table.Header>
-                            <Table.Row>
-                              <Table.Column>周期</Table.Column>
-                              <Table.Column>实际收款</Table.Column>
-                              <Table.Column>预期收款</Table.Column>
-                            </Table.Row>
-                          </Table.Header>
-                          <Table.Body>
-                            {trend.labels.map((label, index) => (
-                              <Table.Row key={`${label}-${index}`}>
-                                <Table.Column scope="row">{label}</Table.Column>
-                                <Table.Cell>
-                                  {trend.actual_values[index] == null
-                                    ? '暂无数据'
-                                    : formatCurrency(trend.actual_values[index] ?? 0)}
-                                </Table.Cell>
-                                <Table.Cell>
-                                  {trend.expected_values[index] == null
-                                    ? '暂无数据'
-                                    : formatCurrency(trend.expected_values[index] ?? 0)}
-                                </Table.Cell>
-                              </Table.Row>
-                            ))}
-                          </Table.Body>
-                        </Table.Root>
-                      </>
+                      <canvas aria-hidden="true" ref={barChartCanvas} />
                     )}
                   </Card.Content>
                 </Card.Root>
@@ -631,6 +632,15 @@ export default function AnalyticsView() {
                     />
                   </Card.Header>
                   <Card.Content className="analytics-chart-card__content">
+                    {!isLoading && !loadError && stats.overdue_amount > 0 ? (
+                      <div className="analytics-insight">
+                        <strong>有 {formatCurrency(stats.overdue_amount)} 逾期待收</strong>
+                        <span>先跟进已到期的款项，再安排后续收款。</span>
+                        <RouterButton size="sm" to="/calendar?view=overdue" variant="ghost">
+                          查看逾期款项 <i aria-hidden="true" className="ri-arrow-right-line" />
+                        </RouterButton>
+                      </div>
+                    ) : null}
                     {isLoading ? (
                       <div
                         aria-label="资金状态对比加载中"
@@ -657,7 +667,9 @@ export default function AnalyticsView() {
                       />
                     ) : (
                       <>
-                        <canvas aria-hidden="true" ref={breakdownChartCanvas} />
+                        <div className="analytics-breakdown-canvas">
+                          <canvas aria-hidden="true" ref={breakdownChartCanvas} />
+                        </div>
                         <Table.Root visuallyHidden>
                           <caption>资金状态对比数据</caption>
                           <Table.Header>
@@ -686,6 +698,53 @@ export default function AnalyticsView() {
                   </Card.Content>
                 </Card.Root>
               </div>
+
+              {!isLoading && !loadError && hasTrendData ? (
+                <Card.Root
+                  aria-label="回款明细"
+                  as="section"
+                  className="analytics-detail-card"
+                  variant="tertiary"
+                >
+                  <Card.Header>
+                    <SectionHeader
+                      description="按周期核对计划与实际到账金额"
+                      headingLevel={2}
+                      icon={<i className="ri-table-line" />}
+                      title="回款明细"
+                    />
+                  </Card.Header>
+                  <Card.Content>
+                    <Table.Root>
+                      <caption className="ods-sr-only">{chartTitle}数据</caption>
+                      <Table.Header>
+                        <Table.Row>
+                          <Table.Column>周期</Table.Column>
+                          <Table.Column>计划回款</Table.Column>
+                          <Table.Column>实际回款</Table.Column>
+                          <Table.Column>完成率</Table.Column>
+                        </Table.Row>
+                      </Table.Header>
+                      <Table.Body>
+                        {trend.labels.map((label, index) => {
+                          const planned = trend.expected_values[index] ?? 0
+                          const actual = trend.actual_values[index] ?? 0
+                          return (
+                            <Table.Row key={`${label}-${index}`}>
+                              <Table.Column scope="row">{label}</Table.Column>
+                              <Table.Cell>{formatCurrency(planned)}</Table.Cell>
+                              <Table.Cell>{formatCurrency(actual)}</Table.Cell>
+                              <Table.Cell>
+                                {planned > 0 ? `${((actual / planned) * 100).toFixed(1)}%` : '—'}
+                              </Table.Cell>
+                            </Table.Row>
+                          )
+                        })}
+                      </Table.Body>
+                    </Table.Root>
+                  </Card.Content>
+                </Card.Root>
+              ) : null}
             </>
           ) : null}
         </Tabs.Panel>

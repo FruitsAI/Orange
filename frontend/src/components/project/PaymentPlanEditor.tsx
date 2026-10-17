@@ -17,6 +17,8 @@ import { createPaymentPlanItem, type PaymentPlanItem } from './paymentPlan'
 export interface PaymentPlanEditorProps {
   className?: string
   description?: ReactNode
+  error?: string
+  id?: string
   installment: boolean
   items: PaymentPlanItem[]
   onItemsChange: (items: PaymentPlanItem[]) => void
@@ -47,6 +49,8 @@ const statusOptions: SelectOption[] = [
 export function PaymentPlanEditor({
   className,
   description,
+  error,
+  id,
   installment,
   items,
   onItemsChange,
@@ -73,8 +77,11 @@ export function PaymentPlanEditor({
       actions={actions}
       className={['payment-plan-editor', className].filter(Boolean).join(' ')}
       description={description}
+      id={id}
+      tabIndex={id ? -1 : undefined}
       title={title}
     >
+      {error ? <p className="payment-plan-editor__error" role="alert">{error}</p> : null}
       {items.length === 0 ? (
         <EmptyState
           action={

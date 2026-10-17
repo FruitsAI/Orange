@@ -1,5 +1,4 @@
-import { RouterButton, Surface } from '@/design-system'
-import DashboardClock from './DashboardClock'
+import { RouterButton } from '@/design-system'
 
 type ExpectedDisplay =
   | { status: 'error' }
@@ -7,6 +6,11 @@ type ExpectedDisplay =
   | { amountText: string; status: 'data'; supportingText: string }
 
 type OverdueDisplay =
+  | { status: 'error' }
+  | { status: 'loading' }
+  | { amountText: string; status: 'data' }
+
+type PaidDisplay =
   | { status: 'error' }
   | { status: 'loading' }
   | { amountText: string; status: 'data' }
@@ -25,6 +29,8 @@ export interface FinancialHeroProps {
   }
   expected: ExpectedDisplay
   overdue: OverdueDisplay
+  overdueCount?: number | null
+  paid: PaidDisplay
   payment: PaymentDisplay
   periodLabel: string
 }
@@ -70,6 +76,12 @@ function OverdueContent({ overdue }: Pick<FinancialHeroProps, 'overdue'>) {
   )
 }
 
+function PaidContent({ paid }: Pick<FinancialHeroProps, 'paid'>) {
+  if (paid.status === 'loading') return <strong>已回款加载中</strong>
+  if (paid.status === 'error') return <strong>暂不可用</strong>
+  return <strong>{paid.amountText}</strong>
+}
+
 function PaymentContent({ payment }: Pick<FinancialHeroProps, 'payment'>) {
   if (payment.status === 'loading') {
     return (
@@ -90,8 +102,8 @@ function PaymentContent({ payment }: Pick<FinancialHeroProps, 'payment'>) {
   if (payment.status === 'empty') {
     return (
       <>
-        <span className="financial-hero__detail-label">暂无待收款计划</span>
-        <strong className="financial-hero__detail-value">可前往项目页安排下一笔收款</strong>
+        <span className="financial-hero__detail-label">未来七天无新到期计划</span>
+        <strong className="financial-hero__detail-value">逾期款项仍需优先跟进</strong>
       </>
     )
   }
@@ -108,45 +120,48 @@ export default function FinancialHero({
   cta,
   expected,
   overdue,
+  overdueCount,
+  paid,
   payment,
   periodLabel,
 }: FinancialHeroProps) {
   return (
-    <Surface
-      as="section"
+    <section
       aria-busy={busy}
       aria-label="财务概览"
       className="financial-hero"
       data-motion="entrance"
-      padding="none"
-      radius="shell"
-      variant="brand"
     >
-      <div className="financial-hero__content">
-        <div className="financial-hero__eyebrow">
-          <span aria-hidden="true" className="financial-hero__pulse" data-motion="continuous" />
-          Ember Orbit
+      <div className="financial-hero__risk">
+        <div className="financial-hero__risk-label">
+          <i aria-hidden="true" className="ri-error-warning-line" />
+          <span>逾期待收</span>
         </div>
-        <h1 className="financial-hero__title">{periodLabel}预计回款</h1>
-        <ExpectedContent expected={expected} />
-
-        <div className="financial-hero__details">
-          <div className="financial-hero__detail">
-            <span className="financial-hero__detail-label">逾期风险</span>
-            <OverdueContent overdue={overdue} />
-          </div>
-          <div className="financial-hero__detail financial-hero__detail--payment">
-            <PaymentContent payment={payment} />
-          </div>
+        <div className="financial-hero__risk-total">
+          <OverdueContent overdue={overdue} />
+          {overdueCount != null && overdueCount > 0 ? (
+            <span className="financial-hero__risk-count">{overdueCount} 笔需跟进</span>
+          ) : null}
         </div>
+        <p>到期款项请及时跟进，避免影响项目回款。</p>
+        <RouterButton className="financial-hero__cta" size="lg" to={cta.to} variant="primary">
+          {cta.label}
+          <i aria-hidden="true" className="ri-arrow-right-line" />
+        </RouterButton>
       </div>
 
-      <DashboardClock />
+      <div className="financial-hero__metric">
+        <span className="financial-hero__metric-label">{periodLabel}预计回款</span>
+        <ExpectedContent expected={expected} />
+      </div>
 
-      <RouterButton className="financial-hero__cta" size="lg" to={cta.to} variant="primary">
-        {cta.label}
-        <i aria-hidden="true" className="ri-arrow-right-up-line" />
-      </RouterButton>
-    </Surface>
+      <div className="financial-hero__metric financial-hero__metric--paid">
+        <span className="financial-hero__metric-label">已回款</span>
+        <PaidContent paid={paid} />
+        <div className="financial-hero__next-payment">
+          <PaymentContent payment={payment} />
+        </div>
+      </div>
+    </section>
   )
 }

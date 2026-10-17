@@ -101,7 +101,7 @@ function ProjectFormSectionTitle({
         <i aria-hidden="true" className={icon} />
       </Surface>
       <span>
-        <small>STEP {String(index).padStart(2, '0')}</small>
+        <small>章节 {String(index).padStart(2, '0')}</small>
         {title}
       </span>
     </span>
@@ -128,6 +128,7 @@ export default function ProjectCreateView() {
   const [paymentItems, setPaymentItems] = useState<PaymentPlanItem[]>([createPaymentPlanItem()])
   const originalPaymentIds = useRef<number[]>([])
   const [saving, setSaving] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const isMountedRef = useRef(false)
   const loadGenerationRef = useRef(0)
   const projectId = id ? Number(id) : null
@@ -140,7 +141,7 @@ export default function ProjectCreateView() {
     form.company.trim(),
     form.type,
     form.start_date,
-    form.end_date,
+    form.end_date && (!form.start_date || form.end_date >= form.start_date),
     form.contract_date,
     form.total_amount > 0,
     paymentItems.every((item) => Boolean(item.amount && item.planDate)),
@@ -164,8 +165,24 @@ export default function ProjectCreateView() {
     activeProjectIdRef.current = projectId
   }, [projectId])
 
-  const updateForm = (patch: Partial<ProjectRequest>) =>
+  const updateForm = (patch: Partial<ProjectRequest>) => {
     setForm((current) => ({ ...current, ...patch }))
+    setValidationErrors((current) => {
+      const next = { ...current }
+      for (const key of Object.keys(patch)) delete next[key]
+      return next
+    })
+  }
+
+  const updatePaymentItems = (items: PaymentPlanItem[]) => {
+    setPaymentItems(items)
+    setValidationErrors((current) => {
+      if (!current.paymentItems) return current
+      const next = { ...current }
+      delete next.paymentItems
+      return next
+    })
+  }
 
   const ensurePaymentItems = (paymentMethod: string) => {
     setPaymentItems((current) => {
@@ -282,20 +299,30 @@ export default function ProjectCreateView() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!form.type) {
-      toastError('请选择项目类型')
-      return
+    const errors: Record<string, string> = {}
+    if (!form.name.trim()) errors.name = '请填写项目名称'
+    if (!form.company.trim()) errors.company = '请填写客户名称'
+    if (!form.type) errors.type = '请选择项目类型'
+    if (!form.start_date) errors.start_date = '请选择开始日期'
+    if (!form.end_date) errors.end_date = '请选择截止日期'
+    if (form.start_date && form.end_date && form.end_date < form.start_date) {
+      errors.end_date = '截止日期不能早于开始日期'
     }
-    if (!form.start_date || !form.end_date) {
-      toastError('请选择项目开始和截止日期')
-      return
+    if (form.total_amount <= 0) errors.total_amount = '合同金额必须大于零'
+    if (!form.contract_date) errors.contract_date = '请选择合同日期'
+    if (paymentItems.some((item) => Number(item.amount) <= 0 || !item.planDate)) {
+      errors.paymentItems = '请填写每笔收款的金额和计划日期'
     }
-    if (!form.contract_date) {
-      toastError('请选择合同日期')
-      return
-    }
-    if (paymentItems.some((item) => !item.amount || !item.planDate)) {
-      toastError('请完整填写收款金额和收款日期')
+
+    setValidationErrors(errors)
+    if (Object.keys(errors).length > 0) {
+      const firstKey = Object.keys(errors)[0]
+      const targetId = firstKey === 'paymentItems' ? 'project-section-payment' : `project-${firstKey}-control`
+      window.requestAnimationFrame(() => {
+        const target = document.getElementById(targetId)
+        target?.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
+        target?.focus({ preventScroll: true })
+      })
       return
     }
 
@@ -319,11 +346,11 @@ export default function ProjectCreateView() {
   return (
     <div className="project-create-view project-form-page" data-motion-scope="project-create">
       <PageHeader
-        description={isEdit ? '更新项目档案与收款计划。' : '建立项目档案并规划回款节点。'}
+        description={isEdit ? '更新项目资料、合同和回款安排。' : '分清项目资料、合同和回款安排。'}
         eyebrow={
           <span className="project-create-kicker">
             <i aria-hidden="true" className={isEdit ? 'ri-edit-box-line' : 'ri-add-box-line'} />
-            {isEdit ? 'PROJECT EDITOR' : 'NEW PROJECT'}
+            {isEdit ? '项目资料' : '建立项目'}
           </span>
         }
         leading={
@@ -331,21 +358,48 @@ export default function ProjectCreateView() {
             <i aria-hidden="true" className="ri-arrow-left-line" />
           </IconButton>
         }
-        title={isEdit ? '编辑项目' : '创建项目'}
+        title={isEdit ? '编辑项目' : '新建项目'}
       />
+
+      <nav aria-label="项目表单章节" className="project-section-nav">
+        {[
+          { id: 'project-section-basic', label: '基本资料' },
+          { id: 'project-section-contract', label: '合同信息' },
+          { id: 'project-section-payment', label: '收款计划' },
+          { id: 'project-section-notes', label: '补充说明' },
+        ].map((section, index) => (
+          <Button
+            key={section.id}
+            onClick={() => document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            size="sm"
+            type="button"
+            variant="secondary"
+          >
+            <span>{index + 1}</span>
+            {section.label}
+          </Button>
+        ))}
+      </nav>
 
       <div className="project-compose-layout">
         <Card.Root className="project-form-card" padding="none" variant="secondary">
-          <form aria-label="项目编辑表单" className="project-form" onSubmit={handleSubmit}>
+          <form aria-label="项目编辑表单" className="project-form" noValidate onSubmit={handleSubmit}>
+            {Object.keys(validationErrors).length > 0 ? (
+              <div className="project-form-error-summary" role="alert">
+                <strong>还有 {Object.keys(validationErrors).length} 项需要检查</strong>
+                <span>已定位到第一处，请按字段提示修改后再保存。</span>
+              </div>
+            ) : null}
             <FormSection
               className="project-form-section"
               description="确定项目归属、服务类型和交付周期。"
+              id="project-section-basic"
               title={
-                <ProjectFormSectionTitle icon="ri-folder-user-line" index={1} title="基本信息" />
+                <ProjectFormSectionTitle icon="ri-folder-user-line" index={1} title="基本资料" />
               }
             >
               <FormGrid columns={2}>
-                <Field.Root required>
+                <Field.Root id="project-name" invalid={Boolean(validationErrors.name)} required>
                   <Field.Label>项目名称</Field.Label>
                   <Input
                     autoCapitalize="off"
@@ -357,9 +411,10 @@ export default function ProjectCreateView() {
                     type="text"
                     value={form.name}
                   />
+                  {validationErrors.name ? <Field.Error>{validationErrors.name}</Field.Error> : null}
                 </Field.Root>
 
-                <Field.Root required>
+                <Field.Root id="project-company" invalid={Boolean(validationErrors.company)} required>
                   <Field.Label>客户名称</Field.Label>
                   <Input
                     autoCapitalize="off"
@@ -371,9 +426,10 @@ export default function ProjectCreateView() {
                     type="text"
                     value={form.company}
                   />
+                  {validationErrors.company ? <Field.Error>{validationErrors.company}</Field.Error> : null}
                 </Field.Root>
 
-                <Field.Root required>
+                <Field.Root id="project-type" invalid={Boolean(validationErrors.type)} required>
                   <Field.Label>项目类型</Field.Label>
                   <Select
                     aria-label="项目类型"
@@ -382,6 +438,7 @@ export default function ProjectCreateView() {
                     placeholder="请选择项目类型"
                     value={form.type}
                   />
+                  {validationErrors.type ? <Field.Error>{validationErrors.type}</Field.Error> : null}
                 </Field.Root>
 
                 <Field.Root required>
@@ -394,7 +451,7 @@ export default function ProjectCreateView() {
                   />
                 </Field.Root>
 
-                <Field.Root required>
+                <Field.Root id="project-start_date" invalid={Boolean(validationErrors.start_date)} required>
                   <Field.Label>开始日期</Field.Label>
                   <DatePicker
                     aria-label="开始日期"
@@ -402,9 +459,10 @@ export default function ProjectCreateView() {
                     placeholder="请选择开始日期"
                     value={form.start_date}
                   />
+                  {validationErrors.start_date ? <Field.Error>{validationErrors.start_date}</Field.Error> : null}
                 </Field.Root>
 
-                <Field.Root required>
+                <Field.Root id="project-end_date" invalid={Boolean(validationErrors.end_date)} required>
                   <Field.Label>截止日期</Field.Label>
                   <DatePicker
                     aria-label="截止日期"
@@ -413,6 +471,7 @@ export default function ProjectCreateView() {
                     placeholder="请选择截止日期"
                     value={form.end_date}
                   />
+                  {validationErrors.end_date ? <Field.Error>{validationErrors.end_date}</Field.Error> : null}
                 </Field.Root>
               </FormGrid>
             </FormSection>
@@ -420,12 +479,13 @@ export default function ProjectCreateView() {
             <FormSection
               className="project-form-section"
               description="记录合同金额、签署信息和约定付款方式。"
+              id="project-section-contract"
               title={
                 <ProjectFormSectionTitle icon="ri-file-list-3-line" index={2} title="合同信息" />
               }
             >
               <FormGrid columns={2}>
-                <Field.Root required>
+                <Field.Root id="project-total_amount" invalid={Boolean(validationErrors.total_amount)} required>
                   <Field.Label>合同总金额 (¥)</Field.Label>
                   <NumberInput
                     min={0}
@@ -433,9 +493,10 @@ export default function ProjectCreateView() {
                     step={0.01}
                     value={form.total_amount}
                   />
+                  {validationErrors.total_amount ? <Field.Error>{validationErrors.total_amount}</Field.Error> : null}
                 </Field.Root>
 
-                <Field.Root required>
+                <Field.Root id="project-contract_date" invalid={Boolean(validationErrors.contract_date)} required>
                   <Field.Label>合同日期</Field.Label>
                   <DatePicker
                     aria-label="合同日期"
@@ -443,6 +504,7 @@ export default function ProjectCreateView() {
                     placeholder="请选择合同日期"
                     value={form.contract_date || ''}
                   />
+                  {validationErrors.contract_date ? <Field.Error>{validationErrors.contract_date}</Field.Error> : null}
                 </Field.Root>
 
                 <Field.Root>
@@ -477,9 +539,11 @@ export default function ProjectCreateView() {
             <PaymentPlanEditor
               className="project-form-section"
               description="设置每笔应收金额与计划到账日期。"
+              error={validationErrors.paymentItems}
+              id="project-section-payment"
               installment={isInstallment}
               items={paymentItems}
-              onItemsChange={setPaymentItems}
+              onItemsChange={updatePaymentItems}
               stageOptions={isInstallment ? installmentStageOptions : oneTimeStageOptions}
               title={
                 <ProjectFormSectionTitle icon="ri-secure-payment-line" index={3} title="收款计划" />
@@ -489,6 +553,7 @@ export default function ProjectCreateView() {
             <FormSection
               className="project-form-section"
               description="补充团队需要了解的交付背景。"
+              id="project-section-notes"
               title={
                 <ProjectFormSectionTitle icon="ri-sticky-note-line" index={4} title="补充说明" />
               }
@@ -517,11 +582,11 @@ export default function ProjectCreateView() {
           </form>
         </Card.Root>
 
-        <aside aria-label="项目草稿摘要" className="project-form-aside">
+        <aside aria-label="项目草稿摘要" className="project-form-aside" data-motion="entrance">
           <Card.Root className="project-draft-card" padding="lg" variant="secondary">
             <div className="project-draft-card__heading">
               <div>
-                <span className="project-draft-card__eyebrow">PROJECT DRAFT</span>
+                <span className="project-draft-card__eyebrow">填写进度</span>
                 <h2>{form.name.trim() || '未命名项目'}</h2>
                 <p>{form.company.trim() || '客户待填写'}</p>
               </div>
@@ -538,7 +603,7 @@ export default function ProjectCreateView() {
 
             <div className="project-draft-progress">
               <div>
-                <span>档案完整度</span>
+                <span>已完成 {requiredFields.filter(Boolean).length}/{requiredFields.length} 项</span>
                 <strong>{completion}%</strong>
               </div>
               <ProgressBar

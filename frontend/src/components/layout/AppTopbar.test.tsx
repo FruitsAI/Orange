@@ -70,7 +70,7 @@ describe('AppTopbar', () => {
     const primaryNavigation = screen.getByRole('navigation', { name: '主导航' })
     expect(topbar).toHaveClass('ods-surface')
     expect(topbar).toHaveAttribute('data-radius', 'shell')
-    expect(topbar).toHaveAttribute('data-variant', 'glass')
+    expect(topbar).toHaveAttribute('data-variant', 'base')
     expect(primaryNavigation).toHaveClass('ods-surface')
     expect(primaryNavigation).toHaveAttribute('data-radius', 'pill')
     expect(primaryNavigation).toHaveAttribute('data-variant', 'inset')

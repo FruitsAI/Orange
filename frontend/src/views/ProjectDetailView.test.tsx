@@ -114,10 +114,10 @@ describe('ProjectDetailView payment deep links', () => {
     expect(screen.getByText('中期款')).toBeInTheDocument()
   })
 
-  it('gives icon-only project controls explicit accessible labels', async () => {
+  it('keeps project controls visibly named and separates the collection progress', async () => {
     const { container } = renderProjectDetail('/projects/42')
 
-    await waitFor(() => expect(screen.getByText('项目整体进度')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('回款进度')).toBeInTheDocument())
     expect(container.querySelector('.project-settlement-board')).toBeInTheDocument()
     expect(container.querySelector('.project-runway')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '项目档案' })).toBeInTheDocument()
@@ -127,13 +127,13 @@ describe('ProjectDetailView payment deep links', () => {
       'aria-label',
       '返回项目列表',
     )
-    expect(screen.getByRole('button', { name: '编辑项目' })).toHaveAttribute(
-      'aria-label',
-      '编辑项目',
+    expect(screen.getByRole('link', { name: '编辑项目' })).toHaveAttribute(
+      'href',
+      '/projects/edit/42',
     )
-    expect(screen.getByRole('button', { name: '导出项目：星轨项目' })).toHaveAttribute(
-      'aria-label',
-      '导出项目：星轨项目',
+    expect(screen.getByRole('link', { name: '查看收款计划' })).toHaveAttribute(
+      'href',
+      '/projects/42?tab=payments',
     )
   })
 
@@ -141,7 +141,7 @@ describe('ProjectDetailView payment deep links', () => {
     const user = userEvent.setup()
     renderProjectDetail('/projects/42')
 
-    await waitFor(() => expect(screen.getByText('项目整体进度')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('回款进度')).toBeInTheDocument())
     expect(screen.getByRole('tab', { name: '项目概览' })).toHaveClass('active')
 
     await user.click(screen.getByRole('button', { name: '打开收款深链' }))

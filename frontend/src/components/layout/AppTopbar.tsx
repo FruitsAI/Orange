@@ -16,6 +16,7 @@ import {
   RouterIconButton,
   RouterLink,
   RouterNavLink,
+  SearchField,
   Surface,
   type ChipTone,
 } from '@/design-system'
@@ -49,6 +50,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [recentNotifications, setRecentNotifications] = useState<Notification[]>([])
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const notificationTriggerRef = useRef<HTMLButtonElement>(null)
   const isAuthenticatedRef = useRef(isAuthenticated)
   const isMountedRef = useRef(false)
@@ -168,6 +170,12 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
     await navigate('/login')
   }
 
+  const handleGlobalSearch = () => {
+    closeMenus()
+    const query = searchTerm.trim()
+    void navigate(query ? `/projects?search=${encodeURIComponent(query)}` : '/projects')
+  }
+
   return (
     <Surface
       as="header"
@@ -176,7 +184,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
       onDoubleClick={handleWindowDragRegionDoubleClick}
       padding="none"
       radius="shell"
-      variant={scrolled ? 'raised' : 'glass'}
+      variant={scrolled ? 'raised' : 'base'}
     >
       <RouterLink
         aria-label="Orange 工作台"
@@ -184,6 +192,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
         onClick={closeMenus}
         tone="foreground"
         to="/dashboard"
+        viewTransition
       >
         <Image
           alt="Orange Logo"
@@ -193,7 +202,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
           showSkeleton={false}
           src="/orange.png"
         />
-        <span>Orange</span>
+        <span className="app-topbar__brand-name">Orange</span>
       </RouterLink>
 
       <Surface
@@ -211,6 +220,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
             key={item.path}
             onClick={closeMenus}
             to={item.path}
+            viewTransition
           >
             {item.label}
           </RouterNavLink>
@@ -218,6 +228,21 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
       </Surface>
 
       <div className="app-topbar__utilities">
+        <SearchField
+          aria-label="搜索项目或客户"
+          className="app-topbar__search"
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              handleGlobalSearch()
+            }
+          }}
+          onValueChange={setSearchTerm}
+          placeholder="搜索项目或客户"
+          size="sm"
+          value={searchTerm}
+        />
+
         <ThemeSelector
           onBeforeOpen={closeMenus}
           onOpenChange={(open) => setActiveMenu(open ? 'theme' : null)}
@@ -258,7 +283,7 @@ export default function AppTopbar({ scrolled = false }: AppTopbarProps) {
               <Button
                 onClick={() => {
                   closeMenus()
-                  navigate('/settings?tab=notification')
+                  navigate('/notifications')
                 }}
                 size="sm"
                 variant="ghost"

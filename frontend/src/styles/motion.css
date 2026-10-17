@@ -1,9 +1,22 @@
+/* Product motion layer: shared keyframes, the declarative entrance system, and
+   interaction primitives. Global reduced-motion compression is owned by
+   design-system/foundations/motion.css. */
+
 @keyframes ember-fade-in {
   from {
     opacity: 0;
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes ember-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 
@@ -30,25 +43,85 @@
   }
 }
 
-.motion-fade-in {
-  animation: ember-fade-in var(--ods-duration-page) var(--ods-ease-standard) both;
+/* Shared entrance choreography.
+   Views opt in with data-motion-scope on the root; sections use
+   data-motion="entrance", grouped children use data-motion-item or inherit
+   their order from a data-motion-group parent.
+   delay = --ember-motion-base + --ember-motion-order * --ember-motion-step (0ms / 0 / 40ms). */
+@media (prefers-reduced-motion: no-preference) {
+  [data-motion-scope] [data-motion='entrance'] {
+    animation: ember-enter-up var(--ods-duration-page) var(--ods-ease-emphasized) both;
+    animation-delay: calc(
+      var(--ember-motion-base, 0ms) + var(--ember-motion-order, 0) * var(--ember-motion-step, 40ms)
+    );
+  }
+
+  [data-motion-scope] [data-motion-item] {
+    animation: ember-enter-up var(--ods-duration-fast) var(--ods-ease-emphasized) both;
+    animation-delay: calc(
+      var(--ember-motion-base, 0ms) + var(--ember-motion-order, 0) * var(--ember-motion-step, 40ms)
+    );
+  }
+
+  [data-motion-group] > :nth-child(2),
+  [data-motion-item]:nth-child(2) {
+    --ember-motion-order: 1;
+  }
+
+  [data-motion-group] > :nth-child(3),
+  [data-motion-item]:nth-child(3) {
+    --ember-motion-order: 2;
+  }
+
+  [data-motion-group] > :nth-child(4),
+  [data-motion-item]:nth-child(4) {
+    --ember-motion-order: 3;
+  }
+
+  [data-motion-group] > :nth-child(5),
+  [data-motion-item]:nth-child(5) {
+    --ember-motion-order: 4;
+  }
+
+  [data-motion-group] > :nth-child(6),
+  [data-motion-item]:nth-child(6) {
+    --ember-motion-order: 5;
+  }
+
+  [data-motion-group] > :nth-child(7),
+  [data-motion-item]:nth-child(7) {
+    --ember-motion-order: 6;
+  }
+
+  [data-motion-group] > :nth-child(n + 8),
+  [data-motion-item]:nth-child(n + 8) {
+    --ember-motion-order: 7;
+  }
+
+  /* Route change cross-fade via the View Transitions API (no-op when
+     unsupported). Old view eases out before the new view's entrance plays. */
+  ::view-transition-old(root) {
+    animation: ember-fade-out var(--ods-duration-fast) var(--ods-ease-standard) both;
+  }
+
+  ::view-transition-new(root) {
+    animation: ember-fade-in var(--ods-duration-page) var(--ods-ease-standard) both;
+  }
 }
 
-.motion-enter-up {
-  animation: ember-enter-up var(--ods-duration-page) var(--ods-ease-emphasized) both;
-}
-
-.motion-ambient {
-  animation: ember-ambient-pulse 8s ease-in-out infinite;
+/* Shared status live-dot: one size and glow across FinancialHero, project
+   settlement board and other "live" indicators. */
+.ember-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--ods-radius-pill);
+  background: var(--ods-color-accent);
+  box-shadow: 0 0 var(--ember-live-dot-glow, 14px) rgba(var(--ods-color-accent-rgb), 0.62);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .motion-ambient,
-  .motion-float,
-  .motion-glow,
   [data-motion='ambient'],
   [data-motion='continuous'],
-  .app-background::after,
   .login-wrapper .login-background,
   .login-wrapper .login-background::before,
   .login-wrapper .floating-shapes .shape {
@@ -68,9 +141,14 @@
     opacity: 0 !important;
   }
 
-  .motion-enter-up,
-  [data-motion='entrance'] {
+  [data-motion='entrance'],
+  [data-motion-item] {
     animation: ember-fade-in 1ms linear both !important;
     transform: none !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
   }
 }

@@ -1,8 +1,4 @@
 .settings-workspace {
-  --ods-color-fg-default: var(--ods-color-fg-relaxed);
-  --ods-font-weight-semibold: var(--ods-font-weight-medium);
-  --ods-font-weight-bold: 600;
-
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -758,7 +754,7 @@
   color: var(--ods-color-fg-muted);
   font-size: var(--ods-font-size-xs);
   font-weight: var(--ods-font-weight-semibold);
-  letter-spacing: 0;
+  letter-spacing: var(--ods-letter-spacing-wide);
   text-transform: uppercase;
 }
 
@@ -800,11 +796,9 @@
 @keyframes settings-logo-breathe {
   0%,
   100% {
-    filter: drop-shadow(0 1rem 1.8rem rgba(var(--ods-color-accent-rgb), 0.2));
     transform: translateY(0);
   }
   50% {
-    filter: drop-shadow(0 1.25rem 2.1rem rgba(var(--ods-color-accent-rgb), 0.3));
     transform: translateY(-3px);
   }
 }

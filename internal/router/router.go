@@ -113,6 +113,7 @@ func NewRouter() *gin.Engine {
 			{
 				paymentHandler := handler.NewPaymentHandler()
 				payments.GET("", paymentHandler.List)                 // 款项列表
+				payments.GET("/overdue", paymentHandler.Overdue)      // 逾期待收
 				payments.POST("", paymentHandler.Create)              // 创建款项
 				payments.PUT("/:id", paymentHandler.Update)           // 更新款项
 				payments.DELETE("/:id", paymentHandler.Delete)        // 删除款项

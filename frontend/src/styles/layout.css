@@ -1,7 +1,7 @@
 :root {
   --app-dock-height: 62px;
-  --app-topbar-height: 68px;
-  --app-topbar-inset: 79px;
+  --app-topbar-height: 64px;
+  --app-topbar-inset: clamp(18px, 3vw, 44px);
   --app-topbar-top-inset: 12px;
 }
 
@@ -20,15 +20,7 @@
 }
 
 .app-background::before {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle 760px at var(--light-x, 28%) var(--light-y, 18%),
-    var(--ods-color-ambient-glow),
-    transparent 58%
-  );
-  content: '';
-  pointer-events: none;
+  content: none;
 }
 
 .app-background::after {
@@ -49,10 +41,10 @@
   --wails-draggable: drag;
   align-items: center;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   height: var(--app-topbar-height);
   left: var(--app-topbar-inset);
-  padding: 0 12px;
+  padding: 0 16px;
   position: fixed;
   right: var(--app-topbar-inset);
   top: var(--app-topbar-top-inset);
@@ -104,6 +96,12 @@
   gap: 6px;
   justify-self: end;
   min-width: 0;
+}
+
+.app-topbar__search {
+  --wails-draggable: no-drag;
+  width: clamp(170px, 16vw, 230px);
+  height: 38px;
 }
 
 .app-topbar__icon-button {
@@ -222,13 +220,13 @@
   align-items: center;
   bottom: calc(10px + env(safe-area-inset-bottom));
   display: none;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   height: var(--app-dock-height);
   left: 50%;
   padding: 5px;
   position: fixed;
   transform: translateX(-50%);
-  width: min(430px, calc(100vw - 24px));
+  width: min(390px, calc(100vw - 24px));
   z-index: 1000;
 }
 
@@ -244,15 +242,18 @@
 
 .app-view-content {
   margin: 0 auto;
-  max-width: 1600px;
+  max-width: 1480px;
   min-width: 0;
-  padding: calc(var(--app-topbar-height) + var(--app-topbar-top-inset) + 28px)
-    clamp(18px, 3vw, 44px) 44px;
+  padding: calc(var(--app-topbar-height) + var(--app-topbar-top-inset) + 32px)
+    clamp(20px, 3vw, 44px) 52px;
   width: 100%;
 }
 
 @media (max-width: 1240px) {
-  .app-topbar__brand span,
+  .app-topbar__search {
+    display: none;
+  }
+  .app-topbar__brand-name,
   .app-topbar__user-name,
   .app-topbar__user-button > .ri-arrow-down-s-line {
     display: none;

@@ -8,7 +8,7 @@ export interface SectionHeaderProps extends Omit<HTMLAttributes<HTMLElement>, 't
   actions?: ReactNode
   density?: SectionHeaderDensity
   description?: ReactNode
-  headingLevel?: 2 | 3 | 4
+  headingLevel?: 1 | 2 | 3 | 4
   icon?: ReactNode
   iconTone?: SurfaceTone
   size?: SectionHeaderSize
@@ -30,7 +30,7 @@ export const SectionHeader = forwardRef<HTMLElement, SectionHeaderProps>(functio
   },
   ref,
 ) {
-  const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4'
+  const Heading = `h${headingLevel}` as 'h1' | 'h2' | 'h3' | 'h4'
 
   return (
     <header

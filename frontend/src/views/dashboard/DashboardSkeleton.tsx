@@ -41,16 +41,6 @@ export function DashboardSectionSkeleton({ label, height }: DashboardSectionSkel
   )
 }
 
-export function DashboardStatsSkeleton() {
-  return (
-    <div className="ember-dashboard__metrics">
-      {Array.from({ length: 3 }, (_, index) => (
-        <SkeletonSurface className="dashboard-skeleton__metric" key={index} />
-      ))}
-    </div>
-  )
-}
-
 export default function DashboardSkeleton() {
   return (
     <div
@@ -59,8 +49,11 @@ export default function DashboardSkeleton() {
       className="ember-dashboard dashboard-skeleton"
       role="status"
     >
-      <SkeletonSurface className="dashboard-skeleton__hero" radius="shell" />
-      <DashboardStatsSkeleton />
+      <div className="financial-hero dashboard-skeleton__overview">
+        <SkeletonSurface className="dashboard-skeleton__hero" radius="shell" />
+        <SkeletonSurface className="dashboard-skeleton__hero" />
+        <SkeletonSurface className="dashboard-skeleton__hero" />
+      </div>
       <div className="dashboard-action-grid">
         <SkeletonSurface className="dashboard-skeleton__chart" />
         <SkeletonSurface className="dashboard-skeleton__queue" />

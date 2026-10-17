@@ -35,11 +35,48 @@
   height: 100%;
 }
 
+/* Anchor tile: the period's headline number doubles its footprint and borrows
+   the concentric-ring motif from the dashboard hero. */
+.analytics-metric-item--anchor {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  grid-column: span 2;
+  border-radius: var(--ods-radius-panel);
+}
+
+.analytics-metric-item--anchor::before {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: radial-gradient(
+    circle at 86% 8%,
+    rgba(var(--ods-color-accent-rgb), 0.13),
+    transparent 56%
+  );
+  content: '';
+  pointer-events: none;
+}
+
+.analytics-metric-item--anchor::after {
+  position: absolute;
+  z-index: 1;
+  width: 150px;
+  aspect-ratio: 1;
+  top: -58px;
+  right: -34px;
+  border: 1px solid rgba(var(--ods-color-accent-rgb), 0.26);
+  border-radius: 50%;
+  box-shadow: 0 0 0 26px rgba(var(--ods-color-accent-rgb), 0.05);
+  content: '';
+  pointer-events: none;
+}
+
 .analytics-chart-layout {
   align-items: stretch;
   display: grid;
   gap: var(--ods-space-6);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
 }
 
 .analytics-chart-card {
@@ -72,30 +109,13 @@
   justify-content: center;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .analytics-view [data-motion='entrance'] {
-    animation: ember-enter-up var(--ods-duration-page) var(--ods-ease-emphasized) both;
-  }
+/* Entrance rhythm: shared choreography lives in styles/motion.css. */
+.analytics-metrics {
+  --ember-motion-base: 60ms;
+}
 
-  .analytics-metrics > :nth-child(2) > [data-motion='entrance'] {
-    animation-delay: 60ms;
-  }
-
-  .analytics-metrics > :nth-child(3) > [data-motion='entrance'] {
-    animation-delay: 100ms;
-  }
-
-  .analytics-metrics > :nth-child(4) > [data-motion='entrance'] {
-    animation-delay: 140ms;
-  }
-
-  .analytics-chart-layout > :first-child {
-    animation-delay: 180ms;
-  }
-
-  .analytics-chart-layout > :last-child {
-    animation-delay: 220ms;
-  }
+.analytics-chart-layout {
+  --ember-motion-base: 220ms;
 }
 
 @media (max-width: 1120px) {
@@ -133,15 +153,12 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .analytics-metric-item--anchor {
+    grid-column: auto;
+  }
+
   .analytics-chart-card__content {
     height: 18rem;
     min-height: 18rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .analytics-view [data-motion='entrance'] {
-    animation: none;
-    transform: none;
   }
 }

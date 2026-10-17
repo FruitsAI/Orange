@@ -18,6 +18,7 @@ export default function AppDock() {
           icon={<i className={item.icon} />}
           key={item.path}
           to={item.path}
+          viewTransition
         >
           {item.label}
         </RouterNavLink>

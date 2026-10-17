@@ -62,6 +62,11 @@ func (s *PaymentService) ListByDateRange(userID int64, startDate, endDate string
 	return s.paymentRepo.ListByDateRange(userID, startDate, endDate)
 }
 
+// ListOverdue returns the user's pending payments with past planned dates.
+func (s *PaymentService) ListOverdue(userID int64) ([]models.Payment, error) {
+	return s.paymentRepo.ListOverdue(userID)
+}
+
 // Create 创建新的收款/回款计划
 //
 // 参数:

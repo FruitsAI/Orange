@@ -94,6 +94,21 @@ func (h *PaymentHandler) List(c *gin.Context) {
 	response.Success(c, []interface{}{})
 }
 
+// Overdue returns pending payments that need follow-up.
+// @Summary 逾期待收款项
+// @Tags Payment
+// @Security Bearer
+// @Success 200 {array} models.Payment
+// @Router /api/v1/payments/overdue [get]
+func (h *PaymentHandler) Overdue(c *gin.Context) {
+	payments, err := h.paymentService.ListOverdue(c.GetInt64("user_id"))
+	if err != nil {
+		response.InternalError(c, "获取逾期收款失败")
+		return
+	}
+	response.Success(c, payments)
+}
+
 // Create 创建新款项
 // @Summary 创建款项
 // @Description 录入新的款项记录(收款计划)

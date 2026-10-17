@@ -55,10 +55,10 @@ describe('settings design-system ownership contract', () => {
     expect(dictionarySource).toContain('variant="navigation"')
   })
 
-  it('uses the relaxed foreground and lighter heading weights within settings', () => {
-    expect(settingsCss).toContain('--ods-color-fg-default: var(--ods-color-fg-relaxed)')
-    expect(settingsCss).toContain('--ods-font-weight-semibold: var(--ods-font-weight-medium)')
-    expect(settingsCss).toContain('--ods-font-weight-bold: 600')
+  it('builds settings hierarchy from component typography instead of token rewrites', () => {
+    expect(settingsCss).not.toContain('--ods-color-fg-default:')
+    expect(settingsCss).not.toContain('--ods-font-weight-semibold:')
+    expect(settingsCss).not.toContain('--ods-font-weight-bold:')
     expect(settingsSource).not.toContain('className="settings-overview"')
   })
 

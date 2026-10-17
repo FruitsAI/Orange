@@ -11,9 +11,14 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { paymentApi, projectApi, type Payment, type Project } from '@/api/project'
 import { PaymentStatusChip, ProjectStatusChip } from '@/components/project/ProjectStatusChip'
 import {
+  getEffectivePaymentStatus,
+  getProjectCollectionSummary,
+} from '@/components/project/projectCollection'
+import {
   Button,
   ButtonGroup,
   Card,
+  Chip,
   CircularProgress,
   EmptyState,
   IconButton,
@@ -64,7 +69,6 @@ export default function ProjectDetailView() {
   const requestedTab = searchParams.get('tab')
   const requestedPayment = searchParams.get('payment')
   const toastError = useToastStore((state) => state.error)
-  const toastInfo = useToastStore((state) => state.info)
   const toastSuccess = useToastStore((state) => state.success)
   const [project, setProject] = useState<Project | null>(null)
   const [payments, setPayments] = useState<Payment[]>([])
@@ -184,6 +188,7 @@ export default function ProjectDetailView() {
   }
 
   const paidAmount = Math.max(project.received_amount || 0, 0)
+  const collection = getProjectCollectionSummary(project, payments)
   const remainingAmount = Math.max(project.total_amount - paidAmount, 0)
   const progress = project.total_amount
     ? Math.min(100, Math.max(0, Math.round((paidAmount / project.total_amount) * 100)))
@@ -210,34 +215,41 @@ export default function ProjectDetailView() {
       <PageHeader
         actions={
           <ButtonGroup aria-label="项目操作" className="project-detail-actions">
-            <IconButton
-              label="编辑项目"
-              onClick={() => navigate(`/projects/edit/${project.id}`)}
-              title="编辑项目"
-              variant="ghost"
-            >
+            <RouterButton size="sm" to={`/projects/edit/${project.id}`} variant="secondary">
               <i aria-hidden="true" className="ri-edit-line" />
-            </IconButton>
-            <IconButton
-              label={`导出项目：${project.name}`}
-              onClick={() => toastInfo('导出功能开发中')}
-              title="导出项目"
-              variant="ghost"
+              编辑项目
+            </RouterButton>
+            <RouterButton
+              size="sm"
+              to={`/projects/${project.id}?tab=payments`}
+              variant="primary"
             >
-              <i aria-hidden="true" className="ri-download-2-line" />
-            </IconButton>
+              查看收款计划
+            </RouterButton>
           </ButtonGroup>
         }
         description={
           <span className="project-detail-meta">
             <span>客户：{project.company}</span>
             <ProjectStatusChip status={project.status} />
+            <Chip
+              size="sm"
+              tone={
+                collection.state === 'overdue' || collection.state === 'review'
+                  ? 'danger'
+                  : collection.state === 'settled'
+                    ? 'success'
+                    : 'warning'
+              }
+            >
+              {collection.label}
+            </Chip>
           </span>
         }
         eyebrow={
           <span className="project-detail-kicker">
             <i aria-hidden="true" className="ri-folder-chart-line" />
-            项目台账
+            项目
             <span>{project.contract_number || `#${project.id}`}</span>
           </span>
         }
@@ -281,23 +293,25 @@ export default function ProjectDetailView() {
                 <div className="project-settlement-board__main">
                   <div className="project-settlement-board__headline">
                     <span className="project-settlement-board__eyebrow">
-                      <span aria-hidden="true" className="project-live-dot" />
-                      项目结算盘面
+                      <span aria-hidden="true" className="project-live-dot ember-live-dot" />
+                      项目回款概览
                     </span>
                     <span className="project-settlement-board__label">待回款</span>
                     <strong className="project-settlement-board__amount">
                       {formatCurrency(remainingAmount)}
                     </strong>
                     <p>
-                      {progress >= 100
-                        ? '合同款项已全部回收，项目财务闭环已完成。'
-                        : `已回收合同金额的 ${progress}%，剩余款项按计划持续跟进。`}
+                      {collection.state === 'review'
+                        ? '合同已足额回款，但仍有待收计划，请核对收款节点。'
+                        : progress >= 100
+                          ? '合同款项已全部回收。'
+                          : `已回收合同金额的 ${progress}%，剩余款项按计划持续跟进。`}
                     </p>
                   </div>
 
                   <div className="project-settlement-progress">
                     <CircularProgress
-                      aria-label="项目总进度"
+                      aria-label="项目回款进度"
                       className="project-overview-progress"
                       showValueLabel
                       size="lg"
@@ -305,7 +319,7 @@ export default function ProjectDetailView() {
                       value={progress}
                     />
                     <div>
-                      <strong className="project-settlement-progress__label">项目整体进度</strong>
+                      <strong className="project-settlement-progress__label">回款进度</strong>
                       <span>以合同回款计算</span>
                     </div>
                   </div>
@@ -353,6 +367,29 @@ export default function ProjectDetailView() {
                 </div>
               </Card.Root>
 
+              {collection.state === 'overdue' || collection.state === 'review' ? (
+                <section
+                  aria-label="收款提醒"
+                  className="project-collection-alert"
+                >
+                  <div>
+                    <strong>
+                      {collection.state === 'review'
+                        ? '收款计划金额需要核对'
+                        : `有 ${formatCurrency(collection.overdueAmount)} 已逾期 ${collection.overdueDays} 天`}
+                    </strong>
+                    <p>
+                      {collection.state === 'review'
+                        ? `剩余待收 ${formatCurrency(collection.remainingAmount)}，仍安排了 ${formatCurrency(collection.pendingPlanAmount)} 的待收计划。`
+                        : '请查看对应收款节点，及时记录跟进和到账情况。'}
+                    </p>
+                  </div>
+                  <RouterButton size="sm" to={`/projects/${project.id}?tab=payments`} variant="secondary">
+                    查看收款节点
+                  </RouterButton>
+                </section>
+              ) : null}
+
               <div className="project-overview-grid" data-motion="entrance">
                 <Card.Root className="project-record-card" padding="lg">
                   <Card.Header>
@@ -396,7 +433,9 @@ export default function ProjectDetailView() {
                     <Card.Header>
                       <div className="project-card-heading-row">
                         <div>
-                          <Card.Title>下一笔计划</Card.Title>
+                          <Card.Title>
+                            {collection.state === 'review' ? '待核对计划' : '下一笔计划'}
+                          </Card.Title>
                           <Card.Description>当前最需要跟进的收款节点</Card.Description>
                         </div>
                         <Surface
@@ -517,7 +556,7 @@ export default function ProjectDetailView() {
                         <div>
                           <div className="payment-title-row">
                             <strong>{getPaymentStageLabel(payment.stage)}</strong>
-                            <PaymentStatusChip status={payment.status} />
+                            <PaymentStatusChip status={getEffectivePaymentStatus(payment)} />
                           </div>
                           <div className="payment-meta-row">
                             <span className="payment-date">

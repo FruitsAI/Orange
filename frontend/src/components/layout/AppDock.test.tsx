@@ -17,7 +17,6 @@ const expectedNavigation = [
   { label: '项目管理', path: '/projects' },
   { label: '收款日历', path: '/calendar' },
   { label: '数据分析', path: '/analytics' },
-  { label: '设计系统', path: '/design-system' },
 ]
 
 const getNavigation = (name: string) => {
@@ -121,7 +120,7 @@ describe('AppDock', () => {
       )
 
     expect(dockRule?.style.display).toBe('none')
-    expect(dockRule?.style.gridTemplateColumns).toContain('repeat(5')
+    expect(dockRule?.style.gridTemplateColumns).toContain('repeat(4')
     expect(dockRule?.style.getPropertyValue('--wails-draggable')).toBe('no-drag')
     expect(dockRule?.style.bottom).toContain('env(safe-area-inset-bottom)')
     expect(routerControlsCss).toMatch(

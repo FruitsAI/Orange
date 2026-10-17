@@ -79,14 +79,15 @@ describe('AnalyticsView', () => {
     const { container } = render(<AnalyticsView />)
 
     await waitFor(() =>
-      expect(dashboardApi.getStats).toHaveBeenCalledWith('month', expect.any(AbortSignal)),
+      expect(dashboardApi.getStats).toHaveBeenCalledWith('year', expect.any(AbortSignal)),
     )
     const periodTabs = screen.getByRole('tablist', { name: '统计周期' })
     expect(periodTabs).toHaveAttribute('data-variant', 'accent')
-    expect(screen.getByRole('tab', { name: '月' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: '年' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getAllByRole('tabpanel', { hidden: true })).toHaveLength(4)
-    expect(screen.getByRole('tabpanel', { name: '月' })).toBeVisible()
+    expect(screen.getByRole('tabpanel', { name: '年' })).toBeVisible()
     expect(container.querySelectorAll('.analytics-chart-layout > .ods-card')).toHaveLength(2)
+    expect(await screen.findByRole('row', { name: '本期 ¥1,000.00 ¥750.00 75.0%' })).toBeVisible()
     expect(container.querySelectorAll('.ods-tabs__tab')).toHaveLength(4)
     expect(screen.getByRole('button', { name: '导出报表' })).toHaveAttribute(
       'data-variant',
@@ -107,22 +108,22 @@ describe('AnalyticsView', () => {
 
   it('keeps the latest period when older stats and trend requests resolve last', async () => {
     const user = userEvent.setup()
-    const monthStats = createDeferred<Awaited<ReturnType<typeof dashboardApi.getStats>>>()
+    const yearStats = createDeferred<Awaited<ReturnType<typeof dashboardApi.getStats>>>()
     const weekStats = createDeferred<Awaited<ReturnType<typeof dashboardApi.getStats>>>()
-    const monthTrend = createDeferred<Awaited<ReturnType<typeof dashboardApi.getIncomeTrend>>>()
+    const yearTrend = createDeferred<Awaited<ReturnType<typeof dashboardApi.getIncomeTrend>>>()
     const weekTrend = createDeferred<Awaited<ReturnType<typeof dashboardApi.getIncomeTrend>>>()
     const latestStats = { ...stats, total_amount: 2_000 }
 
     vi.mocked(dashboardApi.getStats).mockImplementation((period) =>
-      period === 'month' ? monthStats.promise : weekStats.promise,
+      period === 'year' ? yearStats.promise : weekStats.promise,
     )
     vi.mocked(dashboardApi.getIncomeTrend).mockImplementation((period) =>
-      period === 'month' ? monthTrend.promise : weekTrend.promise,
+      period === 'year' ? yearTrend.promise : weekTrend.promise,
     )
 
     render(<AnalyticsView />)
     await waitFor(() =>
-      expect(dashboardApi.getStats).toHaveBeenCalledWith('month', expect.any(AbortSignal)),
+      expect(dashboardApi.getStats).toHaveBeenCalledWith('year', expect.any(AbortSignal)),
     )
     await user.click(screen.getByRole('tab', { name: '周' }))
     await waitFor(() =>
@@ -141,11 +142,11 @@ describe('AnalyticsView', () => {
     const barChart = chartInstances.find((instance) => instance.data.datasets.length === 2)
     await waitFor(() => expect(barChart?.data.labels).toEqual(['最新周']))
 
-    monthStats.resolve(apiResponse(stats) as never)
-    monthTrend.resolve(
+    yearStats.resolve(apiResponse(stats) as never)
+    yearTrend.resolve(
       apiResponse({ actual_values: [750], expected_values: [1_000], labels: ['旧月份'] }) as never,
     )
-    await Promise.all([monthStats.promise, monthTrend.promise, Promise.resolve()])
+    await Promise.all([yearStats.promise, yearTrend.promise, Promise.resolve()])
 
     expect(screen.getByText('¥2,000')).toBeInTheDocument()
     expect(barChart?.data.labels).toEqual(['最新周'])
@@ -176,14 +177,16 @@ describe('AnalyticsView', () => {
 
     await user.click(screen.getByRole('tab', { name: '周' }))
 
-    expect(screen.getByText('周度回款概览 · 正在加载')).toBeInTheDocument()
-    expect(screen.getByText('预期收款加载中')).toBeInTheDocument()
+    expect(screen.getByText('近7天回款概览 · 正在加载')).toBeInTheDocument()
+    expect(screen.getByText('应收加载中')).toBeInTheDocument()
     expect(screen.queryByText('¥1,000')).not.toBeInTheDocument()
 
     weekStats.reject(new Error('stats failed'))
     weekTrend.reject(new Error('trend failed'))
 
-    await waitFor(() => expect(screen.getByText('周度回款概览 · 数据暂不可用')).toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByText('近7天回款概览 · 数据暂不可用')).toBeInTheDocument(),
+    )
     expect(screen.getAllByRole('button', { name: '重新加载' })).toHaveLength(2)
     expect(screen.queryByText('¥1,000')).not.toBeInTheDocument()
   })

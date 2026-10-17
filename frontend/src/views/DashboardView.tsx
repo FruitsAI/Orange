@@ -1,8 +1,10 @@
+import dayjs from 'dayjs'
+import { useEffect, useState } from 'react'
+import { paymentApi } from '@/api/project'
 import ActionQueue from '@/components/dashboard/ActionQueue'
 import FinancialHero, { type FinancialHeroProps } from '@/components/dashboard/FinancialHero'
 import IncomeChart from '@/components/dashboard/IncomeChart'
 import ProjectList from '@/components/dashboard/ProjectList'
-import { SummaryMetric, type SummaryMetricProps } from '@/design-system'
 import { formatCurrency } from '@/utils/format'
 import DashboardError from './dashboard/DashboardError'
 import DashboardSkeleton, { DashboardSectionSkeleton } from './dashboard/DashboardSkeleton'
@@ -11,11 +13,13 @@ import {
   getPaymentDueLabel,
   normalizeSeries,
   sumIncomeValues,
-  toMetricTrend,
+  toPaymentDisplay,
+  type PaymentDisplayItem,
 } from './dashboard/dashboardModel'
 import { useDashboardData } from './dashboard/useDashboardData'
 
 export default function DashboardView() {
+  const [overduePayments, setOverduePayments] = useState<PaymentDisplayItem[] | null>(null)
   const {
     activePeriod,
     initialLoading,
@@ -27,6 +31,23 @@ export default function DashboardView() {
     stats,
     trend,
   } = useDashboardData()
+
+  useEffect(() => {
+    let active = true
+    void paymentApi.overdue().then(
+      (response) => {
+        if (active) setOverduePayments(response.data.data.map((item) => toPaymentDisplay(item)))
+      },
+      () => {
+        if (active) setOverduePayments(null)
+      },
+    )
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const queuePayments = [...(overduePayments || []), ...(payments.data || [])]
   const nearestPayment = findNearestUpcomingPayment(payments.data)
   const expectedValues = trend.data
     ? normalizeSeries(trend.data.labels, trend.data.expected_values)
@@ -48,6 +69,11 @@ export default function DashboardView() {
     : stats.loading
       ? { status: 'loading' }
       : { status: 'error' }
+  const paid: FinancialHeroProps['paid'] = stats.data
+    ? { amountText: formatCurrency(stats.data.paid_amount), status: 'data' }
+    : stats.loading
+      ? { status: 'loading' }
+      : { status: 'error' }
   const payment: FinancialHeroProps['payment'] = nearestPayment
     ? {
         detailText: `${nearestPayment.project_name} · ${formatCurrency(nearestPayment.amount)}`,
@@ -59,44 +85,18 @@ export default function DashboardView() {
       : payments.loading
         ? { status: 'loading' }
         : { status: 'error' }
-  const summaryMetrics: SummaryMetricProps[] = stats.data
-    ? [
-        {
-          icon: 'ri-checkbox-circle-line',
-          label: '已结算',
-          status: 'data',
-          trend: toMetricTrend(stats.data.paid_trend, true),
-          value: formatCurrency(stats.data.paid_amount),
-        },
-        {
-          icon: 'ri-time-line',
-          label: '待结算',
-          status: 'data',
-          trend: toMetricTrend(stats.data.pending_trend, false),
-          value: formatCurrency(stats.data.pending_amount),
-        },
-        {
-          icon: 'ri-timer-line',
-          label: '平均回款',
-          status: 'data',
-          trend: toMetricTrend(stats.data.avg_collection_days_trend, false),
-          value: `${stats.data.avg_collection_days} 天`,
-        },
-      ]
-    : [
-        {
-          icon: 'ri-checkbox-circle-line',
-          label: '已结算',
-          status: stats.loading ? 'loading' : 'error',
-        },
-        { icon: 'ri-time-line', label: '待结算', status: stats.loading ? 'loading' : 'error' },
-        { icon: 'ri-timer-line', label: '平均回款', status: stats.loading ? 'loading' : 'error' },
-      ]
-
   if (initialLoading) return <DashboardSkeleton />
 
   return (
     <div className="ember-dashboard" data-motion-scope="dashboard">
+      <header className="dashboard-page-heading">
+        <div>
+          <span className="dashboard-page-heading__eyebrow">Orange · 工作台</span>
+          <h1>今日回款概览</h1>
+          <p>{dayjs().format('M月D日')} · 先处理风险，再安排下一笔收款</p>
+        </div>
+        <p className="dashboard-page-heading__aside">做好每一笔收款，让项目更健康。</p>
+      </header>
       <FinancialHero
         busy={
           stats.loading ||
@@ -107,28 +107,22 @@ export default function DashboardView() {
           payments.refreshing
         }
         cta={
-          nearestPayment
-            ? {
-                label: '处理待收款',
-                to: `/projects/${nearestPayment.project_id}?tab=payments&payment=${nearestPayment.id}`,
-              }
-            : { label: '查看项目', to: '/projects' }
+          stats.data && stats.data.overdue_amount > 0
+            ? { label: '处理逾期', to: '/calendar?view=overdue' }
+            : nearestPayment
+              ? {
+                  label: '处理待收款',
+                  to: `/projects/${nearestPayment.project_id}?tab=payments&payment=${nearestPayment.id}`,
+                }
+              : { label: '查看项目', to: '/projects' }
         }
         expected={expected}
         overdue={overdue}
+        overdueCount={overduePayments?.length}
+        paid={paid}
         payment={payment}
         periodLabel={periodLabel}
       />
-
-      <div
-        aria-busy={stats.loading || stats.refreshing}
-        className="ember-dashboard__metrics"
-        data-motion-group="summary-metrics"
-      >
-        {summaryMetrics.map((metric) => (
-          <SummaryMetric key={String(metric.label)} {...metric} />
-        ))}
-      </div>
 
       {stats.error && (
         <div className="ember-dashboard__error">
@@ -141,6 +135,26 @@ export default function DashboardView() {
       )}
 
       <div className="dashboard-action-grid">
+        <section
+          aria-busy={payments.loading || payments.refreshing}
+          aria-label="待处理收款"
+          className="dashboard-action-grid__queue flex flex-col gap-md"
+          data-motion="entrance"
+        >
+          {payments.error && (
+            <DashboardError
+              message="收款计划加载失败"
+              onRetry={() => retry('payments')}
+              resourceLabel="收款计划"
+            />
+          )}
+          {payments.loading && !payments.data && (
+            <DashboardSectionSkeleton height={360} label="收款计划" />
+          )}
+          {(payments.data || (overduePayments?.length ?? 0) > 0) && (
+            <ActionQueue overdueAmount={stats.data?.overdue_amount ?? 0} payments={queuePayments} />
+          )}
+        </section>
         <section
           aria-busy={trend.loading || trend.refreshing}
           aria-label="现金流趋势"
@@ -166,24 +180,6 @@ export default function DashboardView() {
               period={activePeriod}
             />
           )}
-        </section>
-        <section
-          aria-busy={payments.loading || payments.refreshing}
-          aria-label="待处理收款"
-          className="dashboard-action-grid__queue flex flex-col gap-md"
-          data-motion="entrance"
-        >
-          {payments.error && (
-            <DashboardError
-              message="收款计划加载失败"
-              onRetry={() => retry('payments')}
-              resourceLabel="收款计划"
-            />
-          )}
-          {payments.loading && !payments.data && (
-            <DashboardSectionSkeleton height={360} label="收款计划" />
-          )}
-          {payments.data && <ActionQueue payments={payments.data} />}
         </section>
       </div>
 

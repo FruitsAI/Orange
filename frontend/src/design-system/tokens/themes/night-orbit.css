@@ -1,19 +1,19 @@
 [data-theme='dark'] {
   color-scheme: dark;
 
-  --ods-color-bg-canvas: var(--ods-ref-color-warm-950);
-  --ods-color-bg-canvas-rgb: 8, 7, 6;
-  --ods-color-bg-canvas-subtle: #0f0d0b;
-  --ods-color-bg-surface: var(--ods-ref-color-warm-900);
-  --ods-color-bg-surface-raised: rgba(34, 29, 25, 0.82);
-  --ods-color-bg-surface-glass: rgba(28, 24, 21, 0.68);
+  --ods-color-bg-canvas: #151311;
+  --ods-color-bg-canvas-rgb: 21, 19, 17;
+  --ods-color-bg-canvas-subtle: #1a1714;
+  --ods-color-bg-surface: #201d1a;
+  --ods-color-bg-surface-raised: #24201c;
+  --ods-color-bg-surface-glass: rgba(36, 32, 28, 0.94);
   --ods-color-bg-surface-hover: rgba(255, 255, 255, 0.06);
   --ods-color-bg-surface-pressed: rgba(255, 255, 255, 0.1);
-  --ods-color-fg-default: #fffaf3;
-  --ods-color-fg-default-rgb: 255, 250, 243;
+  --ods-color-fg-default: #f9f4ec;
+  --ods-color-fg-default-rgb: 249, 244, 236;
   --ods-color-fg-relaxed: rgba(255, 247, 237, 0.88);
   --ods-color-fg-muted: rgba(255, 247, 237, 0.72);
-  --ods-color-fg-subtle: rgba(255, 247, 237, 0.46);
+  --ods-color-fg-subtle: rgba(255, 247, 237, 0.58);
   --ods-color-fg-disabled: rgba(255, 247, 237, 0.28);
   --ods-color-fg-inverse: var(--ods-ref-color-warm-950);
   --ods-color-fg-brand-surface: var(--ods-ref-color-warm-25);
@@ -41,10 +41,10 @@
   --ods-color-status-info-soft: rgba(101, 199, 255, 0.14);
   --ods-color-status-teal: var(--ods-ref-color-teal-300);
   --ods-color-overlay-scrim: rgba(0, 0, 0, 0.56);
-  --ods-color-ambient-glow: rgba(255, 159, 10, 0.16);
+  --ods-color-ambient-glow: rgba(255, 159, 10, 0.025);
   --ods-color-selection: rgba(255, 159, 10, 0.28);
-  --ods-shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.24);
-  --ods-shadow-panel: 0 24px 70px rgba(0, 0, 0, 0.42);
+  --ods-shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.14);
+  --ods-shadow-panel: 0 12px 32px rgba(0, 0, 0, 0.22);
   --ods-shadow-modal: 0 30px 90px rgba(0, 0, 0, 0.58), 0 4px 18px rgba(0, 0, 0, 0.34);
   --ods-shadow-brand-surface: var(--ods-shadow-panel);
   --ods-gradient-glow: linear-gradient(135deg, #ff8a00 0%, #ffc247 52%, #ff6b00 100%);

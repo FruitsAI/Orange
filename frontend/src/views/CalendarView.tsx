@@ -1,6 +1,8 @@
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { paymentApi, type Payment } from '@/api/project'
+import { getEffectivePaymentStatus } from '@/components/project/projectCollection'
 import { useToastStore } from '@/composables/useToast'
 import {
   Button,
@@ -10,6 +12,7 @@ import {
   DataList,
   EmptyState,
   PageHeader,
+  RouterButton,
   SectionHeader,
   Skeleton,
   SummaryMetric,
@@ -21,7 +24,18 @@ import {
 import { formatCurrency, formatDate } from '@/utils/format'
 import '@/styles/calendar-domain.css'
 
-const formatStage = (payment: Payment) => payment.stage || '收款'
+const formatStage = (payment: Payment) => {
+  const labels: Record<string, string> = {
+    all: '全款',
+    deposit: '预付款',
+    final: '尾款',
+    milestone: '阶段款',
+    progress: '进度款',
+  }
+  return labels[payment.stage] || payment.stage || '收款'
+}
+
+const paymentDateKey = (payment: Payment) => dayjs(payment.plan_date).format('YYYY-MM-DD')
 
 const statusMeta: Record<Payment['status'], { label: string; tone: SurfaceTone }> = {
   confirmed: { label: '已收', tone: 'success' },
@@ -30,12 +44,7 @@ const statusMeta: Record<Payment['status'], { label: string; tone: SurfaceTone }
   pending: { label: '待收', tone: 'warning' },
 }
 
-const getPaymentStatus = (payment: Payment): Payment['status'] => {
-  const planDate = dayjs(payment.plan_date)
-  return payment.status === 'pending' && planDate.isValid() && planDate.isBefore(dayjs(), 'day')
-    ? 'overdue'
-    : payment.status
-}
+const getPaymentStatus = getEffectivePaymentStatus
 
 // One mark per day, colored by the most urgent plan on it.
 const TONE_PRIORITY: Record<Payment['status'], number> = {
@@ -86,8 +95,13 @@ function PaymentRow({ payment, secondary, secondaryTone = 'neutral' }: PaymentRo
 }
 
 export default function CalendarView() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const showOverdue = searchParams.get('view') === 'overdue'
   const toastError = useToastStore((state) => state.error)
   const [payments, setPayments] = useState<Payment[]>([])
+  const [overduePayments, setOverduePayments] = useState<Payment[]>([])
+  const [overdueLoading, setOverdueLoading] = useState(false)
+  const [overdueError, setOverdueError] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(() => dayjs().startOf('month'))
@@ -107,6 +121,13 @@ export default function CalendarView() {
       })
       if (!mountedRef.current || requestId !== requestIdRef.current) return
       setPayments(response.data.data)
+      if (response.data.data.length > 0) {
+        const firstPlanDate = paymentDateKey(response.data.data[0])
+        const monthStart = currentMonth.format('YYYY-MM-DD')
+        if (dayjs(firstPlanDate).isSame(currentMonth, 'month')) {
+          setSelectedDate((current) => (current === monthStart ? firstPlanDate : current))
+        }
+      }
     } catch {
       if (!mountedRef.current || requestId !== requestIdRef.current) return
       setPayments([])
@@ -127,22 +148,54 @@ export default function CalendarView() {
     }
   }, [loadPayments])
 
+  const loadOverduePayments = useCallback(async () => {
+    setOverdueLoading(true)
+    setOverdueError(false)
+    try {
+      const response = await paymentApi.overdue()
+      if (!mountedRef.current) return
+      setOverduePayments(response.data.data)
+    } catch {
+      if (!mountedRef.current) return
+      setOverdueError(true)
+      toastError('获取逾期收款失败')
+    } finally {
+      if (mountedRef.current) setOverdueLoading(false)
+    }
+  }, [toastError])
+
+  useEffect(() => {
+    if (!showOverdue) return
+    const timer = window.setTimeout(() => void loadOverduePayments(), 0)
+    return () => window.clearTimeout(timer)
+  }, [loadOverduePayments, showOverdue])
+
   const dateTones = useMemo(() => {
     const tones = new Map<string, Payment['status']>()
     for (const payment of payments) {
       const status = getPaymentStatus(payment)
-      const current = tones.get(payment.plan_date)
+      const date = paymentDateKey(payment)
+      const current = tones.get(date)
       if (!current || TONE_PRIORITY[status] > TONE_PRIORITY[current]) {
-        tones.set(payment.plan_date, status)
+        tones.set(date, status)
       }
     }
     return tones
   }, [payments])
 
   const selectedDatePayments = useMemo(
-    () => payments.filter((payment) => payment.plan_date === selectedDate),
+    () => payments.filter((payment) => paymentDateKey(payment) === selectedDate),
     [payments, selectedDate],
   )
+
+  const dateCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const payment of payments) {
+      const date = paymentDateKey(payment)
+      counts.set(date, (counts.get(date) || 0) + 1)
+    }
+    return counts
+  }, [payments])
 
   const monthlyPayments = useMemo(
     () =>
@@ -190,9 +243,10 @@ export default function CalendarView() {
   const getDateAriaLabel = useCallback(
     (date: string, state: CalendarDayState) => {
       const status = dateTones.get(date)
-      return `${formatDate(date)}${state.isMarked && status ? `，收款计划状态：${statusMeta[status].label}` : ''}`
+      const count = dateCounts.get(date) || 0
+      return `${formatDate(date)}${state.isMarked && status ? `，${count}笔收款计划，最紧急状态：${statusMeta[status].label}` : ''}`
     },
-    [dateTones],
+    [dateCounts, dateTones],
   )
 
   const summaryText = loadError
@@ -206,6 +260,13 @@ export default function CalendarView() {
           } 笔${
             monthSummary.overdue > 0 ? ` · 逾期 ${monthSummary.overdue} 笔` : ''
           } · 已收 ${monthSummary.received} 笔`
+  const overdueSummaryText = overdueLoading
+    ? '正在汇总逾期款项…'
+    : overdueError
+      ? '逾期款项暂不可用'
+      : `${overduePayments.length} 笔逾期待收 · 合计 ${formatCurrency(
+          overduePayments.reduce((sum, payment) => sum + payment.amount, 0),
+        )}`
 
   const metricState = (value: string) =>
     loadError
@@ -264,21 +325,61 @@ export default function CalendarView() {
 
   return (
     <div className="calendar-view" data-motion-scope="calendar">
-      <PageHeader description={summaryText} title="收款日历" />
+      <PageHeader
+        description={showOverdue ? overdueSummaryText : summaryText}
+        title={showOverdue ? '逾期收款' : '收款日历'}
+      />
 
-      <div className="calendar-summary" data-motion-group="summary">
+      {showOverdue ? (
+        <section aria-label="逾期待收款" className="calendar-overdue-board">
+          <div className="calendar-overdue-board__header">
+            <div>
+              <span className="calendar-overdue-board__eyebrow">待处理</span>
+              <h2>逾期待收款</h2>
+              <p>按到期时间排序，从最早的款项开始跟进。</p>
+            </div>
+            <Button onClick={() => setSearchParams({})} size="sm" variant="secondary">
+              返回月历
+            </Button>
+          </div>
+          {overdueLoading ? (
+            <div aria-label="正在加载逾期收款" role="status"><Skeleton height="8rem" /></div>
+          ) : overdueError ? (
+            <EmptyState
+              action={<Button onClick={() => void loadOverduePayments()} size="sm">重试</Button>}
+              title="逾期收款暂时无法加载"
+            />
+          ) : overduePayments.length === 0 ? (
+            <EmptyState title="暂无逾期待收款" description="当前没有需要跟进的逾期款项。" />
+          ) : (
+            <DataList.Root as="ol">
+              {overduePayments.map((payment) => (
+                <PaymentRow
+                  key={payment.id}
+                  payment={payment}
+                  secondary={`${formatDate(payment.plan_date)} · 逾期${dayjs().diff(dayjs(payment.plan_date), 'day')}天`}
+                  secondaryTone="danger"
+                />
+              ))}
+            </DataList.Root>
+          )}
+        </section>
+      ) : null}
+
+      {!showOverdue ? <div className="calendar-summary" data-motion-group="summary">
         {summaryMetrics.map((metric) => (
           <SummaryMetric key={String(metric.label)} {...metric} />
         ))}
-      </div>
+      </div> : null}
 
-      <div className="calendar-view__layout" data-motion="entrance">
+      {!showOverdue ? <div className="calendar-view__layout" data-motion="entrance">
         <section aria-label="收款日历" className="calendar-board">
           <Calendar
             aria-busy={loading}
             aria-label="收款日历"
             className="calendar-view__calendar"
             getDateAriaLabel={getDateAriaLabel}
+            getDateCount={(date) => dateCounts.get(date) || 0}
             getDateTone={getDateTone}
             layout="fluid"
             onValueChange={setSelectedDate}
@@ -306,7 +407,7 @@ export default function CalendarView() {
           </div>
         </section>
 
-        <div className="calendar-view__detail-stack">
+        <div className="calendar-view__detail-stack" data-motion-group="calendar-detail">
           <Card.Root aria-busy={loading} data-motion="entrance" variant="tertiary">
             <Card.Header>
               <SectionHeader
@@ -383,6 +484,12 @@ export default function CalendarView() {
                 />
               ) : monthlyPayments.length === 0 ? (
                 <EmptyState
+                  action={
+                    <RouterButton size="sm" to="/calendar?view=overdue" variant="secondary">
+                      查看逾期款项
+                    </RouterButton>
+                  }
+                  description="本月没有计划，可查看其他月份或先处理逾期款项。"
                   icon={<i className="ri-calendar-event-line" />}
                   size="sm"
                   title="本月无收款计划"
@@ -408,7 +515,7 @@ export default function CalendarView() {
             </Card.Content>
           </Card.Root>
         </div>
-      </div>
+      </div> : null}
     </div>
   )
 }

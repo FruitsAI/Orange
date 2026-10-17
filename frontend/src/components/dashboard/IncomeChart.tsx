@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import EmberPanel from '@/components/common/EmberPanel'
 import Chart from '@/config/chart'
-import { SectionHeader, Table, Tabs } from '@/design-system'
+import { RouterButton, SectionHeader, Table, Tabs } from '@/design-system'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useThemeStore } from '@/stores/theme'
 import { formatCurrency } from '@/utils/format'
@@ -48,6 +48,9 @@ export default function IncomeChart({
   const safeLabels = labels ?? []
   const accessibleExpected = normalizeSeries(safeLabels, expectedValues)
   const accessibleActual = normalizeSeries(safeLabels, actualValues)
+  const hasActivity = [...accessibleExpected, ...accessibleActual].some(
+    (value) => value !== null && value !== 0,
+  )
   const handlePeriodChange = (value: string) => {
     const nextPeriod = incomePeriodOptions.find((option) => option.period === value)?.period
     if (nextPeriod) onPeriodChange(nextPeriod)
@@ -101,8 +104,20 @@ export default function IncomeChart({
           title="现金流趋势"
         />
         <Tabs.Panel className="income-chart__panel" value={period}>
-          <div className="chart-container income-chart__canvas">
+          <div
+            className={`chart-container income-chart__canvas${hasActivity ? '' : ' income-chart__canvas--empty'}`}
+          >
             <canvas aria-hidden="true" ref={canvasRef} />
+            {!hasActivity && (
+              <div className="income-chart__empty">
+                <i aria-hidden="true" className="ri-line-chart-line" />
+                <strong>这个周期暂无回款趋势</strong>
+                <span>切换周期，或到收款日历查看计划。</span>
+                <RouterButton size="sm" to="/calendar" variant="secondary">
+                  查看收款日历
+                </RouterButton>
+              </div>
+            )}
           </div>
           <Table.Root visuallyHidden>
             <caption>{subtitle}数据</caption>

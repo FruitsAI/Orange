@@ -115,9 +115,9 @@
 }
 
 .ods-router-nav-link[data-appearance='tab'][aria-current='page'] {
-  background: var(--ods-gradient-glow);
-  box-shadow: 0 6px 18px rgba(var(--ods-color-accent-rgb), 0.28);
-  color: var(--ods-color-accent-fg);
+  background: var(--ods-color-accent-soft);
+  box-shadow: none;
+  color: var(--ods-color-accent);
 }
 
 .ods-router-nav-link[data-appearance='dock'] {
@@ -178,7 +178,7 @@
   height: 3px;
   border-radius: var(--ods-radius-pill);
   background: var(--ods-color-accent);
-  box-shadow: 0 0 10px rgba(var(--ods-color-accent-rgb), 0.56);
+  box-shadow: none;
   content: '';
 }
 

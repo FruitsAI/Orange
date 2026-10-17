@@ -217,6 +217,19 @@
   background: var(--ods-color-status-info-soft);
 }
 
+.ods-card[data-hoverable='true'] {
+  transition:
+    border-color var(--ods-duration-fast) var(--ods-ease-standard),
+    box-shadow var(--ods-duration-fast) var(--ods-ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ods-card[data-hoverable='true']:hover {
+    border-color: var(--ods-color-border-strong);
+    box-shadow: var(--ods-shadow-panel);
+  }
+}
+
 .ods-card[data-pressable='true'] {
   appearance: none;
   cursor: pointer;
@@ -252,6 +265,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ods-card[data-hoverable='true'],
   .ods-card[data-pressable='true'] {
     transition: none;
   }

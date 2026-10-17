@@ -17,18 +17,18 @@ describe('Orange Design System tokens', () => {
     document.documentElement.removeAttribute('data-theme')
 
     expect(tokenValue('--ods-ref-color-warm-50')).toBe('#f7f2e9')
-    expect(tokenValue('--ods-color-bg-canvas')).toBe('var(--ods-ref-color-warm-50)')
+    expect(tokenValue('--ods-color-bg-canvas')).toBe('#f7f4ee')
     expect(tokenValue('--ods-color-accent')).toBe('var(--ods-ref-color-ember-500)')
-    expect(tokenValue('--ods-color-ambient-glow')).toBe('rgba(244, 123, 22, 0.1)')
+    expect(tokenValue('--ods-color-ambient-glow')).toBe('rgba(244, 123, 22, 0.02)')
   })
 
   it('provides the complete Night Orbit theme', () => {
     document.documentElement.setAttribute('data-theme', 'dark')
 
-    expect(tokenValue('--ods-color-bg-canvas')).toBe('var(--ods-ref-color-warm-950)')
+    expect(tokenValue('--ods-color-bg-canvas')).toBe('#151311')
     expect(tokenValue('--ods-color-accent')).toBe('#ff9f0a')
-    expect(tokenValue('--ods-color-fg-default')).toBe('#fffaf3')
-    expect(tokenValue('--ods-color-ambient-glow')).toBe('rgba(255, 159, 10, 0.16)')
+    expect(tokenValue('--ods-color-fg-default')).toBe('#f9f4ec')
+    expect(tokenValue('--ods-color-ambient-glow')).toBe('rgba(255, 159, 10, 0.025)')
   })
 
   it('publishes semantic spacing, geometry, and motion contracts', () => {

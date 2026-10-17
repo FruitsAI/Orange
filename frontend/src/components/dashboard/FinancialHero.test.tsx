@@ -14,6 +14,8 @@ const baseProps: FinancialHeroProps = {
     supportingText: '同期已回款 人民币 8,000 元',
   },
   overdue: { amountText: '人民币 1,500 元', status: 'data' },
+  overdueCount: 3,
+  paid: { amountText: '人民币 8,000 元', status: 'data' },
   payment: {
     detailText: '星轨品牌升级 · 人民币 3,200 元',
     dueLabel: '下一笔 3 天后到期',
@@ -23,32 +25,26 @@ const baseProps: FinancialHeroProps = {
 }
 
 describe('FinancialHero', () => {
-  it('presents the period expected income as the semantic hero heading and stable RMB amount', () => {
+  it('puts overdue risk first while retaining the expected and paid amounts', () => {
     render(<FinancialHero {...baseProps} />)
 
     expect(screen.getByRole('region', { name: '财务概览' })).toHaveAttribute(
       'data-motion',
       'entrance',
     )
-    expect(screen.getByRole('region', { name: '财务概览' })).toHaveClass('ods-surface')
-    expect(screen.getByRole('region', { name: '财务概览' })).toHaveAttribute(
-      'data-variant',
-      'brand',
-    )
-    expect(screen.getByRole('region', { name: '财务概览' })).toHaveAttribute('data-radius', 'shell')
-    expect(document.querySelector('.financial-hero__pulse')).toHaveAttribute(
-      'data-motion',
-      'continuous',
-    )
-    expect(screen.getByRole('heading', { level: 1, name: '近30天预计回款' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '财务概览' })).toHaveClass('financial-hero')
+    expect(screen.getByText('逾期待收')).toBeInTheDocument()
+    expect(screen.getByText('3 笔需跟进')).toBeInTheDocument()
+    expect(screen.getByText('近30天预计回款')).toBeInTheDocument()
     expect(screen.getByText('人民币 12,345 元')).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: /本地时间/ })).toBeInTheDocument()
+    expect(screen.getAllByText(/人民币 8,000 元/)).toHaveLength(2)
+    expect(document.querySelector('.dashboard-clock')).not.toBeInTheDocument()
   })
 
   it('shows overdue risk and the next payment countdown', () => {
     render(<FinancialHero {...baseProps} />)
 
-    expect(screen.getByText('逾期风险')).toBeInTheDocument()
+    expect(screen.getByText('逾期待收')).toBeInTheDocument()
     expect(screen.getByText('人民币 1,500 元')).toBeInTheDocument()
     expect(screen.getByText('下一笔 3 天后到期')).toBeInTheDocument()
     expect(screen.getByText('星轨品牌升级 · 人民币 3,200 元')).toBeInTheDocument()
@@ -75,8 +71,8 @@ describe('FinancialHero', () => {
       />,
     )
 
-    expect(screen.getByText('暂无待收款计划')).toBeInTheDocument()
-    expect(screen.getByText('可前往项目页安排下一笔收款')).toBeInTheDocument()
+    expect(screen.getByText('未来七天无新到期计划')).toBeInTheDocument()
+    expect(screen.getByText('逾期款项仍需优先跟进')).toBeInTheDocument()
   })
 
   it('renders exactly one primary action with the supplied target', () => {
@@ -103,7 +99,7 @@ describe('FinancialHero', () => {
     expect(screen.getByText('预计回款暂不可用')).toBeInTheDocument()
     expect(screen.getByText('逾期风险暂不可用')).toBeInTheDocument()
     expect(screen.getByText('收款计划暂不可用')).toBeInTheDocument()
-    expect(screen.queryByText('暂无待收款计划')).not.toBeInTheDocument()
+    expect(screen.queryByText('未来七天无新到期计划')).not.toBeInTheDocument()
   })
 
   it('marks initial resource work busy and distinguishes loading from empty', () => {
@@ -121,7 +117,7 @@ describe('FinancialHero', () => {
     expect(screen.getByText('预计回款加载中')).toBeInTheDocument()
     expect(screen.getByText('逾期风险加载中')).toBeInTheDocument()
     expect(screen.getByText('收款计划加载中')).toBeInTheDocument()
-    expect(screen.queryByText('暂无待收款计划')).not.toBeInTheDocument()
+    expect(screen.queryByText('未来七天无新到期计划')).not.toBeInTheDocument()
   })
 
   it('has no decorative orbit element and imports no business formatter', () => {

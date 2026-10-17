@@ -78,6 +78,8 @@ export type CardTone = SurfaceTone
 
 interface CardRootOwnProps {
   gap?: CardGap
+  /** Opt-in pointer feedback (border + shadow raise) for non-pressable cards. */
+  hoverable?: boolean
   orientation?: CardOrientation
   padding?: SurfacePadding
   pressable?: boolean
@@ -103,6 +105,7 @@ function CardRoot({
   as,
   className,
   gap = 'md',
+  hoverable = false,
   orientation = 'vertical',
   padding = 'md',
   pressable = false,
@@ -116,6 +119,7 @@ function CardRoot({
     ...props,
     className: joinClasses('ods-card', className),
     'data-gap': gap,
+    'data-hoverable': (hoverable && !pressable) || undefined,
     'data-orientation': orientation,
     'data-padding': padding,
     'data-pressable': pressable || undefined,

@@ -81,6 +81,11 @@ func Bootstrap(mode RuntimeMode) (*Runtime, func(), error) {
 		return nil, nil, err
 	}
 
+	if err := database.NormalizeLegacyPaymentStatuses(db); err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+
 	if err := database.Seed(db); err != nil {
 		slog.Error("Failed to seed database", "error", err)
 	}

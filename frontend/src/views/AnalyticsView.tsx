@@ -534,7 +534,7 @@ export default function AnalyticsView() {
               >
                 {summaryMetrics.map((metric) => (
                   <div className="analytics-metric-item" key={String(metric.label)} role="listitem">
-                    <SummaryMetric {...metric} />
+                    <SummaryMetric {...metric} metaPosition="top-end" />
                   </div>
                 ))}
               </div>

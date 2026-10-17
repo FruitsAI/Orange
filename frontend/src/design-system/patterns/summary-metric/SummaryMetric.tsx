@@ -23,6 +23,7 @@ interface SummaryMetricBaseProps extends Omit<ComponentPropsWithoutRef<'article'
   layout?: 'compact' | 'stacked'
   loadingValue?: ReactNode
   meta?: ReactNode
+  metaPosition?: 'inline' | 'top-end'
   tone?: CardTone
   trend?: MetricTrend
   variant?: CardVariant
@@ -40,6 +41,7 @@ export function SummaryMetric({
   layout = 'compact',
   loadingValue,
   meta,
+  metaPosition = 'inline',
   status,
   tone = 'neutral',
   trend,
@@ -81,6 +83,7 @@ export function SummaryMetric({
       as="article"
       className={['ods-summary-metric', className].filter(Boolean).join(' ')}
       data-layout={layout}
+      data-meta-position={metaPosition}
       data-motion="entrance"
       data-motion-item
       data-status={status}

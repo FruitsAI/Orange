@@ -22,6 +22,12 @@
   flex-direction: column;
 }
 
+.ods-tabs__list:is([data-variant='navigation'], [data-variant='rail']) .ods-tabs__tab {
+  display: flex;
+  align-items: center;
+  text-align: start;
+}
+
 .ods-tabs__list[data-variant='navigation'] {
   width: 100%;
   align-items: stretch;

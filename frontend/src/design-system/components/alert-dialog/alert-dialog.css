@@ -1,0 +1,5 @@
+.ods-alert-dialog__description {
+  margin: 0;
+  color: var(--ods-color-fg-muted);
+  line-height: var(--ods-line-height-body);
+}

@@ -1,0 +1,106 @@
+# golangci-lint 配置文件
+
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs:
+    - vendor
+    - third_party
+  skip-files:
+    - ".*_test.go"
+
+linters:
+  enable:
+    - errcheck        # 检查未处理的错误
+    - gosimple        # 简化代码建议
+    - govet           # go vet 检查
+    - ineffassign     # 检测无效赋值
+    - staticcheck     # 静态分析
+    - unused          # 未使用的代码
+    - gofmt           # 代码格式
+    - goimports       # import 排序
+    - misspell        # 拼写错误
+    - goconst         # 重复常量检测
+    - gocyclo         # 圈复杂度
+    - dupl            # 代码重复检测
+    - gosec           # 安全检查
+    - exportloopref   # 循环变量引用问题
+    - nolintlint      # 检查 nolint 指令
+    - revive          # 替代 golint
+  disable:
+    - typecheck       # 类型检查（编译时已检查）
+
+linters-settings:
+  errcheck:
+    check-blank: true
+    check-type-assertions: true
+
+  gocyclo:
+    min-complexity: 15
+
+  dupl:
+    threshold: 100
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  misspell:
+    locale: US
+
+  gosec:
+    excludes:
+      - G104  # 忽略未检查的错误（由 errcheck 处理）
+      - G304  # 文件路径包含用户输入（可接受的情况）
+
+  revive:
+    confidence: 0.8
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: redefines-builtin-id
+
+issues:
+  exclude-rules:
+    # 排除测试文件的某些检查
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - dupl
+        - gosec
+
+    # 排除主函数的 exitAfterDefer 检查
+    - path: cmd/
+      linters:
+        - gosec
+      text: "G104"
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  uniq-by-line: true
+  sort-results: true

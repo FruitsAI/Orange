@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/FruitsAI/Orange/internal/models"
 	"github.com/FruitsAI/Orange/internal/pkg/response"
 	"github.com/FruitsAI/Orange/internal/service"
@@ -41,25 +39,20 @@ type CreateNotificationRequest struct {
 // @Router /api/v1/notifications [post]
 func (h *NotificationHandler) Create(c *gin.Context) {
 	userID := c.GetInt64("user_id")
-	role := c.GetString("role")
 
-	// 1. 权限校验
-	if role != "admin" {
-		response.Forbidden(c)
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
-	// 2. 参数绑定
+	// 参数绑定
 	var req CreateNotificationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamError(c, err.Error())
 		return
 	}
 
-	// 3. 调用服务层
+	// 调用服务层
 	notification, err := h.notificationService.Create(userID, req.Title, req.Content, req.Type, req.TargetUserID)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "创建通知失败")
 		return
 	}
 
@@ -77,31 +70,24 @@ func (h *NotificationHandler) Create(c *gin.Context) {
 // @Failure 403 {string} string "无权操作"
 // @Router /api/v1/notifications/{id} [put]
 func (h *NotificationHandler) Update(c *gin.Context) {
-	role := c.GetString("role")
-
-	// 1. 权限校验
-	if role != "admin" {
-		response.Forbidden(c)
-		return
-	}
-
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	// 权限校验由路由层 AdminOnly 中间件统一处理
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的通知ID")
 		return
 	}
 
-	// 2. 参数绑定
+	// 参数绑定
 	var req CreateNotificationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamError(c, err.Error())
 		return
 	}
 
-	// 3. 执行更新
+	// 执行更新
 	notification, err := h.notificationService.Update(id, req.Title, req.Content, req.Type, req.TargetUserID)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "更新通知失败")
 		return
 	}
 
@@ -119,8 +105,7 @@ func (h *NotificationHandler) Update(c *gin.Context) {
 // @Router /api/v1/notifications [get]
 func (h *NotificationHandler) List(c *gin.Context) {
 	userID := c.GetInt64("user_id")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	page, pageSize := response.GetPagination(c)
 
 	var notifications []models.Notification
 	var total int64
@@ -131,7 +116,7 @@ func (h *NotificationHandler) List(c *gin.Context) {
 	notifications, total, err = h.notificationService.ListByUser(userID, page, pageSize)
 
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "获取通知列表失败")
 		return
 	}
 
@@ -148,14 +133,14 @@ func (h *NotificationHandler) List(c *gin.Context) {
 // @Router /api/v1/notifications/{id}/read [put]
 func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 	userID := c.GetInt64("user_id")
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的通知ID")
 		return
 	}
 
 	if err := h.notificationService.MarkAsRead(id, userID); err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "标记已读失败")
 		return
 	}
 
@@ -172,22 +157,16 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 // @Failure 403 {string} string "无权操作"
 // @Router /api/v1/notifications/{id} [delete]
 func (h *NotificationHandler) Delete(c *gin.Context) {
-	role := c.GetString("role")
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
-	// 1. 权限校验
-	if role != "admin" {
-		response.Forbidden(c)
-		return
-	}
-
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的通知ID")
 		return
 	}
 
 	if err := h.notificationService.Delete(id); err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "删除通知失败")
 		return
 	}
 
@@ -206,7 +185,7 @@ func (h *NotificationHandler) UnreadCount(c *gin.Context) {
 
 	count, err := h.notificationService.GetUnreadCount(userID)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "获取未读数失败")
 		return
 	}
 
@@ -222,17 +201,11 @@ func (h *NotificationHandler) UnreadCount(c *gin.Context) {
 // @Failure 403 {string} string "无权操作"
 // @Router /api/v1/notifications/users [get]
 func (h *NotificationHandler) ListUsers(c *gin.Context) {
-	role := c.GetString("role")
-
-	// 权限校验
-	if role != "admin" {
-		response.Forbidden(c)
-		return
-	}
+	// 权限校验由路由层 AdminOnly 中间件统一处理
 
 	users, err := h.notificationService.ListUsers()
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "获取用户列表失败")
 		return
 	}
 
@@ -248,15 +221,16 @@ func (h *NotificationHandler) ListUsers(c *gin.Context) {
 // @Success 200 {object} models.Notification
 // @Router /api/v1/notifications/{id} [get]
 func (h *NotificationHandler) Get(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	userID := c.GetInt64("user_id")
+	id, err := response.ParseIDParam(c, "id")
 	if err != nil {
 		response.ParamError(c, "无效的通知ID")
 		return
 	}
 
-	notification, err := h.notificationService.Get(id)
+	notification, err := h.notificationService.GetForUser(userID, id)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.HandleServiceError(c, err, "获取通知详情失败")
 		return
 	}
 

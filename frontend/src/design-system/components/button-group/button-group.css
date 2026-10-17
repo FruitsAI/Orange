@@ -1,0 +1,46 @@
+.ods-button-group {
+  display: inline-flex;
+  isolation: isolate;
+}
+
+.ods-button-group[data-orientation='vertical'] {
+  flex-direction: column;
+}
+
+/* Merge the pill buttons into one continuous segmented control. */
+.ods-button-group > .ods-button {
+  border-radius: 0;
+}
+
+.ods-button-group[data-orientation='horizontal'] > .ods-button:first-child {
+  border-start-start-radius: var(--ods-radius-pill);
+  border-end-start-radius: var(--ods-radius-pill);
+}
+
+.ods-button-group[data-orientation='horizontal'] > .ods-button:last-child {
+  border-start-end-radius: var(--ods-radius-pill);
+  border-end-end-radius: var(--ods-radius-pill);
+}
+
+.ods-button-group[data-orientation='horizontal'] > .ods-button:not(:first-child) {
+  margin-inline-start: -1px;
+}
+
+.ods-button-group[data-orientation='vertical'] > .ods-button:first-child {
+  border-start-start-radius: var(--ods-radius-md);
+  border-start-end-radius: var(--ods-radius-md);
+}
+
+.ods-button-group[data-orientation='vertical'] > .ods-button:last-child {
+  border-end-start-radius: var(--ods-radius-md);
+  border-end-end-radius: var(--ods-radius-md);
+}
+
+.ods-button-group[data-orientation='vertical'] > .ods-button:not(:first-child) {
+  margin-block-start: -1px;
+}
+
+.ods-button-group > .ods-button:hover,
+.ods-button-group > .ods-button:focus-visible {
+  z-index: 1;
+}

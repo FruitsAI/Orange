@@ -1,0 +1,21 @@
+Orange Third-Party Notices
+
+MiSans
+
+This software uses the official MiSans variable font provided by Xiaomi.
+
+Font file:
+  fonts/misans/MiSansVF.ttf
+
+Local license agreement:
+  fonts/misans/LICENSE-MiSans.pdf
+
+Official font website:
+  https://hyperos.mi.com/font/en/download
+
+Official license agreement:
+  https://hyperos.mi.com/font-download/MiSans%E5%AD%97%E4%BD%93%E7%9F%A5%E8%AF%86%E4%BA%A7%E6%9D%83%E8%AE%B8%E5%8F%AF%E5%8D%8F%E8%AE%AE.pdf
+
+MiSans is used subject to the terms of Xiaomi's MiSans Fonts Intellectual
+Property License Agreement. The font file is kept in its official, unmodified
+form.

@@ -1,0 +1,16 @@
+:focus-visible {
+  outline: var(--ods-focus-ring-width) solid var(--ods-color-border-focus);
+  outline-offset: var(--ods-focus-ring-offset);
+}
+
+.ods-focus-ring:focus-visible,
+[data-focus-visible='true'] {
+  outline: var(--ods-focus-ring-width) solid var(--ods-color-border-focus);
+  outline-offset: var(--ods-focus-ring-offset);
+}
+
+@supports selector(:focus-visible) {
+  :focus:not(:focus-visible) {
+    outline-color: transparent;
+  }
+}

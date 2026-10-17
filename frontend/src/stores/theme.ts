@@ -1,66 +1,140 @@
 /**
  * @file stores/theme.ts
- * @description 主题状态管理
- * 支持 Light (亮色模式), Dark (暗色模式) 和 Auto (跟随系统)。
+ * @description React/Zustand theme state.
  */
-import { ref } from 'vue'
-import { defineStore } from 'pinia'
+import { create } from 'zustand'
 
-export const useThemeStore = defineStore('theme', () => {
-  // 当前选择的主题模式: 'light' | 'dark' | 'auto'
-  const theme = ref(localStorage.getItem('theme') || 'auto')
-  // 实际生效的主题 (当 theme 为 auto 时，会根据系统偏好计算为 light 或 dark)
-  const effectiveTheme = ref('light')
+export type ThemeMode = 'light' | 'dark' | 'auto'
+export type EffectiveTheme = 'light' | 'dark'
 
-  /** 应用主题到 DOM */
-  function applyTheme() {
-    const root = document.documentElement
-    let targetTheme = theme.value
+export const THEME_OPTIONS: ReadonlyArray<{
+  icon: string
+  label: string
+  value: ThemeMode
+}> = [
+  { icon: 'ri-computer-line', label: '跟随系统', value: 'auto' },
+  { icon: 'ri-sun-line', label: '亮色', value: 'light' },
+  { icon: 'ri-moon-line', label: '深色', value: 'dark' },
+]
 
-    // 如果是自动模式，根据系统偏好决定
-    if (targetTheme === 'auto') {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      targetTheme = isDark ? 'dark' : 'light'
-    }
+export const getThemeModeLabel = (theme: ThemeMode) =>
+  THEME_OPTIONS.find((option) => option.value === theme)?.label ?? '跟随系统'
 
-    effectiveTheme.value = targetTheme
-    // 设置 html 标签的 data-theme 属性，供 CSS 变量使用
-    root.setAttribute('data-theme', targetTheme)
+interface ThemeState {
+  theme: ThemeMode
+  effectiveTheme: EffectiveTheme
+  initializeTheme: () => () => void
+  applyTheme: (transition?: boolean) => void
+  setTheme: (theme: ThemeMode) => void
+  toggleTheme: () => void
+}
+
+const isThemeMode = (value: string | null): value is ThemeMode =>
+  value === 'light' || value === 'dark' || value === 'auto'
+
+const getStoredTheme = (): ThemeMode => {
+  if (typeof window === 'undefined') return 'auto'
+  const stored = window.localStorage.getItem('theme')
+  return isThemeMode(stored) ? stored : 'auto'
+}
+
+const resolveEffectiveTheme = (theme: ThemeMode): EffectiveTheme => {
+  if (theme !== 'auto') return theme
+  if (typeof window === 'undefined') return 'light'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+// Keep synchronized with --ods-duration-fast (200ms) in design-system/tokens/semantic.css.
+export const THEME_TRANSITION_DURATION = 200
+let transitionTimer: number | undefined
+
+const clearThemeTransition = () => {
+  if (transitionTimer !== undefined && typeof window !== 'undefined') {
+    window.clearTimeout(transitionTimer)
+  }
+  transitionTimer = undefined
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.remove('theme-transitioning')
+  }
+}
+
+const startThemeTransition = () => {
+  clearThemeTransition()
+  if (
+    typeof window === 'undefined' ||
+    typeof document === 'undefined' ||
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    return
   }
 
-  /**
-   * 手动设置主题
-   * @param newTheme 主题模式
-   */
-  function setTheme(newTheme: string) {
-    theme.value = newTheme
-    localStorage.setItem('theme', newTheme)
-    applyTheme()
-  }
+  document.documentElement.classList.add('theme-transitioning')
+  transitionTimer = window.setTimeout(clearThemeTransition, THEME_TRANSITION_DURATION)
+}
 
-  /**
-   * 切换主题 (Light/Dark 循环)
-   * 跳过 Auto 模式
-   */
-  function toggleTheme() {
-    // Cycle: Light <-> Dark (Skip Auto)
-    if (theme.value === 'dark') {
-      setTheme('light')
-    } else {
-      setTheme('dark')
+export const useThemeStore = create<ThemeState>((set, get) => ({
+  theme: getStoredTheme(),
+  effectiveTheme: resolveEffectiveTheme(getStoredTheme()),
+
+  initializeTheme() {
+    get().applyTheme(false)
+
+    if (typeof window === 'undefined') return () => {}
+
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => {
+      if (get().theme === 'auto') {
+        get().applyTheme(true)
+      }
     }
-  }
 
-  // 监听系统主题变化事件
-  // 当设置为自动模式时，系统主题切换会立即反映到界面上
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if (theme.value === 'auto') {
-      applyTheme()
+    media.addEventListener('change', handleChange)
+    return () => {
+      media.removeEventListener('change', handleChange)
+      clearThemeTransition()
     }
-  })
+  },
 
-  // 初始化应用
-  applyTheme()
+  applyTheme(transition = false) {
+    const effectiveTheme = resolveEffectiveTheme(get().theme)
+    if (transition) startThemeTransition()
+    set({ effectiveTheme })
 
-  return { theme, effectiveTheme, setTheme, toggleTheme }
-})
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', effectiveTheme)
+      // WKWebView can leave descendants that consume inherited custom
+      // properties on the previous composited frame until the window resizes.
+      // Rebuilding body layout in the same task invalidates that stale frame;
+      // the browser cannot paint the temporary display:none state.
+      if (transition && document.body) {
+        const previousDisplay = document.body.style.display
+        const scrollX = window.scrollX
+        const scrollY = window.scrollY
+        document.body.style.display = 'none'
+        void document.body.offsetHeight
+        document.body.style.display = previousDisplay
+        if (scrollX !== 0 || scrollY !== 0) {
+          window.scrollTo(scrollX, scrollY)
+        }
+      }
+    }
+  },
+
+  setTheme(theme) {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('theme', theme)
+    }
+
+    set({ theme })
+    get().applyTheme(true)
+  },
+
+  toggleTheme() {
+    get().setTheme(get().effectiveTheme === 'dark' ? 'light' : 'dark')
+  },
+}))
+
+/** Applies the persisted/system theme synchronously before React's first render. */
+export const applyThemeBeforeRender = () => {
+  useThemeStore.getState().applyTheme(false)
+}

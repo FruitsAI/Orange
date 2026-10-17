@@ -4,12 +4,12 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
-	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/FruitsAI/Orange/internal/middleware"
 	"github.com/FruitsAI/Orange/internal/models"
+	"github.com/FruitsAI/Orange/internal/pkg/response"
 	"github.com/FruitsAI/Orange/internal/repository"
 	"github.com/gin-gonic/gin"
 )
@@ -36,12 +36,21 @@ type CreateTokenResponse struct {
 
 // generateToken 生成随机 Token 字符串 (32字节 hex)
 func generateToken() (string, error) {
-	bytes := make([]byte, 16) // 16 bytes = 32 hex chars
+	bytes := make([]byte, 32) // 32 bytes = 64 hex chars
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
 	}
 	// 添加前缀以便识别
 	return "pat_" + hex.EncodeToString(bytes), nil
+}
+
+func parseTokenID(c *gin.Context) (int64, bool) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		response.ParamError(c, "Invalid token id")
+		return 0, false
+	}
+	return id, true
 }
 
 // hashToken 计算 Token Hash
@@ -54,7 +63,7 @@ func hashToken(token string) string {
 func (h *TokenHandler) Create(c *gin.Context) {
 	var req CreateTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "Invalid parameters"})
+		response.ParamError(c, "Invalid parameters")
 		return
 	}
 
@@ -63,7 +72,7 @@ func (h *TokenHandler) Create(c *gin.Context) {
 	// 1. 生成原始 Token
 	rawToken, err := generateToken()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "Failed to generate token"})
+		response.InternalError(c, "Failed to generate token")
 		return
 	}
 
@@ -88,18 +97,14 @@ func (h *TokenHandler) Create(c *gin.Context) {
 
 	// 5. 保存到数据库
 	if err := h.repo.Create(token); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "Failed to save token"})
+		response.InternalError(c, "Failed to save token")
 		return
 	}
 
 	// 6. 返回结果 (包含原始 Token，仅此一次)
-	c.JSON(http.StatusOK, gin.H{
-		"code":    0,
-		"message": "success",
-		"data": CreateTokenResponse{
-			Token: rawToken,
-			Data:  token,
-		},
+	response.Success(c, CreateTokenResponse{
+		Token: rawToken,
+		Data:  token,
 	})
 }
 
@@ -108,45 +113,43 @@ func (h *TokenHandler) List(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	tokens, err := h.repo.List(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "Failed to list tokens"})
+		response.InternalError(c, "Failed to list tokens")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":    0,
-		"message": "success",
-		"data":    tokens,
-	})
+	response.Success(c, tokens)
 }
 
 // Revoke 撤销令牌
 func (h *TokenHandler) Revoke(c *gin.Context) {
-	idStr := c.Param("id")
-	var id int64
-	fmt.Sscanf(idStr, "%d", &id)
+	id, ok := parseTokenID(c)
+	if !ok {
+		return
+	}
 
 	userID := middleware.GetUserID(c)
 
 	if err := h.repo.Revoke(id, userID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "Failed to revoke token"})
+		response.InternalError(c, "Failed to revoke token")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"code": 0, "message": "success"})
+	response.SuccessWithMessage(c, "success", nil)
 }
 
 // Delete 删除令牌
 func (h *TokenHandler) Delete(c *gin.Context) {
-	idStr := c.Param("id")
-	var id int64
-	fmt.Sscanf(idStr, "%d", &id)
+	id, ok := parseTokenID(c)
+	if !ok {
+		return
+	}
 
 	userID := middleware.GetUserID(c)
 
 	if err := h.repo.Delete(id, userID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "Failed to delete token"})
+		response.InternalError(c, "Failed to delete token")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"code": 0, "message": "success"})
+	response.SuccessWithMessage(c, "success", nil)
 }

@@ -1,0 +1,60 @@
+.ods-scroll-shadow {
+  --ods-scroll-shadow-size: var(--ods-space-8);
+
+  overflow: auto;
+}
+
+/* Soft edge masks instead of hard dividers; edges fade only when content continues. */
+.ods-scroll-shadow[data-orientation='vertical'] {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--ods-scroll-shadow-size),
+    #000 calc(100% - var(--ods-scroll-shadow-size)),
+    transparent 100%
+  );
+}
+
+.ods-scroll-shadow[data-orientation='vertical'][data-at-start='true'] {
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - var(--ods-scroll-shadow-size)),
+    transparent 100%
+  );
+}
+
+.ods-scroll-shadow[data-orientation='vertical'][data-at-end='true'] {
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--ods-scroll-shadow-size));
+}
+
+.ods-scroll-shadow[data-orientation='vertical'][data-at-start='true'][data-at-end='true'] {
+  mask-image: none;
+}
+
+.ods-scroll-shadow[data-orientation='horizontal'] {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--ods-scroll-shadow-size),
+    #000 calc(100% - var(--ods-scroll-shadow-size)),
+    transparent 100%
+  );
+}
+
+.ods-scroll-shadow[data-orientation='horizontal'][data-at-start='true'] {
+  mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 calc(100% - var(--ods-scroll-shadow-size)),
+    transparent 100%
+  );
+}
+
+.ods-scroll-shadow[data-orientation='horizontal'][data-at-end='true'] {
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--ods-scroll-shadow-size));
+}
+
+.ods-scroll-shadow[data-orientation='horizontal'][data-at-start='true'][data-at-end='true'] {
+  mask-image: none;
+}

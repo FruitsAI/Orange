@@ -144,7 +144,7 @@ func main() {
 }
 
 func checkCommand(name string, args ...string) bool {
-	cmd := exec.Command(name, args...)
+	cmd := exec.Command(name, args...) // #nosec G204 -- developer dependency checker runs fixed commands defined by this script.
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	return cmd.Run() == nil

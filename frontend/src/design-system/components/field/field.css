@@ -1,0 +1,41 @@
+.ods-field {
+  display: grid;
+  /* Rows must not stretch when a sibling grid cell is taller (e.g. a field with an error). */
+  align-content: start;
+  gap: var(--ods-space-2);
+  min-width: 0;
+}
+
+.ods-field__label {
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-sm);
+  font-weight: var(--ods-font-weight-semibold);
+  line-height: var(--ods-line-height-body);
+}
+
+.ods-field__required {
+  color: var(--ods-color-status-danger);
+  margin-inline-start: var(--ods-space-1);
+}
+
+.ods-field__description,
+.ods-field__error {
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-xs);
+  line-height: var(--ods-line-height-body);
+  margin: var(--ods-space-0);
+}
+
+.ods-field__description {
+  color: var(--ods-color-fg-muted);
+}
+
+.ods-field__error {
+  color: var(--ods-color-status-danger);
+}
+
+.ods-field[data-disabled='true'] .ods-field__label,
+.ods-field[data-disabled='true'] .ods-field__description {
+  color: var(--ods-color-fg-disabled);
+}

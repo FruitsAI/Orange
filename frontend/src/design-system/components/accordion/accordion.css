@@ -1,0 +1,89 @@
+.ods-accordion {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ods-color-border-default);
+  border-radius: var(--ods-radius-panel);
+  background: var(--ods-color-bg-surface-raised);
+  overflow: hidden;
+}
+
+.ods-accordion__item + .ods-accordion__item {
+  border-block-start: 1px solid var(--ods-color-border-default);
+}
+
+.ods-accordion__heading {
+  margin: 0;
+}
+
+.ods-accordion__trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ods-space-3);
+  padding: var(--ods-space-4) var(--ods-space-5);
+  border: 0;
+  background: transparent;
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-body);
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--ods-duration-fast) var(--ods-ease-standard);
+}
+
+.ods-accordion__trigger:hover {
+  background: var(--ods-color-bg-surface-hover);
+}
+
+.ods-accordion__trigger:focus-visible {
+  outline: var(--ods-focus-ring-width) solid var(--ods-color-border-focus);
+  outline-offset: calc(var(--ods-focus-ring-offset) * -1);
+}
+
+.ods-accordion__titles {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ods-space-1);
+}
+
+.ods-accordion__title {
+  font-size: var(--ods-font-size-md);
+  font-weight: var(--ods-font-weight-semibold);
+}
+
+.ods-accordion__subtitle {
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-sm);
+}
+
+.ods-accordion__indicator {
+  flex: 0 0 auto;
+  color: var(--ods-color-fg-subtle);
+  font-size: var(--ods-font-size-xl);
+  line-height: 1;
+  transition: transform var(--ods-duration-fast) var(--ods-ease-spring);
+}
+
+.ods-accordion__item[data-open='true'] .ods-accordion__indicator {
+  color: var(--ods-color-accent);
+  transform: rotate(90deg);
+}
+
+.ods-accordion__panel[hidden] {
+  display: none;
+}
+
+.ods-accordion__content {
+  padding: 0 var(--ods-space-5) var(--ods-space-5);
+  color: var(--ods-color-fg-muted);
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-sm);
+  line-height: var(--ods-line-height-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ods-accordion__indicator {
+    transition: none;
+  }
+}

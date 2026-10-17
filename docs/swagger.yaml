@@ -1,0 +1,1229 @@
+definitions:
+  dto.ChangePasswordRequest:
+    properties:
+      new_password:
+        minLength: 8
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
+  dto.ConfirmPaymentRequest:
+    properties:
+      actual_date:
+        type: string
+      method:
+        type: string
+    required:
+    - actual_date
+    type: object
+  dto.CreateDictionaryItemRequest:
+    properties:
+      label:
+        type: string
+      sort:
+        type: integer
+      value:
+        type: string
+    required:
+    - label
+    - value
+    type: object
+  dto.CreateProjectRequest:
+    properties:
+      company:
+        type: string
+      contract_date:
+        type: string
+      contract_number:
+        type: string
+      description:
+        type: string
+      end_date:
+        type: string
+      name:
+        type: string
+      payment_method:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: number
+      type:
+        type: string
+    required:
+    - company
+    - end_date
+    - name
+    - start_date
+    - total_amount
+    - type
+    type: object
+  dto.IncomeTrend:
+    properties:
+      actual_values:
+        items:
+          type: number
+        type: array
+      expected_values:
+        items:
+          type: number
+        type: array
+      labels:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  dto.LoginResult:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+    type: object
+  dto.PaymentRequest:
+    properties:
+      amount:
+        type: number
+      method:
+        type: string
+      percentage:
+        type: number
+      plan_date:
+        type: string
+      project_id:
+        type: integer
+      remark:
+        type: string
+      stage:
+        type: string
+      status:
+        type: string
+    required:
+    - amount
+    - plan_date
+    - project_id
+    - stage
+    type: object
+  dto.Stats:
+    properties:
+      avg_collection_days:
+        type: number
+      avg_collection_days_trend:
+        type: number
+      overdue_amount:
+        type: number
+      overdue_trend:
+        type: number
+      paid_amount:
+        type: number
+      paid_trend:
+        type: number
+      pending_amount:
+        type: number
+      pending_trend:
+        type: number
+      total_amount:
+        type: number
+      total_trend:
+        type: number
+    type: object
+  dto.UpdateProfileRequest:
+    properties:
+      department:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      position:
+        type: string
+    type: object
+  handler.CheckUpdateResponse:
+    properties:
+      body:
+        description: 更新日志内容
+        type: string
+      html_url:
+        description: 发布页面链接
+        type: string
+      tag_name:
+        description: 版本标签 (如 v1.0.1)
+        type: string
+    type: object
+  handler.CreateNotificationRequest:
+    properties:
+      content:
+        description: 内容
+        type: string
+      target_user_id:
+        description: 目标用户ID (0 = 全员通知)
+        type: integer
+      title:
+        description: 标题
+        type: string
+      type:
+        description: '类型: system, activity, private'
+        type: string
+    required:
+    - content
+    - title
+    type: object
+  models.Dictionary:
+    properties:
+      code:
+        description: 字典编码 (英文唯一，前端使用)
+        type: string
+      create_time:
+        description: 创建时间
+        type: string
+      id:
+        type: integer
+      items:
+        description: 关联
+        items:
+          $ref: '#/definitions/models.DictionaryItem'
+        type: array
+      name:
+        description: 字典名称
+        type: string
+      remark:
+        description: 备注
+        type: string
+      status:
+        description: '状态: 1=启用, 0=禁用'
+        type: integer
+      update_time:
+        description: 更新时间
+        type: string
+    type: object
+  models.DictionaryItem:
+    properties:
+      create_time:
+        type: string
+      dictionary_id:
+        description: 归属字典ID
+        type: integer
+      id:
+        type: integer
+      label:
+        description: 显示文本
+        type: string
+      remark:
+        description: 备注
+        type: string
+      sort:
+        description: 排序字段
+        type: integer
+      status:
+        description: '状态: 1=启用'
+        type: integer
+      update_time:
+        type: string
+      value:
+        description: 实际值
+        type: string
+    type: object
+  models.Notification:
+    properties:
+      content:
+        description: 内容
+        type: string
+      create_time:
+        description: 创建时间
+        type: string
+      id:
+        type: integer
+      is_global:
+        description: '是否为全局广播: 0=否, 1=是'
+        type: integer
+      is_read:
+        description: 非数据库字段，用于前端展示
+        type: boolean
+      sender:
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: 发送者详情
+      sender_id:
+        description: 发送者ID
+        type: integer
+      title:
+        description: 标题
+        type: string
+      type:
+        description: '类型: 1:系统通知, 2:活动通知, 3:私信'
+        type: integer
+      update_time:
+        description: 更新时间
+        type: string
+    type: object
+  models.Payment:
+    properties:
+      actual_date:
+        description: 实际收款日期
+        type: string
+      amount:
+        description: 金额
+        type: number
+      create_time:
+        description: 创建时间
+        type: string
+      id:
+        type: integer
+      method:
+        description: '收款方式 (如: 银行转账)'
+        type: string
+      percentage:
+        description: 占总金额百分比
+        type: number
+      plan_date:
+        description: 计划收款日期
+        type: string
+      project:
+        allOf:
+        - $ref: '#/definitions/models.Project'
+        description: 关联
+      project_id:
+        description: 关联项目ID
+        type: integer
+      remark:
+        description: 备注
+        type: string
+      stage:
+        description: '款项阶段 (如: 首付款, 进度款, 尾款)'
+        type: string
+      status:
+        description: '状态: uncollected, collected'
+        type: string
+      update_time:
+        description: 更新时间
+        type: string
+      user_id:
+        description: 经办人ID (通常为创建者或当前负责人)
+        type: integer
+    type: object
+  models.Project:
+    properties:
+      company:
+        description: 建设单位/客户
+        type: string
+      contract_date:
+        description: 签订日期
+        type: string
+      contract_number:
+        description: 合同编号
+        type: string
+      create_time:
+        description: 创建时间
+        type: string
+      description:
+        description: 项目描述
+        type: string
+      end_date:
+        description: 计划结束日期
+        type: string
+      id:
+        type: integer
+      name:
+        description: 项目名称
+        type: string
+      payment_method:
+        description: 支付方式 (字典项)
+        type: string
+      payments:
+        description: 关联款项列表
+        items:
+          $ref: '#/definitions/models.Payment'
+        type: array
+      received_amount:
+        description: 已回款金额
+        type: number
+      start_date:
+        description: 计划开始日期
+        type: string
+      status:
+        description: '状态: pending, processing, completed, archived'
+        type: string
+      total_amount:
+        description: 合同总金额
+        type: number
+      type:
+        description: 项目类型 (字典项)
+        type: string
+      update_time:
+        description: 更新时间
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: 关联
+      user_id:
+        description: 负责人ID
+        type: integer
+    type: object
+  models.User:
+    properties:
+      avatar:
+        description: 头像 URL
+        type: string
+      create_time:
+        description: 创建时间
+        type: string
+      department:
+        description: 部门
+        type: string
+      email:
+        description: 邮箱
+        type: string
+      id:
+        type: integer
+      last_login_time:
+        description: 最后登录时间
+        type: string
+      name:
+        description: 真实姓名
+        type: string
+      phone:
+        description: 手机号
+        type: string
+      position:
+        description: 职位
+        type: string
+      role:
+        description: '角色: admin, user'
+        type: string
+      status:
+        description: '状态: 1=正常, 0=禁用'
+        type: integer
+      update_time:
+        description: 更新时间
+        type: string
+      username:
+        description: 用户名，唯一
+        type: string
+    type: object
+  response.PageData:
+    properties:
+      list:
+        description: 当前页的数据列表
+      page:
+        description: 当前页码
+        type: integer
+      page_size:
+        description: 每页条数
+        type: integer
+      total:
+        description: 总记录数
+        type: integer
+    type: object
+  response.PageResult:
+    properties:
+      code:
+        description: 业务状态码
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/response.PageData'
+        description: 分页数据
+      message:
+        description: 提示消息
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 验证用户名密码并返回JWT Token
+      parameters:
+      - description: 登录参数
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoginResult'
+      summary: 用户登录
+      tags:
+      - Auth
+  /api/v1/auth/logout:
+    post:
+      description: 客户端登出（当前由前端清除Token，后端仅做预留）
+      responses: {}
+      summary: 退出登录
+      tags:
+      - Auth
+  /api/v1/dashboard/income-trend:
+    get:
+      description: 获取指定周期内的收入趋势对比数据
+      parameters:
+      - description: '时间维度: week, month, quarter, year (默认month)'
+        in: query
+        name: period
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.IncomeTrend'
+      security:
+      - Bearer: []
+      summary: 收入趋势折线图
+      tags:
+      - Dashboard
+  /api/v1/dashboard/recent-projects:
+    get:
+      description: 获取最近更新的5个项目，用于仪表盘展示
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Project'
+            type: array
+      security:
+      - Bearer: []
+      summary: 最近项目列表
+      tags:
+      - Dashboard
+  /api/v1/dashboard/stats:
+    get:
+      description: 获取总金额、已收、待收等核心指标，支持按周期(period)过滤
+      parameters:
+      - description: '统计周期: week, month, quarter, year, all (默认为all)'
+        in: query
+        name: period
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Stats'
+      security:
+      - Bearer: []
+      summary: 仪表盘统计卡片数据
+      tags:
+      - Dashboard
+  /api/v1/dashboard/upcoming-payments:
+    get:
+      description: 获取未来7天内即将到期的待收款项
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Payment'
+            type: array
+      security:
+      - Bearer: []
+      summary: 即将到期收款
+      tags:
+      - Dashboard
+  /api/v1/dictionaries:
+    get:
+      description: 获取系统中所有可用的字典类型定义
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Dictionary'
+            type: array
+      security:
+      - Bearer: []
+      summary: 获取字典列表
+      tags:
+      - Dictionary
+  /api/v1/dictionaries/{code}/items:
+    get:
+      description: 根据字典编码(Code)获取其下属的所有选项
+      parameters:
+      - description: 字典编码 (如 project_status)
+        in: path
+        name: code
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.DictionaryItem'
+            type: array
+      security:
+      - Bearer: []
+      summary: 获取字典选项列表
+      tags:
+      - Dictionary
+    post:
+      description: 为指定字典添加一个新的选项值(仅限管理员)
+      parameters:
+      - description: 字典编码
+        in: path
+        name: code
+        required: true
+        type: string
+      - description: 字典项参数
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateDictionaryItemRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.DictionaryItem'
+        "403":
+          description: 无权操作
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 创建字典项
+      tags:
+      - Dictionary
+  /api/v1/dictionaries/{code}/items/{id}:
+    delete:
+      description: 物理删除指定的字典选项(仅限管理员)
+      parameters:
+      - description: 字典编码 (仅作路由占位)
+        in: path
+        name: code
+        required: true
+        type: string
+      - description: 字典项ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            type: string
+        "403":
+          description: 无权操作
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 删除字典项
+      tags:
+      - Dictionary
+    put:
+      description: 更新现有字典选项的名称、值或排序(仅限管理员)
+      parameters:
+      - description: 字典编码 (仅作路由占位)
+        in: path
+        name: code
+        required: true
+        type: string
+      - description: 字典项ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新参数
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateDictionaryItemRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.DictionaryItem'
+        "403":
+          description: 无权操作
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 更新字典项
+      tags:
+      - Dictionary
+  /api/v1/notifications:
+    get:
+      description: 分页获取当前用户的通知（含系统全员通知和私信）
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.PageResult'
+      security:
+      - Bearer: []
+      summary: 获取通知列表
+      tags:
+      - Notification
+    post:
+      description: 管理员发布新通知，支持全员或指定用户
+      parameters:
+      - description: 通知内容
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateNotificationRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Notification'
+        "403":
+          description: 无权操作
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 发布通知
+      tags:
+      - Notification
+  /api/v1/notifications/{id}:
+    delete:
+      description: 管理员删除指定通知
+      parameters:
+      - description: 通知ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            type: string
+        "403":
+          description: 无权操作
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 删除通知
+      tags:
+      - Notification
+    get:
+      description: 根据ID获取通知详细信息
+      parameters:
+      - description: 通知ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Notification'
+      security:
+      - Bearer: []
+      summary: 通知详情
+      tags:
+      - Notification
+    put:
+      description: 修改现有通知的标题、内容等信息(仅限管理员)
+      parameters:
+      - description: 通知ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新内容
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateNotificationRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Notification'
+        "403":
+          description: 无权操作
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 更新通知
+      tags:
+      - Notification
+  /api/v1/notifications/{id}/read:
+    put:
+      description: 将指定通知标记为当前用户已读
+      parameters:
+      - description: 通知ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 标记已读
+      tags:
+      - Notification
+  /api/v1/notifications/unread-count:
+    get:
+      description: 获取当前用户的未读通知总数
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+      security:
+      - Bearer: []
+      summary: 未读通知数
+      tags:
+      - Notification
+  /api/v1/notifications/users:
+    get:
+      description: 获取所有用户列表，用于发送通知时选择目标(仅限管理员)
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "403":
+          description: 无权操作
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 获取用户列表
+      tags:
+      - Notification
+  /api/v1/payments:
+    get:
+      description: 根据日期范围或项目ID筛选款项记录
+      parameters:
+      - description: 开始日期 (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: 结束日期 (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      - description: 项目ID (可选，若提供则忽略日期范围)
+        in: query
+        name: project_id
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Payment'
+            type: array
+      security:
+      - Bearer: []
+      summary: 查询款项列表
+      tags:
+      - Payment
+    post:
+      description: 录入新的款项记录(收款计划)
+      parameters:
+      - description: 款项信息
+        in: body
+        name: payment
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PaymentRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Payment'
+      security:
+      - Bearer: []
+      summary: 创建款项
+      tags:
+      - Payment
+  /api/v1/payments/{id}:
+    delete:
+      description: 永久删除指定的款项记录
+      parameters:
+      - description: 款项ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 删除款项
+      tags:
+      - Payment
+    put:
+      description: 修改现有款项的金额、日期、阶段等信息
+      parameters:
+      - description: 款项ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新内容
+        in: body
+        name: payment
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PaymentRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Payment'
+      security:
+      - Bearer: []
+      summary: 更新款项
+      tags:
+      - Payment
+  /api/v1/payments/{id}/confirm:
+    post:
+      description: 将款项状态流转为"已收款"，并记录实际收款日期和方式
+      parameters:
+      - description: 款项ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 确认信息
+        in: body
+        name: confirm
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ConfirmPaymentRequest'
+      responses:
+        "200":
+          description: 确认成功
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 确认收款
+      tags:
+      - Payment
+  /api/v1/projects:
+    get:
+      description: 分页查询项目，支持按状态(status)和关键词(keyword)搜索
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: '项目状态: pending, processing, completed, archived'
+        in: query
+        name: status
+        type: string
+      - description: '搜索关键词: 项目名称或合同编号'
+        in: query
+        name: keyword
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.PageResult'
+      security:
+      - Bearer: []
+      summary: 获取项目列表
+      tags:
+      - Project
+    post:
+      description: 创建一个新的项目记录
+      parameters:
+      - description: 项目信息
+        in: body
+        name: project
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateProjectRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Project'
+      security:
+      - Bearer: []
+      summary: 创建项目
+      tags:
+      - Project
+  /api/v1/projects/{id}:
+    delete:
+      description: 软删除或硬删除项目记录(视Repo实现而定)，通常会级联删除关联款项
+      parameters:
+      - description: 项目ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 删除项目
+      tags:
+      - Project
+    get:
+      description: 根据项目ID获取详细信息
+      parameters:
+      - description: 项目ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Project'
+      security:
+      - Bearer: []
+      summary: 项目详情
+      tags:
+      - Project
+    put:
+      description: 更新项目的基础信息、状态或合同金额
+      parameters:
+      - description: 项目ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新信息
+        in: body
+        name: project
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateProjectRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Project'
+      security:
+      - Bearer: []
+      summary: 更新项目
+      tags:
+      - Project
+  /api/v1/projects/{id}/archive:
+    post:
+      description: 将项目标记为已归档，不再在常规列表中显示
+      parameters:
+      - description: 项目ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: 归档成功
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 归档项目
+      tags:
+      - Project
+  /api/v1/projects/{id}/payments:
+    get:
+      description: 根据项目ID获取该项目下的所有款项记录
+      parameters:
+      - description: 项目ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Payment'
+            type: array
+      security:
+      - Bearer: []
+      summary: 项目款项列表
+      tags:
+      - Payment
+  /api/v1/projects/check-contract-number:
+    get:
+      description: 检查输入的合同编号是否已被其他项目使用
+      parameters:
+      - description: 待检查的合同编号
+        in: query
+        name: contract_number
+        required: true
+        type: string
+      - description: 排除的项目ID(编辑时使用)
+        in: query
+        name: exclude_id
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+      security:
+      - Bearer: []
+      summary: 检查合同号唯一性
+      tags:
+      - Project
+  /api/v1/projects/generate-contract-number:
+    get:
+      description: 根据日期生成格式为 HTYYYYMMDDXXXX 的智能建议编号
+      parameters:
+      - description: 项目日期 (YYYY-MM-DD)
+        in: query
+        name: date
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: 生成合同编号
+      tags:
+      - Project
+  /api/v1/sync/compare:
+    post:
+      responses: {}
+  /api/v1/sync/config:
+    get:
+      responses: {}
+  /api/v1/sync/execute:
+    post:
+      responses: {}
+  /api/v1/sync/test-connection:
+    post:
+      responses: {}
+  /api/v1/system/check-update:
+    get:
+      description: 从 GitHub 获取最新 Release 信息
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CheckUpdateResponse'
+      summary: 检查更新
+      tags:
+      - System
+  /api/v1/users/me:
+    get:
+      description: 获取当前登录用户的详细资料
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      security:
+      - Bearer: []
+      summary: 获取当前用户信息
+      tags:
+      - User
+    put:
+      description: 更新当前用户的姓名、邮箱、职位等信息
+      parameters:
+      - description: 更新参数
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateProfileRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      security:
+      - Bearer: []
+      summary: 更新个人资料
+      tags:
+      - User
+  /api/v1/users/me/password:
+    put:
+      description: 修改当前登录用户的密码
+      parameters:
+      - description: 密码修改参数
+        in: body
+        name: password
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangePasswordRequest'
+      responses:
+        "200":
+          description: 此处返回成功消息
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: 修改密码
+      tags:
+      - User
+swagger: "2.0"

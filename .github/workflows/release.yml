@@ -19,15 +19,15 @@ jobs:
       fail-fast: false
       matrix:
         # 定义构建矩阵，分别为 macOS, Ubuntu (Linux), Windows
-        platform: [macos-latest, ubuntu-latest, windows-latest]
+        platform: [macos-15, ubuntu-24.04, windows-2025]
         include:
-          - platform: macos-latest
+          - platform: macos-15
             goos: darwin
             task_os: darwin
-          - platform: ubuntu-latest
+          - platform: ubuntu-24.04
             goos: linux
             task_os: linux
-          - platform: windows-latest
+          - platform: windows-2025
             goos: windows
             task_os: windows
 
@@ -39,18 +39,18 @@ jobs:
       # 2. 设置 Node.js 环境 (用于构建前端)
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '24.15.0'
 
       # 3. 设置 Go 环境 (用于构建后端)
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25.5'
-          check-latest: true
+          go-version-file: go.mod
+          check-latest: false
 
       # 4. (Linux) 安装系统依赖库
       # 包括 GTK3, WebKit2GTK (Wails 运行时依赖) 以及 rpm/nsis 打包工具
       - name: Install Linux Dependencies
-        if: matrix.platform == 'ubuntu-latest'
+        if: matrix.task_os == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev build-essential nsis rpm
@@ -61,11 +61,11 @@ jobs:
 
       # 6. 安装 Task 构建工具
       - name: Install Task
-        run: go install github.com/go-task/task/v3/cmd/task@latest
+        run: go install github.com/go-task/task/v3/cmd/task@v3.51.1
 
       # 7. (Windows) 安装打包依赖 NSIS
       - name: Install Windows Dependencies
-        if: matrix.platform == 'windows-latest'
+        if: matrix.task_os == 'windows'
         shell: pwsh
         run: |
           choco install nsis
@@ -86,7 +86,7 @@ jobs:
       # 9. (macOS) 压缩 App Bundle
       # 将 .app 文件夹压缩为 .zip 以便于分发
       - name: Zip macOS App
-        if: matrix.platform == 'macos-latest'
+        if: matrix.task_os == 'darwin'
         run: |
           cd bin
           zip -r Orange-${{ github.ref_name }}-macOS-universal.zip Orange.app
@@ -95,7 +95,7 @@ jobs:
       # 10. (Windows) 查找并重命名安装包
       # project.nsi 将安装包直接输出到了 bin/ 目录
       - name: Prepare Windows Artifacts
-        if: matrix.platform == 'windows-latest'
+        if: matrix.task_os == 'windows'
         shell: pwsh
         run: |
           $version = $env:GITHUB_REF_NAME
@@ -116,7 +116,7 @@ jobs:
       # 11. (Linux) 重命名构建产物
       # 为生成的 .deb, .rpm, .AppImage 添加版本号后缀
       - name: Prepare Linux Artifacts
-        if: matrix.platform == 'ubuntu-latest'
+        if: matrix.task_os == 'linux'
         run: |
           VERSION=${GITHUB_REF_NAME}
           cd bin

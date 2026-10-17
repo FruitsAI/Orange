@@ -10,8 +10,8 @@ import (
 // JWT 基础配置
 var (
 	// SecretKey JWT 签名密钥
-	// 注意: 生产环境应从配置文件或环境变量读取，而非硬编码。
-	SecretKey = []byte("orange-secret-key-xu")
+	// 必须从配置文件或环境变量读取，禁止使用硬编码默认值。
+	SecretKey []byte
 
 	// TokenExpiry Token 有效期时长
 	// 此变量通常由 main.go 在启动时根据配置注入初始化。

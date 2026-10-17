@@ -6,6 +6,8 @@ import (
 
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
+	"github.com/FruitsAI/Orange/internal/pkg/cache"
+	"github.com/FruitsAI/Orange/internal/pkg/utils"
 	"github.com/FruitsAI/Orange/internal/repository"
 )
 
@@ -32,6 +34,28 @@ func NewDashboardService() *DashboardService {
 	}
 }
 
+// dashboardPeriods GetStats 支持的统计周期，同时是缓存键与缓存失效的唯一依据
+var dashboardPeriods = []string{"all", "week", "month", "quarter", "year"}
+
+// normalizeDashboardPeriod 归一化客户端传入的统计周期
+// 空值与未知值一律归为 "all"，保证缓存键有界且失效列表完全覆盖
+func normalizeDashboardPeriod(period string) string {
+	for _, p := range dashboardPeriods {
+		if period == p {
+			return period
+		}
+	}
+	return "all"
+}
+
+// invalidateDashboardCache 清除指定用户所有周期的 Dashboard 统计缓存
+// 供 Payment/Project 服务在数据变更后调用。
+func invalidateDashboardCache(userID int64) {
+	for _, period := range dashboardPeriods {
+		_ = cache.Delete(fmt.Sprintf("dashboard:stats:v1:%d:%s", userID, period))
+	}
+}
+
 // GetStats 获取仪表盘核心统计数据
 // 根据指定的用户ID和时间周期，计算总金额、已收款、待收款、逾期金额及各项数据的环比趋势。
 //
@@ -47,9 +71,21 @@ func NewDashboardService() *DashboardService {
 //   - 当 period 为 "all" 或空字符串时，返回全局统计数据（基于项目合同总额），此时不计算趋势（趋势值为0）。
 //   - 其他周期模式下，统计数据基于实际产生的款项（Payment）计算，并会计算与上一周期的环比趋势。
 func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, error) {
+	// 归一化周期，未知/空值 → "all"，防止任意字符串撑爆缓存键空间
+	period = normalizeDashboardPeriod(period)
+
+	// 尝试从缓存获取 (v1 表示缓存数据结构版本)
+	cacheKey := fmt.Sprintf("dashboard:stats:v1:%d:%s", userID, period)
+	var stats dto.Stats
+
+	// 尝试从缓存读取
+	if err := cache.GetJSON(cacheKey, &stats); err == nil {
+		return &stats, nil
+	}
+
+	// 缓存未命中，从数据库查询
 	// 模式 1: 全局统计模式（通常用于工作台概览）
-	// 当未指定周期或周期为 "all" 时触发
-	if period == "all" || period == "" {
+	if period == "all" {
 		// 核心逻辑: 从 Project 表获取基于合同金额的宏观统计
 		// 也就是所有项目的总合同额、已收和待收
 		totalAmount, paidAmount, pendingAmount, err := s.projectRepo.GetStats(userID)
@@ -59,7 +95,10 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 
 		// 补充逻辑: 计算逾期金额
 		// 逾期金额需要基于 Payment 表中具体款项的截止日期来判断
-		overdueAmount := s.paymentRepo.SumOverdue(userID)
+		overdueAmount, err := s.paymentRepo.SumOverdue(userID)
+		if err != nil {
+			return nil, err
+		}
 
 		// ---------------------------------------------------------------------
 		// 优化: 计算趋势 (Trend)
@@ -67,14 +106,19 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 		// 而不是无意义的 0% 或 全量 vs 0。
 		// ---------------------------------------------------------------------
 
-		// 1. 定义 "本月" 和 "上月" 的时间范围
+		// 1. 定义 "本月" 和 "上月" 的时间范围（使用自然月）
 		now := time.Now()
-		// 本月范围
-		startDate := now.AddDate(0, 0, -29).Format("2006-01-02")
+
+		// 本月：从月初到现在
+		currentMonthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		startDate := currentMonthStart.Format("2006-01-02")
 		endDate := now.Format("2006-01-02") + " 23:59:59"
-		// 上月范围
-		prevStartDate := now.AddDate(0, 0, -59).Format("2006-01-02")
-		prevEndDate := now.AddDate(0, 0, -30).Format("2006-01-02") + " 23:59:59"
+
+		// 上月：上个月的第一天到最后一天
+		prevMonthStart := currentMonthStart.AddDate(0, -1, 0)
+		prevMonthEnd := currentMonthStart.Add(-time.Second)
+		prevStartDate := prevMonthStart.Format("2006-01-02")
+		prevEndDate := prevMonthEnd.Format("2006-01-02") + " 23:59:59"
 
 		// 2. 获取本月统计作为 "当前周期值" (只用于计算 Trend)
 		currTotal, currPaid, currPending, currOverdue, currAvgDays, err := s.paymentRepo.GetStatsByPeriod(userID, startDate, endDate)
@@ -91,113 +135,61 @@ func (s *DashboardService) GetStats(userID int64, period string) (*dto.Stats, er
 			return nil, err
 		}
 
-		// 4. 定义环比计算函数
-		calcTrend := func(curr, prev float64) float64 {
-			if prev == 0 {
-				if curr > 0 {
-					return 100
-				}
-				return 0
-			}
-			return ((curr - prev) / prev) * 100
-		}
-
 		// 5. 组装返回结构
-		// 注意: Amount 字段使用全量数据 (ProjectRepo), Trend 字段使用月度环比
-		return &dto.Stats{
+		// 注意: Amount 字段使用全量数据 (ProjectRepo)；
+		// AvgCollectionDays 与所有 Trend 字段一致，采用"本月 vs 上月"口径，
+		// 避免出现数值为 0 而趋势非 0 的矛盾展示
+		result := &dto.Stats{
 			TotalAmount:            totalAmount,   // 全量
 			PaidAmount:             paidAmount,    // 全量
 			PendingAmount:          pendingAmount, // 全量
 			OverdueAmount:          overdueAmount, // 全量
-			AvgCollectionDays:      0,             // 全局模式下暂不计算
-			TotalTrend:             calcTrend(currTotal, prevTotal),
-			PaidTrend:              calcTrend(currPaid, prevPaid),
-			PendingTrend:           calcTrend(currPending, prevPending),
-			OverdueTrend:           calcTrend(currOverdue, prevOverdue), // 计算逾期金额的环比趋势
-			AvgCollectionDaysTrend: calcTrend(currAvgDays, prevAvgDays),
-		}, nil
+			AvgCollectionDays:      currAvgDays,   // 本月均值
+			TotalTrend:             utils.CalcPercentageTrend(currTotal, prevTotal),
+			PaidTrend:              utils.CalcPercentageTrend(currPaid, prevPaid),
+			PendingTrend:           utils.CalcPercentageTrend(currPending, prevPending),
+			OverdueTrend:           utils.CalcPercentageTrend(currOverdue, prevOverdue),
+			AvgCollectionDaysTrend: utils.CalcPercentageTrend(currAvgDays, prevAvgDays),
+		}
+
+		// 写入缓存
+		_ = cache.SetJSON(cacheKey, result, 1*time.Minute)
+		return result, nil
 	}
 
 	// 模式 2: 按周期统计模式（通常用于数据分析页面）
 	// 需要计算当前周期和上一周期的数据，以得出趋势百分比
-	now := time.Now()
-	var startDate, endDate string         // 当前周期的时间范围
-	var prevStartDate, prevEndDate string // 上一周期的时间范围（用于计算环比）
-
-	// 根据不同的周期类型计算时间范围
-	switch period {
-	case "week":
-		// 本周（过去7天） vs 上周（再往前7天）
-		startDate = now.AddDate(0, 0, -6).Format("2006-01-02")
-		endDate = now.Format("2006-01-02") + " 23:59:59"
-		prevStartDate = now.AddDate(0, 0, -13).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, 0, -7).Format("2006-01-02") + " 23:59:59"
-	case "month":
-		// 本月（过去30天） vs 上月
-		startDate = now.AddDate(0, 0, -29).Format("2006-01-02")
-		endDate = now.Format("2006-01-02") + " 23:59:59"
-		prevStartDate = now.AddDate(0, 0, -59).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, 0, -30).Format("2006-01-02") + " 23:59:59"
-	case "quarter":
-		// 本季度（过去3个月） vs 上季度
-		startDate = now.AddDate(0, -3, 0).Format("2006-01-02")
-		endDate = now.Format("2006-01-02") + " 23:59:59"
-		prevStartDate = now.AddDate(0, -6, 0).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, -3, 0).Format("2006-01-02") + " 23:59:59"
-	case "year":
-		// 本年（过去12个月/1年） vs 去年
-		startDate = now.AddDate(-1, 0, 0).Format("2006-01-02")
-		endDate = now.Format("2006-01-02") + " 23:59:59"
-		prevStartDate = now.AddDate(-2, 0, 0).Format("2006-01-02")
-		prevEndDate = now.AddDate(-1, 0, 0).Format("2006-01-02") + " 23:59:59"
-	default:
-		// 默认情况：按照最近30天计算 (同 month)
-		startDate = now.AddDate(0, 0, -29).Format("2006-01-02")
-		endDate = now.Format("2006-01-02") + " 23:59:59"
-		prevStartDate = now.AddDate(0, 0, -59).Format("2006-01-02")
-		prevEndDate = now.AddDate(0, 0, -30).Format("2006-01-02") + " 23:59:59"
-	}
+	current, previous := utils.GetCurrentAndPreviousPeriod(period)
 
 	// 步骤 1: 获取当前周期的各项统计指标
-	currTotal, currPaid, currPending, currOverdue, currAvgDays, err := s.paymentRepo.GetStatsByPeriod(userID, startDate, endDate)
+	currTotal, currPaid, currPending, currOverdue, currAvgDays, err := s.paymentRepo.GetStatsByPeriod(userID, current.StartDate, current.EndDate)
 	if err != nil {
 		return nil, err
 	}
-	// 获取当前的逾期总额（逾期是一个状态值，通常通过快照获取，但此处简单处理为当前总逾期）
-	// 注意：在 "all" 模式下，主数值 OverdueAmount 依然使用 SumOverdue(userID) 全量计算
-	// 而 currOverdue 仅用于计算趋势 (本周期内产生的逾期)
 
 	// 步骤 2: 获取上一周期的各项统计指标（用于对比）
-	prevTotal, prevPaid, prevPending, prevOverdue, prevAvgDays, err := s.paymentRepo.GetStatsByPeriod(userID, prevStartDate, prevEndDate)
+	prevTotal, prevPaid, prevPending, prevOverdue, prevAvgDays, err := s.paymentRepo.GetStatsByPeriod(userID, previous.StartDate, previous.EndDate)
 	if err != nil {
 		return nil, err
 	}
 
-	// 内部辅助函数: 计算环比增长率
-	// 公式: ((当前值 - 前值) / 前值) * 100
-	calcTrend := func(curr, prev float64) float64 {
-		if prev == 0 {
-			if curr > 0 {
-				return 100 // 如果前期为0且当前有值，视为增长100%（或可根据业务定义为 N/A）
-			}
-			return 0
-		}
-		return ((curr - prev) / prev) * 100
-	}
-
-	// 步骤 3: 组装最终统计对象
-	return &dto.Stats{
+	// 步骤 3: 组装返回结构
+	result := &dto.Stats{
 		TotalAmount:            currTotal,
 		PaidAmount:             currPaid,
 		PendingAmount:          currPending,
 		OverdueAmount:          currOverdue,
 		AvgCollectionDays:      currAvgDays,
-		TotalTrend:             calcTrend(currTotal, prevTotal),
-		PaidTrend:              calcTrend(currPaid, prevPaid),
-		PendingTrend:           calcTrend(currPending, prevPending),
-		OverdueTrend:           calcTrend(currOverdue, prevOverdue), // 计算逾期金额的环比趋势
-		AvgCollectionDaysTrend: calcTrend(currAvgDays, prevAvgDays),
-	}, nil
+		TotalTrend:             utils.CalcPercentageTrend(currTotal, prevTotal),
+		PaidTrend:              utils.CalcPercentageTrend(currPaid, prevPaid),
+		PendingTrend:           utils.CalcPercentageTrend(currPending, prevPending),
+		OverdueTrend:           utils.CalcPercentageTrend(currOverdue, prevOverdue),
+		AvgCollectionDaysTrend: utils.CalcPercentageTrend(currAvgDays, prevAvgDays),
+	}
+
+	// 写入缓存
+	_ = cache.SetJSON(cacheKey, result, 1*time.Minute)
+	return result, nil
 }
 
 // GetIncomeTrend 获取收入趋势图表数据
@@ -317,7 +309,7 @@ func (s *DashboardService) GetRecentProjects(userID int64) ([]models.Project, er
 }
 
 // GetUpcomingPayments 获取即将到期的款项
-// 查询未来7天内到期的待收款项，最多返回5条。
+// 查询今天至未来7天内到期的待收款项。
 //
 // 参数:
 //   - userID: 用户ID
@@ -326,6 +318,5 @@ func (s *DashboardService) GetRecentProjects(userID int64) ([]models.Project, er
 //   - []models.Payment: 款项列表切片
 //   - error: 错误信息
 func (s *DashboardService) GetUpcomingPayments(userID int64) ([]models.Payment, error) {
-	// 参数说明: ListUpcoming(userID, days=7, limit=5)
-	return s.paymentRepo.ListUpcoming(userID, 7, 5)
+	return s.paymentRepo.ListUpcoming(userID, 7, 20)
 }

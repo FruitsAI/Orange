@@ -1,0 +1,116 @@
+.ods-alert {
+  --ods-alert-color: var(--ods-color-fg-muted);
+  --ods-alert-tint: var(--ods-color-bg-surface-hover);
+
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: start;
+  gap: var(--ods-space-3);
+  padding: var(--ods-space-4) var(--ods-space-5);
+  border: 1px solid color-mix(in srgb, var(--ods-alert-color) 22%, transparent);
+  border-radius: var(--ods-radius-panel);
+  background:
+    linear-gradient(var(--ods-alert-tint), var(--ods-alert-tint)),
+    var(--ods-color-bg-surface-raised);
+  box-shadow: var(--ods-shadow-soft);
+  color: var(--ods-color-fg-default);
+  overflow: hidden;
+}
+
+/* Ember bar: the tone's signal, echoing the hero eyebrow pulse. */
+.ods-alert::before {
+  position: absolute;
+  inset-block: var(--ods-space-3);
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: var(--ods-radius-pill);
+  background: var(--ods-alert-color);
+  content: '';
+}
+
+.ods-alert[data-tone='success'] {
+  --ods-alert-color: var(--ods-color-status-success);
+  --ods-alert-tint: var(--ods-color-status-success-soft);
+}
+
+.ods-alert[data-tone='warning'] {
+  --ods-alert-color: var(--ods-color-status-warning);
+  --ods-alert-tint: var(--ods-color-status-warning-soft);
+}
+
+.ods-alert[data-tone='danger'] {
+  --ods-alert-color: var(--ods-color-status-danger);
+  --ods-alert-tint: var(--ods-color-status-danger-soft);
+}
+
+.ods-alert[data-tone='info'] {
+  --ods-alert-color: var(--ods-color-status-info);
+  --ods-alert-tint: var(--ods-color-status-info-soft);
+}
+
+.ods-alert__icon {
+  display: grid;
+  width: var(--ods-space-8);
+  height: var(--ods-space-8);
+  place-items: center;
+  border-radius: var(--ods-radius-control);
+  background: color-mix(in srgb, var(--ods-alert-color) 14%, transparent);
+  color: var(--ods-alert-color);
+  font-size: var(--ods-font-size-lg);
+  line-height: var(--ods-line-height-tight);
+}
+
+.ods-alert__copy {
+  min-width: 0;
+  padding-block: var(--ods-space-1);
+}
+
+.ods-alert__title {
+  margin: var(--ods-space-0);
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-display);
+  font-size: var(--ods-font-size-md);
+  font-weight: var(--ods-font-weight-semibold);
+  letter-spacing: var(--ods-letter-spacing-tight);
+  line-height: var(--ods-line-height-heading);
+}
+
+.ods-alert__description {
+  margin-top: var(--ods-space-1);
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-sm);
+  line-height: var(--ods-line-height-body);
+}
+
+.ods-alert__action {
+  display: flex;
+  align-items: center;
+}
+
+.ods-alert__dismiss {
+  display: grid;
+  width: var(--ods-control-height-sm);
+  height: var(--ods-control-height-sm);
+  padding: var(--ods-space-0);
+  place-items: center;
+  border: 0;
+  border-radius: var(--ods-radius-pill);
+  background: transparent;
+  color: var(--ods-color-fg-muted);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--ods-duration-fast) var(--ods-ease-standard),
+    color var(--ods-duration-fast) var(--ods-ease-standard);
+}
+
+.ods-alert__dismiss:hover {
+  background: var(--ods-color-bg-surface-hover);
+  color: var(--ods-color-fg-default);
+}
+
+.ods-alert__dismiss:focus-visible {
+  outline: var(--ods-focus-ring-width) solid var(--ods-color-border-focus);
+  outline-offset: var(--ods-focus-ring-offset);
+}

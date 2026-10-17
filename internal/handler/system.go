@@ -4,14 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/FruitsAI/Orange/internal/config"
+	"github.com/FruitsAI/Orange/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 )
 
 // SystemHandler 系统级功能处理器
 // 负责处理如版本检查、系统状态检测等全局性请求。
 type SystemHandler struct{}
+
+var updateHTTPClient = &http.Client{
+	Timeout: 10 * time.Second,
+}
 
 // NewSystemHandler 创建系统处理器实例
 func NewSystemHandler() *SystemHandler {
@@ -38,27 +44,23 @@ func (h *SystemHandler) CheckUpdate(c *gin.Context) {
 	}
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
 
-	resp, err := http.Get(url)
+	resp, err := updateHTTPClient.Get(url)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch update info"})
+		response.InternalError(c, "Failed to fetch update info")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		c.JSON(resp.StatusCode, gin.H{"error": "Failed to fetch update info from GitHub"})
+		response.InternalError(c, "Failed to fetch update info from GitHub")
 		return
 	}
 
 	var releaseInfo CheckUpdateResponse
 	if err := json.NewDecoder(resp.Body).Decode(&releaseInfo); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse GitHub response"})
+		response.InternalError(c, "Failed to parse GitHub response")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":    0,
-		"message": "success",
-		"data":    releaseInfo,
-	})
+	response.Success(c, releaseInfo)
 }

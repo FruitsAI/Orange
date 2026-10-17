@@ -30,18 +30,30 @@ export interface IncomeTrend {
 // 仪表盘 API 集合
 export const dashboardApi = {
   // 获取统计数据
-  getStats: (period?: 'week' | 'month' | 'quarter' | 'year') =>
-    api.get<ApiResponse<DashboardStats>>('/dashboard/stats', { params: { period, _t: Date.now() } }),
+  getStats: (period?: 'week' | 'month' | 'quarter' | 'year', signal?: AbortSignal) =>
+    api.get<ApiResponse<DashboardStats>>('/dashboard/stats', {
+      params: { period, _t: Date.now() },
+      signal,
+    }),
 
   // 获取收入趋势
-  getIncomeTrend: (period?: 'week' | 'month' | 'quarter' | 'year') =>
-    api.get<ApiResponse<IncomeTrend>>('/dashboard/income-trend', { params: { period, _t: Date.now() } }),
+  getIncomeTrend: (period?: 'week' | 'month' | 'quarter' | 'year', signal?: AbortSignal) =>
+    api.get<ApiResponse<IncomeTrend>>('/dashboard/income-trend', {
+      params: { period, _t: Date.now() },
+      signal,
+    }),
 
   // 获取近期项目
-  getRecentProjects: () =>
-    api.get<ApiResponse<Project[]>>('/dashboard/recent-projects', { params: { _t: Date.now() } }),
+  getRecentProjects: (signal?: AbortSignal) =>
+    api.get<ApiResponse<Project[]>>('/dashboard/recent-projects', {
+      params: { _t: Date.now() },
+      signal,
+    }),
 
   // 获取即将到期收款
-  getUpcomingPayments: () =>
-    api.get<ApiResponse<Payment[]>>('/dashboard/upcoming-payments', { params: { _t: Date.now() } }),
+  getUpcomingPayments: (signal?: AbortSignal) =>
+    api.get<ApiResponse<Payment[]>>('/dashboard/upcoming-payments', {
+      params: { _t: Date.now() },
+      signal,
+    }),
 }

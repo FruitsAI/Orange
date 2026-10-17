@@ -1,0 +1,81 @@
+.ods-number-input {
+  display: inline-flex;
+  align-items: center;
+  height: var(--ods-control-height-md);
+  overflow: hidden;
+  border: 1px solid var(--ods-color-border-default);
+  border-radius: var(--ods-radius-control);
+  background: var(--ods-color-bg-surface);
+  transition:
+    border-color var(--ods-duration-fast) var(--ods-ease-standard),
+    box-shadow var(--ods-duration-fast) var(--ods-ease-standard);
+}
+
+.ods-number-input[data-size='sm'] {
+  height: var(--ods-control-height-sm);
+}
+
+.ods-number-input[data-size='lg'] {
+  height: var(--ods-control-height-lg);
+}
+
+.ods-number-input:focus-within {
+  border-color: var(--ods-color-border-focus);
+  box-shadow: 0 0 0 4px var(--ods-color-accent-soft);
+}
+
+.ods-number-input[data-disabled='true'] {
+  background: var(--ods-color-bg-canvas-subtle);
+}
+
+.ods-number-input__field {
+  width: 4ch;
+  height: 100%;
+  flex: 1 1 auto;
+  border: 0;
+  background: transparent;
+  color: var(--ods-color-fg-default);
+  font-family: var(--ods-font-family-body);
+  font-size: var(--ods-font-size-md);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.ods-number-input__field::-webkit-outer-spin-button,
+.ods-number-input__field::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.ods-number-input__button {
+  display: inline-flex;
+  width: var(--ods-space-8);
+  height: 100%;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--ods-color-fg-muted);
+  font-size: var(--ods-font-size-lg);
+  cursor: pointer;
+  transition:
+    background-color var(--ods-duration-fast) var(--ods-ease-standard),
+    color var(--ods-duration-fast) var(--ods-ease-standard);
+}
+
+.ods-number-input__button:hover:not(:disabled) {
+  background: var(--ods-color-bg-surface-hover);
+  color: var(--ods-color-accent);
+}
+
+.ods-number-input__button:active:not(:disabled) {
+  background: var(--ods-color-bg-surface-pressed);
+}
+
+.ods-number-input__button:disabled {
+  color: var(--ods-color-fg-disabled);
+  cursor: not-allowed;
+}

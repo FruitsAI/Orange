@@ -2,13 +2,16 @@ package service
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/FruitsAI/Orange/internal/database"
 	"github.com/FruitsAI/Orange/internal/dto"
 	"github.com/FruitsAI/Orange/internal/models"
+	pkgerrors "github.com/FruitsAI/Orange/internal/pkg/errors"
 	"github.com/FruitsAI/Orange/internal/repository"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // ProjectService 项目服务
@@ -71,18 +74,18 @@ func (s *ProjectService) List(userID int64, status, keyword string, page, pageSi
 	}, nil
 }
 
-// Get 获取项目详情
-// 根据项目ID获取单个项目的详细信息，并默认包含该项目关联的所有款项数据。
-//
-// 参数:
-//   - id: 项目ID
-//
-// 返回:
-//   - *models.Project: 项目实体（包含 Preloaded Payments）
-//   - error: 记录不存在或数据库错误
-func (s *ProjectService) Get(id int64) (*models.Project, error) {
-	// 使用 FindByIDWithPayments 确保在详情页能展示关联的收款计划
-	return s.projectRepo.FindByIDWithPayments(id)
+// GetForUser 获取项目详情（校验归属）
+// 根据项目ID获取单个项目的详细信息，并包含该项目关联的所有款项数据，
+// 用于详情页展示收款计划。
+func (s *ProjectService) GetForUser(userID, id int64) (*models.Project, error) {
+	project, err := s.projectRepo.FindByIDWithPaymentsForUser(id, userID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, pkgerrors.ErrProjectNotFound
+		}
+		return nil, pkgerrors.Wrap(err, "查询项目失败")
+	}
+	return project, nil
 }
 
 // Create 创建新项目
@@ -95,27 +98,40 @@ func (s *ProjectService) Get(id int64) (*models.Project, error) {
 //   - *models.Project: 创建成功的项目实体
 //   - error: 日期解析失败或数据库写入错误
 func (s *ProjectService) Create(input dto.CreateProjectRequest) (*models.Project, error) {
-	// 1. 日期字段解析 (字符串 "YYYY-MM-DD" -> time.Time)
-	startDate, err := time.Parse("2006-01-02", input.StartDate)
-	if err != nil {
-		return nil, err
+	// 1. 检查合同编号是否已存在
+	if input.ContractNumber != "" {
+		exists, err := s.projectRepo.ExistsByContractNumber(input.UserID, input.ContractNumber, 0)
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "检查合同编号失败")
+		}
+		if exists {
+			return nil, pkgerrors.ErrContractDuplicate
+		}
 	}
-	endDate, err := time.Parse("2006-01-02", input.EndDate)
+
+	// 2. 日期字段解析 (字符串 "YYYY-MM-DD" -> time.Time)
+	// 使用 ParseInLocation 确保时区一致性
+	loc := time.Local // 或使用 time.LoadLocation("Asia/Shanghai")
+	startDate, err := time.ParseInLocation("2006-01-02", input.StartDate, loc)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.WrapWithCode(err, 400, "开始日期格式错误")
+	}
+	endDate, err := time.ParseInLocation("2006-01-02", input.EndDate, loc)
+	if err != nil {
+		return nil, pkgerrors.WrapWithCode(err, 400, "结束日期格式错误")
 	}
 
 	// 合同日期为选填项，需处理空值情况
 	var contractDate *time.Time
 	if input.ContractDate != "" {
-		t, err := time.Parse("2006-01-02", input.ContractDate)
+		t, err := time.ParseInLocation("2006-01-02", input.ContractDate, loc)
 		if err != nil {
-			return nil, err
+			return nil, pkgerrors.WrapWithCode(err, 400, "合同日期格式错误")
 		}
 		contractDate = &t
 	}
 
-	// 2. 构建项目实体
+	// 3. 构建项目实体
 	project := &models.Project{
 		Name:           input.Name,
 		Company:        input.Company,
@@ -131,55 +147,60 @@ func (s *ProjectService) Create(input dto.CreateProjectRequest) (*models.Project
 		UserID:         input.UserID,
 	}
 
-	// 3. 设置默认状态
+	// 4. 设置默认状态
 	if project.Status == "" {
 		project.Status = "active"
 	}
 
-	// 4. 持久化到数据库
+	// 5. 持久化到数据库
 	if err := s.projectRepo.Create(project); err != nil {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "创建项目失败")
 	}
 
+	// 项目合同总额影响 Dashboard 全局统计，创建后清除缓存
+	invalidateDashboardCache(input.UserID)
 	return project, nil
 }
 
-// Update 更新项目详情
-// 根据项目ID更新指定字段。
-//
-// 参数:
-//   - id: 项目ID
-//   - input: 更新请求DTO
-//
-// 返回:
-//   - *models.Project: 更新后的项目实体
-//   - error: 记录不存在或更新失败
-func (s *ProjectService) Update(id int64, input dto.CreateProjectRequest) (*models.Project, error) {
-	// 1. 检查是否存在
-	project, err := s.projectRepo.FindByID(id)
+// UpdateForUser 更新项目详情（校验归属与合同编号唯一性）
+func (s *ProjectService) UpdateForUser(userID, id int64, input dto.CreateProjectRequest) (*models.Project, error) {
+	project, err := s.projectRepo.FindByIDForUser(id, userID)
 	if err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, pkgerrors.ErrProjectNotFound
+		}
+		return nil, pkgerrors.Wrap(err, "查询项目失败")
 	}
 
-	// 2. 解析日期字段
-	startDate, err := time.Parse("2006-01-02", input.StartDate)
-	if err != nil {
-		return nil, err
+	// 检查合同编号唯一性
+	if input.ContractNumber != "" && input.ContractNumber != project.ContractNumber {
+		exists, err := s.projectRepo.ExistsByContractNumber(userID, input.ContractNumber, id)
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "检查合同编号失败")
+		}
+		if exists {
+			return nil, pkgerrors.ErrContractDuplicate
+		}
 	}
-	endDate, err := time.Parse("2006-01-02", input.EndDate)
+
+	loc := time.Local
+	startDate, err := time.ParseInLocation("2006-01-02", input.StartDate, loc)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.WrapWithCode(err, 400, "开始日期格式错误")
+	}
+	endDate, err := time.ParseInLocation("2006-01-02", input.EndDate, loc)
+	if err != nil {
+		return nil, pkgerrors.WrapWithCode(err, 400, "结束日期格式错误")
 	}
 	var contractDate *time.Time
 	if input.ContractDate != "" {
-		t, err := time.Parse("2006-01-02", input.ContractDate)
+		t, err := time.ParseInLocation("2006-01-02", input.ContractDate, loc)
 		if err != nil {
-			return nil, err
+			return nil, pkgerrors.WrapWithCode(err, 400, "合同日期格式错误")
 		}
 		contractDate = &t
 	}
 
-	// 3. 更新实体字段
 	project.Name = input.Name
 	project.Company = input.Company
 	project.TotalAmount = input.TotalAmount
@@ -192,40 +213,47 @@ func (s *ProjectService) Update(id int64, input dto.CreateProjectRequest) (*mode
 	project.EndDate = endDate
 	project.Description = input.Description
 
-	// 4. 执行数据库更新
 	if err := s.projectRepo.Update(project); err != nil {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "更新项目失败")
 	}
 
+	// 合同总额/状态变更影响 Dashboard 统计，更新后清除缓存
+	invalidateDashboardCache(userID)
 	return project, nil
 }
 
-// Delete 删除项目及关联数据
-// 这是一个事务操作，会同时删除项目本身及其下属的所有款项记录。
-//
-// 参数:
-//   - id: 待删除的项目ID
-//
-// 返回:
-//   - error: 事务执行错误
-func (s *ProjectService) Delete(id int64) error {
-	return database.GetDB().Transaction(func(tx *gorm.DB) error {
-		// 1. 级联删除: 先删除项目关联的所有款项 (Payments)
+// DeleteForUser 删除项目及关联数据（校验归属）
+// 事务操作: 同时删除项目本身及其下属的所有款项记录。
+func (s *ProjectService) DeleteForUser(userID, id int64) error {
+	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
+		var project models.Project
+		if err := tx.Where("id = ? AND user_id = ?", id, userID).First(&project).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return pkgerrors.ErrProjectNotFound
+			}
+			return pkgerrors.Wrap(err, "查询项目失败")
+		}
 		if err := tx.Where("project_id = ?", id).Delete(&models.Payment{}).Error; err != nil {
-			return err
+			return pkgerrors.Wrap(err, "删除关联款项失败")
 		}
-		// 2. 主体删除: 删除项目本身
-		if err := tx.Delete(&models.Project{}, id).Error; err != nil {
-			return err
-		}
-		return nil
+		return tx.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Project{}).Error
 	})
+	if err != nil {
+		return err
+	}
+
+	// 事务提交后清除该用户的 Dashboard 统计缓存
+	invalidateDashboardCache(userID)
+	return nil
 }
 
-// Archive 归档项目
+// ArchiveForUser 归档项目（校验归属）
 // 将项目状态更新为 "archived"，归档后的项目通常只读或不显示在主列表中。
-func (s *ProjectService) Archive(id int64) error {
-	return s.projectRepo.UpdateStatus(id, "archived")
+func (s *ProjectService) ArchiveForUser(userID, id int64) error {
+	if _, err := s.projectRepo.FindByIDForUser(id, userID); err != nil {
+		return err
+	}
+	return s.projectRepo.UpdateStatusForUser(id, userID, "archived")
 }
 
 // CheckContractNumberExists 检查合同编号是否在库中已存在
@@ -258,7 +286,8 @@ func (s *ProjectService) CheckContractNumberExists(userID int64, contractNumber 
 //   - string: 生成的合同编号
 func (s *ProjectService) GenerateNextContractNumber(userID int64, date string) (string, error) {
 	// 解析日期
-	t, err := time.Parse("2006-01-02", date)
+	loc := time.Local
+	t, err := time.ParseInLocation("2006-01-02", date, loc)
 	if err != nil {
 		return "", err
 	}
@@ -266,23 +295,51 @@ func (s *ProjectService) GenerateNextContractNumber(userID int64, date string) (
 	// 构造前缀: HT + YYYYMMDD
 	prefix := "HT" + t.Format("20060102")
 
-	// 获取该日期前缀下的最大编号
-	maxNumber, err := s.projectRepo.GetMaxContractNumberByPrefix(userID, prefix)
-	if err != nil {
-		return "", err
-	}
+	var result string
 
-	// 计算下一个序号
-	nextSeq := 1
-	if maxNumber != "" && len(maxNumber) >= len(prefix)+4 {
-		// 提取现有最大编号的末尾4位作为序号
-		seqStr := maxNumber[len(prefix):]
-		var seq int
-		if _, err := fmt.Sscanf(seqStr, "%d", &seq); err == nil {
-			nextSeq = seq + 1
+	// 使用事务缩小读写窗口；SQLite 不支持 FOR UPDATE，其他数据库使用行锁降低并发竞态。
+	// SQLite 使用乐观锁重试机制
+	maxRetries := 3
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		err = database.GetDB().Transaction(func(tx *gorm.DB) error {
+			var maxNumber string
+			query := tx.Model(&models.Project{}).
+				Where("user_id = ? AND contract_number LIKE ?", userID, prefix+"%").
+				Order("contract_number DESC").
+				Limit(1)
+			if database.GetDBType() != "sqlite" {
+				query = query.Clauses(clause.Locking{Strength: "UPDATE"})
+			}
+			if err := query.Pluck("contract_number", &maxNumber).Error; err != nil {
+				return err
+			}
+
+			// 计算下一个序号
+			nextSeq := 1
+			if maxNumber != "" && len(maxNumber) >= len(prefix)+4 {
+				// 提取现有最大编号的末尾4位作为序号
+				seqStr := maxNumber[len(prefix):]
+				var seq int
+				if _, err := fmt.Sscanf(seqStr, "%d", &seq); err == nil {
+					nextSeq = seq + 1
+				}
+			}
+
+			// 格式化输出: 前缀 + 4位序号(补零)
+			result = fmt.Sprintf("%s%04d", prefix, nextSeq)
+			return nil
+		})
+
+		// 如果成功或非唯一约束错误，直接返回
+		if err == nil || !strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			break
+		}
+
+		// SQLite 唯一约束冲突，重试
+		if attempt < maxRetries-1 {
+			time.Sleep(time.Millisecond * time.Duration(10*(attempt+1)))
 		}
 	}
 
-	// 格式化输出: 前缀 + 4位序号(补零)
-	return fmt.Sprintf("%s%04d", prefix, nextSeq), nil
+	return result, err
 }

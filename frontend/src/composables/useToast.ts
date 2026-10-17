@@ -1,64 +1,47 @@
 /**
  * @file composables/useToast.ts
- * @description 全局轻量提示 (Toast) Hook
- * 提供成功、失败、警告、信息等不同类型的 Toast 消息推送功能。
+ * @description Global toast store for React components.
  */
-import { ref } from 'vue'
+import { create } from 'zustand'
+import { dismissToast, toast as odsToast } from '@/design-system'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
-export interface Toast {
-  id: number
-  message: string
-  type: ToastType
-  duration?: number // 显示时长 (ms)
+interface ToastState {
+  add: (message: string, type?: ToastType, duration?: number) => number
+  remove: (id: number) => void
+  success: (message: string, duration?: number) => number
+  error: (message: string, duration?: number) => number
+  warning: (message: string, duration?: number) => number
+  info: (message: string, duration?: number) => number
 }
 
-// 全局响应式状态，确保多个组件使用的 Toast 队列一致
-const toasts = ref<Toast[]>([])
-let nextId = 0
+export const useToastStore = create<ToastState>((_set, get) => ({
+  add(message, type = 'info', duration = 3000) {
+    return odsToast[type](message, duration)
+  },
+
+  remove(id) {
+    dismissToast(id)
+  },
+
+  success(message, duration) {
+    return get().add(message, 'success', duration)
+  },
+
+  error(message, duration) {
+    return get().add(message, 'error', duration)
+  },
+
+  warning(message, duration) {
+    return get().add(message, 'warning', duration)
+  },
+
+  info(message, duration) {
+    return get().add(message, 'info', duration)
+  },
+}))
 
 export function useToast() {
-  /** 移除指定 ID 的 Toast */
-  const remove = (id: number) => {
-    const index = toasts.value.findIndex((t) => t.id === id)
-    if (index !== -1) {
-      toasts.value.splice(index, 1)
-    }
-  }
-
-  /**
-   * 添加 Toast
-   * @param message 消息内容
-   * @param type 类型 (默认 info)
-   * @param duration 持续时间 (默认 3000ms)
-   */
-  const add = (message: string, type: ToastType = 'info', duration = 3000) => {
-    const id = nextId++
-    const toast: Toast = { id, message, type, duration }
-    toasts.value.push(toast)
-
-    // 自动移除定时器
-    if (duration > 0) {
-      setTimeout(() => {
-        remove(id)
-      }, duration)
-    }
-  }
-
-  // 快捷方法
-  const success = (message: string, duration?: number) => add(message, 'success', duration)
-  const error = (message: string, duration?: number) => add(message, 'error', duration)
-  const warning = (message: string, duration?: number) => add(message, 'warning', duration)
-  const info = (message: string, duration?: number) => add(message, 'info', duration)
-
-  return {
-    toasts,
-    add,
-    remove,
-    success,
-    error,
-    warning,
-    info,
-  }
+  return useToastStore()
 }

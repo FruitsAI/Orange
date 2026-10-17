@@ -1,11 +1,20 @@
 package router
 
 import (
+	"crypto/subtle"
+	"log/slog"
 	"net/http"
 
+	"github.com/FruitsAI/Orange/internal/config"
+	"github.com/FruitsAI/Orange/internal/constants"
 	"github.com/FruitsAI/Orange/internal/handler"
 	"github.com/FruitsAI/Orange/internal/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "github.com/FruitsAI/Orange/docs" // Swagger 生成的文档包
 )
 
 // NewRouter 创建并配置 Gin 路由引擎
@@ -13,26 +22,44 @@ import (
 func NewRouter() *gin.Engine {
 	router := gin.New()
 
+	// 安全加固：不信任任何上游代理，使 c.ClientIP() 仅取真实 RemoteAddr，
+	// 防止攻击者伪造 X-Forwarded-For 绕过基于 IP 的登录限流。
+	// 若未来部署在可信反向代理之后，应在此显式配置代理网段。
+	if err := router.SetTrustedProxies(nil); err != nil {
+		slog.Warn("Failed to set trusted proxies", "error", err)
+	}
+
 	// 1. 注册全局中间件
-	router.Use(middleware.Logger()) // 统一请求日志
-	router.Use(gin.Recovery())      // Panic 恢复 (防止服务崩溃)
-	router.Use(corsMiddleware())    // 跨域处理
+	// Recovery 注册在最外层，确保后续任意中间件（含 Logger）内部 panic 也能被兜底捕获。
+	router.Use(gin.Recovery())       // Panic 恢复 (防止服务崩溃)
+	router.Use(middleware.Logger())  // 统一请求日志
+	router.Use(middleware.Metrics()) // Prometheus 指标采集
+	router.Use(corsMiddleware())     // 跨域处理
 
 	// 2. 健康检查接口 (用于负载均衡或探针检测)
 	router.GET("/api/health", healthCheck)
+
+	// 2.1 Prometheus 指标端点 (建议生产环境限制访问)
+	router.GET("/metrics", metricsAuth(), gin.WrapH(promhttp.Handler()))
+
+	// 2.1 Swagger API 文档路由（仅开发环境启用）
+	if gin.Mode() == gin.DebugMode {
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+		slog.Info("Swagger API docs enabled at http://localhost:3456/swagger/index.html")
+	}
 
 	// 3. API v1 路由组
 	// 所有业务接口统一挂载在 /api/v1 下
 	v1 := router.Group("/api/v1")
 	{
 		// 3.1 公开路由 (无需鉴权)
-		// 认证模块: 登录、注册、注销
+		// 认证模块: 登录、注销
 		auth := v1.Group("/auth")
 		{
 			authHandler := handler.NewAuthHandler()
-			auth.POST("/login", authHandler.Login)       // 登录获取 Token
-			auth.POST("/register", authHandler.Register) // 用户注册
-			auth.POST("/logout", authHandler.Logout)     // 注销 (客户端清除)
+			// 登录接口应用速率限制，防止暴力破解
+			auth.POST("/login", middleware.LoginRateLimiter(), authHandler.Login)
+			auth.POST("/logout", authHandler.Logout) // 注销 (客户端清除)
 		}
 
 		// 3.2 受保护路由 (需要 JWT 鉴权)
@@ -51,12 +78,12 @@ func NewRouter() *gin.Engine {
 				users.PUT("/me", authHandler.UpdateProfile)
 				users.PUT("/me/password", authHandler.ChangePassword)
 
-				// 管理员接口 (内部已做权限校验)
-				users.GET("", userHandler.List)
-				users.POST("", userHandler.Create)
-				users.PUT("/:id", userHandler.Update)
-				users.DELETE("/:id", userHandler.Delete)
-				users.PUT("/:id/password", userHandler.ResetPassword)
+				// 管理员接口 (通过 AdminOnly 中间件统一鉴权)
+				users.GET("", middleware.AdminOnly(), userHandler.List)
+				users.POST("", middleware.AdminOnly(), userHandler.Create)
+				users.PUT("/:id", middleware.AdminOnly(), userHandler.Update)
+				users.DELETE("/:id", middleware.AdminOnly(), userHandler.Delete)
+				users.PUT("/:id/password", middleware.AdminOnly(), userHandler.ResetPassword)
 			}
 
 			// 项目管理模块
@@ -117,14 +144,14 @@ func NewRouter() *gin.Engine {
 			notifications := authorized.Group("/notifications")
 			{
 				notificationHandler := handler.NewNotificationHandler()
-				notifications.GET("", notificationHandler.List)                     // 通知列表
-				notifications.POST("", notificationHandler.Create)                  // 发送通知 (私信/广播)
-				notifications.GET("/:id", notificationHandler.Get)                  // 通知详情
-				notifications.PUT("/:id", notificationHandler.Update)               // 更新通知
-				notifications.GET("/unread-count", notificationHandler.UnreadCount) // 未读数
-				notifications.GET("/users", notificationHandler.ListUsers)          // 可通知用户列表
-				notifications.PUT("/:id/read", notificationHandler.MarkAsRead)      // 标记已读
-				notifications.DELETE("/:id", notificationHandler.Delete)            // 删除通知
+				notifications.GET("", notificationHandler.List)                                    // 通知列表
+				notifications.POST("", middleware.AdminOnly(), notificationHandler.Create)         // 发送通知 (私信/广播, 仅管理员)
+				notifications.GET("/unread-count", notificationHandler.UnreadCount)                // 未读数
+				notifications.GET("/users", middleware.AdminOnly(), notificationHandler.ListUsers) // 可通知用户列表 (仅管理员)
+				notifications.GET("/:id", notificationHandler.Get)                                 // 通知详情
+				notifications.PUT("/:id", middleware.AdminOnly(), notificationHandler.Update)      // 更新通知 (仅管理员)
+				notifications.PUT("/:id/read", notificationHandler.MarkAsRead)                     // 标记已读
+				notifications.DELETE("/:id", middleware.AdminOnly(), notificationHandler.Delete)   // 删除通知 (仅管理员)
 			}
 
 			// 个人访问令牌模块
@@ -144,8 +171,8 @@ func NewRouter() *gin.Engine {
 				system.GET("/updates/check", systemHandler.CheckUpdate)
 			}
 
-			// 数据同步模块
-			sync := authorized.Group("/sync")
+			// 数据同步模块 (涉及云端数据库连接与全量数据导出，仅管理员)
+			sync := authorized.Group("/sync", middleware.AdminOnly())
 			{
 				syncHandler := handler.NewSyncHandler()
 				sync.GET("/config", syncHandler.GetConfig)                // 获取配置
@@ -166,25 +193,87 @@ func healthCheck(c *gin.Context) {
 		"message": "ok",
 		"data": gin.H{
 			"service": "Orange API",
-			"version": "1.0.0",
+			"version": constants.AppVersion,
 		},
 	})
 }
 
 // corsMiddleware 处理跨域资源共享 (CORS) 问题
-// 允许所有 Origin 访问，支持常见的 HTTP 方法和 Header。
-// 注意: 生产环境建议将 Allow-Origin 限制为特定域名以提高安全性。
+// 仅允许白名单中的域名访问，支持常见的 HTTP 方法和 Header。
+// 同时添加安全响应头以防止常见的 Web 攻击。
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
+		origin := c.Request.Header.Get("Origin")
+
+		// 检查是否在白名单中
+		allowed := false
+		for _, allowedOrigin := range config.AppConfig.AllowedOrigins {
+			if origin == allowedOrigin {
+				allowed = true
+				break
+			}
+		}
+
+		// 无论是否命中白名单都声明按 Origin 变化，避免 CDN/缓存把某来源的
+		// Access-Control-Allow-Origin 响应头错误地复用给其他来源。
+		c.Header("Vary", "Origin")
+
+		// 如果在白名单中，则允许访问
+		if allowed {
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Access-Control-Allow-Credentials", "true")
+		}
+
+		// 设置 CORS 相关头
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
 		c.Header("Access-Control-Max-Age", "86400")
+
+		// 添加安全响应头
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-XSS-Protection", "1; mode=block")
+		csp := "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'"
+		if gin.Mode() == gin.DebugMode {
+			csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'"
+		}
+		c.Header("Content-Security-Policy", csp)
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 
 		// 浏览器在发送复杂请求前会发送 OPTIONS 预检请求
 		// 此处直接返回 204 No Content 即可
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// metricsAuth 为 /metrics 端点提供基本认证保护
+// 生产环境应启用此中间件或使用防火墙/反向代理限制访问
+func metricsAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// 检查是否配置了 Prometheus 认证
+		// 未配置则允许访问（开发环境），生产环境建议配置 PROMETHEUS_USER 和 PROMETHEUS_PASSWORD
+		user := config.AppConfig.PrometheusUser
+		password := config.AppConfig.PrometheusPassword
+
+		if user == "" || password == "" {
+			// 未配置认证，允许访问（记录警告日志）
+			slog.Warn("Prometheus /metrics endpoint is unprotected. Set PROMETHEUS_USER and PROMETHEUS_PASSWORD for production.")
+			c.Next()
+			return
+		}
+
+		// 验证 Basic Auth（常量时间比较，避免时序侧信道泄露凭据）
+		authUser, authPassword, hasAuth := c.Request.BasicAuth()
+		userOK := subtle.ConstantTimeCompare([]byte(authUser), []byte(user)) == 1
+		passOK := subtle.ConstantTimeCompare([]byte(authPassword), []byte(password)) == 1
+		if !hasAuth || !userOK || !passOK {
+			c.Header("WWW-Authenticate", "Basic realm=\"Prometheus Metrics\"")
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 

@@ -1,0 +1,63 @@
+.ods-popover-root {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Anchored to the trigger; scales from that origin (apple-design §7). */
+.ods-popover {
+  position: fixed;
+  z-index: var(--ods-z-dropdown);
+  min-width: 12rem;
+  border: var(--ods-material-glass-border-subtle);
+  border-radius: var(--ods-radius-panel);
+  background: var(--ods-color-bg-surface-raised);
+  box-shadow: var(--ods-shadow-panel);
+  backdrop-filter: blur(var(--ods-material-glass-blur))
+    saturate(var(--ods-material-glass-saturation));
+  color: var(--ods-color-fg-default);
+  animation: ods-popover-in var(--ods-duration-fast) var(--ods-ease-spring);
+}
+
+.ods-popover[data-padding='none'] {
+  padding: var(--ods-space-0);
+}
+
+.ods-popover[data-padding='sm'] {
+  padding: var(--ods-space-2);
+}
+
+.ods-popover[data-padding='md'] {
+  padding: var(--ods-space-4);
+}
+
+.ods-popover[data-placement='bottom-start'] {
+  transform-origin: top left;
+}
+
+.ods-popover[data-placement='bottom-end'] {
+  transform-origin: top right;
+}
+
+.ods-popover[data-placement='top-start'] {
+  transform-origin: bottom left;
+}
+
+@keyframes ods-popover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ods-popover {
+    animation: ods-popover-in var(--ods-duration-fast) var(--ods-ease-standard);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ods-popover {
+    background: var(--ods-color-bg-surface);
+    backdrop-filter: none;
+  }
+}
